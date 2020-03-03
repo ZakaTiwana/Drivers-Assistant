@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/container_distance"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".TestObjectDistance"
+    android:background="@color/bg">
+
+    <com.example.fyp.customview.OverlayView
+        android:id="@+id/overlay_distance"
+        android:layout_width="1280px"
+        android:layout_height="720px"
+        android:layout_gravity="center"/>
+
+</FrameLayout>

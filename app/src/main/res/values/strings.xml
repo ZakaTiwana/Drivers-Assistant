@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">FYP</string>
+    <string name="google_maps_key" templateMergeStrategy="preserve" translatable="false">AIzaSyBDMnkecPu3LCgXZuPsLdkPsNtGbf1cr4U</string>
+</resources>
