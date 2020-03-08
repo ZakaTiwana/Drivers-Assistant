@@ -4,46 +4,59 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/black"
     tools:context=".AssistanceMode">
 
 
     <Button
         android:id="@+id/btn_camera"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="155dp"
+        android:layout_height="44dp"
         android:layout_marginStart="130dp"
         android:layout_marginTop="40dp"
+        android:background="@drawable/custom_button"
+        android:padding="10dp"
         android:text="To Camera"
+        android:textColor="@color/light_grey"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/btn_to_distance" />
 
     <Button
         android:id="@+id/btn_lane"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="155dp"
+        android:layout_height="44dp"
         android:layout_marginStart="130dp"
         android:layout_marginTop="40dp"
+        android:background="@drawable/custom_button"
+        android:padding="10dp"
         android:text="To Lane"
+        android:textColor="@color/light_grey"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/btn_camera" />
 
     <Button
         android:id="@+id/btn_to_sign"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="155dp"
+        android:layout_height="44dp"
         android:layout_marginStart="130dp"
         android:layout_marginTop="40dp"
+        android:background="@drawable/custom_button"
+        android:padding="10dp"
         android:text="To Sign"
+        android:textColor="@color/light_grey"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/btn_lane" />
 
     <Button
         android:id="@+id/btn_to_distance"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="155dp"
+        android:layout_height="44dp"
         android:layout_marginStart="130dp"
         android:layout_marginTop="140dp"
+        android:background="@drawable/custom_button"
+        android:padding="10dp"
         android:text="To Distance"
+        android:textColor="@color/light_grey"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 

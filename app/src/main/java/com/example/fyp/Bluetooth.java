@@ -114,6 +114,7 @@ public class Bluetooth extends AppCompatActivity implements AdapterView.OnItemCl
                 //case1: bonded already
                 if (mDevice.getBondState() == BluetoothDevice.BOND_BONDED) {
                     Log.d(TAG, "BroadcastReceiver: BOND_BONDED.");
+                    Toast.makeText(getApplicationContext(),"Paired Sucessfully",Toast.LENGTH_SHORT).show();
                     mBTDevice = mDevice;
                 }
                 //case2: creating a bone
@@ -163,13 +164,13 @@ public class Bluetooth extends AppCompatActivity implements AdapterView.OnItemCl
                 if (Build.VERSION.SDK_INT > Build.VERSION_CODES.JELLY_BEAN_MR2) {
                     Log.d(TAG, "Trying to pair with " + deviceName);
                     //  mBTDevices2.get(i).createBond();
-                    //             mBTDevices.get(i).createBond();
+                                 mBTDevices.get(i).createBond();
                     mBTDevice = mBTDevices.get(i);
                     mBluetoothConnection = new BluetoothConnectionService(Bluetooth.this);
 
 //                    gtct = new GetTroubleCodesTask();
 //                    gtct.execute();
-                    startConnection();
+                  //  startConnection();
 
                 }
             }
@@ -250,9 +251,10 @@ public class Bluetooth extends AppCompatActivity implements AdapterView.OnItemCl
             Log.d(TAG, "Trying to pair with " + deviceName2);
             //  mBTDevices2.get(i).createBond();
             mBTDevices2.get(i).createBond();
+           // Toast.makeText(this,"Paired Successfully!",Toast.LENGTH_SHORT).show();
             mBTDevice = mBTDevices2.get(i);
             mBluetoothConnection = new BluetoothConnectionService(Bluetooth.this);
-            startConnection();
+          //  startConnection();
         }
 
 //        String deviceName = mBTDevices.get(i).getName();
@@ -425,24 +427,24 @@ public class Bluetooth extends AppCompatActivity implements AdapterView.OnItemCl
                     // Let's configure the connection.
                     Log.d(TAG, "Queueing jobs for connection configuration..");
 
-                    onProgressUpdate(1);
+                //    onProgressUpdate(1);
 
                     new ObdResetCommand().run(sock.getInputStream(), sock.getOutputStream());
 
 
-                    onProgressUpdate(2);
+               //     onProgressUpdate(2);
 
                     new EchoOffCommand().run(sock.getInputStream(), sock.getOutputStream());
 
-                    onProgressUpdate(3);
+              //      onProgressUpdate(3);
 
                     new LineFeedOffCommand().run(sock.getInputStream(), sock.getOutputStream());
 
-                    onProgressUpdate(4);
+            //        onProgressUpdate(4);
 
                     new SelectProtocolCommand(ObdProtocols.AUTO).run(sock.getInputStream(), sock.getOutputStream());
 
-                    onProgressUpdate(5);
+             //       onProgressUpdate(5);
 
                     ModifiedTroubleCodesObdCommand tcoc = new ModifiedTroubleCodesObdCommand();
                     tcoc.run(sock.getInputStream(), sock.getOutputStream());

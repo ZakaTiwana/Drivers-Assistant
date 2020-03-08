@@ -110,7 +110,12 @@ public class BluetoothConnectionService {
             }
 
             //           will talk about this in the 3rd video
-            connected(mmSocket, mmDevice);
+            try {
+                mProgressDialog.dismiss();
+            } catch (NullPointerException e) {
+                e.printStackTrace();
+            }
+           // connected(mmSocket, mmDevice);
         }
 
         public void cancel() {
