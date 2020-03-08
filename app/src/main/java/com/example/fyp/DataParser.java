@@ -14,9 +14,9 @@ import java.util.List;
  */
 
 public class DataParser {
-    public List<List<HashMap<String, String>>> parse(JSONObject jObject) {
+    public List<List<LatLng>> parse(JSONObject jObject) {
 
-        List<List<HashMap<String, String>>> routes = new ArrayList<>();
+        List<List<LatLng>> listOfPolyline = new ArrayList<>();
         JSONArray jRoutes;
         JSONArray jLegs;
         JSONArray jSteps;
@@ -35,16 +35,8 @@ public class DataParser {
                         String polyline = "";
                         polyline = (String) ((JSONObject) ((JSONObject) jSteps.get(k)).get("polyline")).get("points");
                         List<LatLng> list = decodePoly(polyline);
-
-                        /** Traversing all points */
-                        for (int l = 0; l < list.size(); l++) {
-                            HashMap<String, String> hm = new HashMap<>();
-                            hm.put("lat", Double.toString((list.get(l)).latitude));
-                            hm.put("lng", Double.toString((list.get(l)).longitude));
-                            path.add(hm);
-                        }
+                        listOfPolyline.add(list);
                     }
-                    routes.add(path);
                 }
             }
 
@@ -52,7 +44,7 @@ public class DataParser {
             e.printStackTrace();
         } catch (Exception e) {
         }
-        return routes;
+        return listOfPolyline;
     }
 
 
