@@ -19,7 +19,7 @@ import java.util.List;
  * Created by Vishal on 10/20/2018.
  */
 
-public class PointsParser extends AsyncTask< String, Integer, List<List<LatLng>> > {
+public class PointsParser extends AsyncTask<String, Integer, List<List<HashMap<String, String>>>> {
     TaskLoadedCallback taskCallback;
     String directionMode = "driving";
 
@@ -30,10 +30,10 @@ public class PointsParser extends AsyncTask< String, Integer, List<List<LatLng>>
 
     // Parsing the data in non-ui thread
     @Override
-    protected List<List<LatLng>> doInBackground(String... jsonData) {
+    protected List<List<HashMap<String, String>>> doInBackground(String... jsonData) {
 
         JSONObject jObject;
-        List<List<LatLng>> listOfPolyline = null;
+        List<List<HashMap<String, String>>> routes = null;
 
         try {
             jObject = new JSONObject(jsonData[0]);
@@ -42,36 +42,45 @@ public class PointsParser extends AsyncTask< String, Integer, List<List<LatLng>>
             Log.d("mylog", parser.toString());
 
             // Starts parsing data
-            listOfPolyline = parser.parse(jObject);
+            routes = parser.parse(jObject);
             Log.d("mylog", "Executing routes");
-//            Log.d("mylog", listOfPolyline.toString());
+            Log.d("mylog", routes.toString());
 
         } catch (Exception e) {
             Log.d("mylog", e.toString());
             e.printStackTrace();
         }
-        return listOfPolyline;
+        return routes;
     }
 
     // Executes in UI thread, after the parsing process
     @Override
-    protected void onPostExecute(List<List<LatLng>> result) {
-        List<PolylineOptions> lineOptions = new ArrayList<>();
+    protected void onPostExecute(List<List<HashMap<String, String>>> result) {
+        ArrayList<LatLng> points;
+        PolylineOptions lineOptions = null;
         // Traversing through all the routes
         for (int i = 0; i < result.size(); i++) {
-            PolylineOptions lineOption = new PolylineOptions();
+            points = new ArrayList<>();
+            lineOptions = new PolylineOptions();
             // Fetching i-th route
-            List<LatLng> path = result.get(i);
+            List<HashMap<String, String>> path = result.get(i);
             // Fetching all the points in i-th route
             for (int j = 0; j < path.size(); j++) {
-                lineOption.add(path.get(j));
+                HashMap<String, String> point = path.get(j);
+                double lat = Double.parseDouble(point.get("lat"));
+                double lng = Double.parseDouble(point.get("lng"));
+                LatLng position = new LatLng(lat, lng);
+                points.add(position);
             }
-
-            lineOption.width(20);
-            if (i % 2 == 0) lineOption.color(Color.BLUE);
-            else            lineOption.color(Color.RED);
-
-            lineOptions.add(lineOption);
+            // Adding all the points in the route to LineOptions
+            lineOptions.addAll(points);
+            if (directionMode.equalsIgnoreCase("walking")) {
+                lineOptions.width(10);
+                lineOptions.color(Color.MAGENTA);
+            } else {
+                lineOptions.width(20);
+                lineOptions.color(Color.BLUE);
+            }
             Log.d("mylog", "onPostExecute lineoptions decoded");
         }
 

@@ -49,7 +49,6 @@ import java.util.Arrays;
 import java.util.List;
 
 public class DestinationActivity extends AppCompatActivity implements OnMapReadyCallback, TaskLoadedCallback {
-    private static final String TAG = "DestinationActivity";
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
@@ -78,9 +77,10 @@ public class DestinationActivity extends AppCompatActivity implements OnMapReady
     private ImageView mGps,direction;
 
     private MarkerOptions place1, place2;
-    private List<Polyline> currentPolyline = new ArrayList<>();
+    private Polyline currentPolyline;
 
 
+    private static final String TAG = "DestinationActivity";
 
     private static final String FINE_LOCATION = Manifest.permission.ACCESS_FINE_LOCATION;
     private static final String COURSE_LOCATION = Manifest.permission.ACCESS_COARSE_LOCATION;
@@ -107,6 +107,8 @@ public class DestinationActivity extends AppCompatActivity implements OnMapReady
 
     private void init(){
         Log.d(TAG, "init: initializing");
+
+
 
         Places.initialize(this, "AIzaSyBDMnkecPu3LCgXZuPsLdkPsNtGbf1cr4U");
         // Create a new Places client instance.
@@ -149,6 +151,11 @@ public class DestinationActivity extends AppCompatActivity implements OnMapReady
             }
         });
 
+
+
+
+
+
         mGps.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -169,6 +176,12 @@ public class DestinationActivity extends AppCompatActivity implements OnMapReady
         place1=new MarkerOptions().position(fromPosition).title("Location 1");
 
 
+
+
+
+
+
+
     }
 
     private String getUrl(LatLng origin, LatLng dest, String directionMode) {
@@ -184,22 +197,16 @@ public class DestinationActivity extends AppCompatActivity implements OnMapReady
         String output = "json";
         // Building the url to the web service
         String url = "https://maps.googleapis.com/maps/api/directions/" + output + "?" + parameters + "&key=AIzaSyBDMnkecPu3LCgXZuPsLdkPsNtGbf1cr4U" ;
-        Log.d(TAG, "getUrl: url = "+url);
+
         return url;
 //
     }
 
     @Override
     public void onTaskDone(Object... values) {
-        if (!currentPolyline.isEmpty()){
-            for (Polyline p : currentPolyline) p.remove();
-            currentPolyline.clear();
-        }
-
-//        currentPolyline = mMap.addPolyline((PolylineOptions) values[0]);
-        List<PolylineOptions> pos =  (List <PolylineOptions>) values[0];
-
-        for(PolylineOptions po: pos) currentPolyline.add(mMap.addPolyline(po));
+        if (currentPolyline != null)
+            currentPolyline.remove();
+        currentPolyline = mMap.addPolyline((PolylineOptions) values[0]);
     }
 
 
