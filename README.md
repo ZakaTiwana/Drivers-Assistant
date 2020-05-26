@@ -1,8 +1,8 @@
 # Drivers-Assistant
 ## Group Members
-Muhammad Zakaullah FA16-BCS-045
+Muhammad Zakaullah  FA16-BCS-045
 
-Bilal Hassan       FA16-BCS-077
+Bilal Hassan        FA16-BCS-077
 ## Supervisor
 Dr. Mubeen Gafoor
 ## Summary
@@ -23,3 +23,5 @@ feature in case an accident does occur. It will ask the user for his trusted con
 an accident does occur, it will inform the user’s trusted contacts about it and his location.
 Additionally it will help the user in finding his destination in a better and precise way by
 augmenting direction arrows on a live video feed of the car’s front.
+##Note
+Download models from [here](https://drive.google.com/open?id=1NBArbhrRKSLAzz0fsfpjxf9Ao_HPm-Sc) add to folder **app > src > main > asset**
