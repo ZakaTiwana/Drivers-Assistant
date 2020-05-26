@@ -1,6 +1,7 @@
 # Drivers-Assistant
 ## Group Members
 Muhammad Zakaullah FA16-BCS-045
+
 Bilal Hassan       FA16-BCS-077
 ## Supervisor
 Dr. Mubeen Gafoor
@@ -8,7 +9,7 @@ Dr. Mubeen Gafoor
 Driving a car on the road is a serious job and requires 100% focus from the driver. A little
 loss in focus can sometimes result in serious injury and loss of human life. Road Accidents are one
 of the largest contributors to deaths and injuries every year. Unless a serious action is taken, road
-traffic injuries are predicted to become the fifth leading cause of death by 2030 [1]. Our proposed
+traffic injuries are predicted to become the fifth leading cause of death by 2030. Our proposed
 system is going to help minimize that problem. Furthermore, while driving it gets a lot easier for the
 driver if there is some assistance provided to the driver in finding the destination he wants to reach.
 
