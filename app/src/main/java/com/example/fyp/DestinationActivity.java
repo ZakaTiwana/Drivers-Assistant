@@ -50,6 +50,7 @@ import java.util.List;
 
 public class DestinationActivity extends AppCompatActivity implements OnMapReadyCallback, TaskLoadedCallback {
 
+    //new changes
     @Override
     public void onMapReady(GoogleMap googleMap) {
         //     Toast.makeText(this, "Map is Ready", Toast.LENGTH_SHORT).show();
@@ -73,7 +74,7 @@ public class DestinationActivity extends AppCompatActivity implements OnMapReady
         }
 
     }
-
+//new changes
     private ImageView mGps,direction;
 
     private MarkerOptions place1, place2;
