@@ -29,6 +29,7 @@ import android.view.TextureView;
 import android.view.View;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
@@ -104,6 +105,14 @@ public abstract class CameraCaptureActivity extends AppCompatActivity implements
             mCameraDevice = null;
             Log.e(TAG,"At mCameraDeviceStateCallback onError error = "+error);
         }
+
+        @Override
+        public void onClosed(@NonNull CameraDevice camera) {
+            super.onClosed(camera);
+//            camera.close();
+            mCameraDevice = null;
+            Log.e(TAG,"At mCameraDeviceStateCallback close closed.");
+        }
     };
     private HandlerThread mBackgroundHandlerThread;
     private Handler mBackgroundHandler;
@@ -156,9 +165,7 @@ public abstract class CameraCaptureActivity extends AppCompatActivity implements
     @Override
     protected void onResume() {
         super.onResume();
-
         startBackgroundThread();
-
         if(mTextureView.isAvailable()) {
             Log.d(TAG, String.format("onResume: mTextureView.width = %d and height = %d", mTextureView.getWidth(),mTextureView.getHeight()));
             setupCamera(mTextureView.getWidth(), mTextureView.getHeight());
@@ -184,9 +191,7 @@ public abstract class CameraCaptureActivity extends AppCompatActivity implements
     @Override
     protected void onPause() {
         closeCamera();
-
         stopBackgroundThread();
-
         super.onPause();
     }
 
@@ -262,7 +267,7 @@ public abstract class CameraCaptureActivity extends AppCompatActivity implements
         }
     }
 
-    private void startPreview() {
+    private synchronized void startPreview() {
         SurfaceTexture surfaceTexture = mTextureView.getSurfaceTexture();
         surfaceTexture.setDefaultBufferSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
         Surface previewSurface = new Surface(surfaceTexture);
@@ -280,7 +285,8 @@ public abstract class CameraCaptureActivity extends AppCompatActivity implements
                             Log.d(TAG, "onConfigured: startPreview");
                             mPreviewCaptureSession = session;
                             try {
-                                mPreviewCaptureSession.setRepeatingRequest(mPreviewRequestBuilder.build(),
+                                if (mCameraDevice != null)
+                                 mPreviewCaptureSession.setRepeatingRequest(mPreviewRequestBuilder.build(),
                                         null, mBackgroundHandler); // mPreviewCaptureCallback
 
                             } catch (CameraAccessException e) {
