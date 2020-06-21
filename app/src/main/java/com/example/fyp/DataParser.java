@@ -1,17 +1,16 @@
 package com.example.fyp;
+
 import com.google.android.gms.maps.model.LatLng;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-/**
- * Created by Vishal on 10/20/2018.
- */
 
 public class DataParser {
     public List<List<HashMap<String, String>>> parse(JSONObject jObject) {
@@ -53,6 +52,47 @@ public class DataParser {
         } catch (Exception e) {
         }
         return routes;
+    }
+
+    public   ArrayList<String>  parseSteps(JSONObject jObject) {
+
+
+        ArrayList<String> stepsInfo = new ArrayList<String>();
+        JSONArray jRoutes;
+        JSONArray jLegs;
+        JSONArray jSteps;
+        String lat;
+        String lng;
+        String maneuver;
+        try {
+            jRoutes = jObject.getJSONArray("routes");
+            jLegs = ((JSONObject) jRoutes.get(0)).getJSONArray("legs");
+            jSteps = ((JSONObject) jLegs.get(0)).getJSONArray("steps");
+
+
+            /** Traversing all steps */
+            for (int i = 0; i < jSteps.length(); i++) {
+
+               if(  ((JSONObject) jSteps.get(i)).has("maneuver")){
+                   maneuver=(String) ((JSONObject) jSteps.get(i)).get("maneuver");
+               }
+               else{
+                   maneuver=null;
+               }
+                lat=(String) ((JSONObject) ((JSONObject) jSteps.get(i)).get("start_location")).get("lat").toString();
+                lng=(String) ((JSONObject) ((JSONObject) jSteps.get(i)).get("start_location")).get("lng").toString();
+                stepsInfo.add((String) ((JSONObject) ((JSONObject) jSteps.get(i)).get("distance")).get("text")+"::"
+                        +(String) ((JSONObject) jSteps.get(i)).get("html_instructions")+"::"
+                        +lat+"::"
+                        +lng+"::"
+                        +maneuver);
+
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        return stepsInfo;
     }
 
 

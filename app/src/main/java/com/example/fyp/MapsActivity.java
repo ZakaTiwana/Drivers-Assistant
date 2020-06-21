@@ -48,6 +48,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import io.nlopez.smartlocation.OnLocationUpdatedListener;
+import io.nlopez.smartlocation.SmartLocation;
+import io.nlopez.smartlocation.location.config.LocationAccuracy;
+import io.nlopez.smartlocation.location.config.LocationParams;
+
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
@@ -215,29 +220,57 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         try {
             if (mLocationPermissionsGranted) {
 
-                final Task location = mFusedLocationProviderClient.getLastLocation();
-                location.addOnCompleteListener(new OnCompleteListener() {
-                    @Override
-                    public void onComplete(@NonNull Task task) {
-                        if (task.isSuccessful()) {
-                            Log.d(TAG, "onComplete: found location!");
-                            Location currentLocation = (Location) task.getResult();
-                            if (currentLocation == null) {
-                                Toast.makeText(getApplicationContext(), "unable to get current location. wait for a few minutes and restart the app", Toast.LENGTH_SHORT).show();
 
-                            } else {
-                                fromPosition = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
-
-                                moveCamera(new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude()),
-                                        DEFAULT_ZOOM, "My Location");
-                            }
-
-                        } else {
-                            Log.d(TAG, "onComplete: current location is null");
-                            Toast.makeText(MapsActivity.this, "unable to get current location", Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                });
+//                final Task location = mFusedLocationProviderClient.getLastLocation();
+//                location.addOnCompleteListener(new OnCompleteListener() {
+//                    @Override
+//                    public void onComplete(@NonNull Task task) {
+//                        if (task.isSuccessful()) {
+//                            Log.d(TAG, "onComplete: found location!");
+//                            Location currentLocation = (Location) task.getResult();
+//                            if (currentLocation == null) {
+//                                Toast.makeText(getApplicationContext(), "unable to get current location. wait for a few minutes and restart the app", Toast.LENGTH_SHORT).show();
+//
+//                            } else {
+//                                fromPosition = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
+//
+//                                moveCamera(new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude()),
+//                                        DEFAULT_ZOOM, "My Location");
+//                            }
+//
+//                        } else {
+//                            Log.d(TAG, "onComplete: current location is null");
+//                            Toast.makeText(MapsActivity.this, "unable to get current location", Toast.LENGTH_SHORT).show();
+//                        }
+//                    }
+//                });
+                SmartLocation smartLocation = null;
+                LocationParams.Builder builder;
+                smartLocation = new SmartLocation.Builder(this).logging(true).build();
+                builder = new LocationParams.Builder()
+                        .setAccuracy(LocationAccuracy.HIGH)
+                        .setDistance(0)
+                        .setInterval(5000);
+                try{
+                    smartLocation.with(this)
+                            .location()
+                            .config(LocationParams.BEST_EFFORT)
+                            .continuous()
+                            .config(builder.build())
+                            .start(new OnLocationUpdatedListener() {
+                                @Override
+                                public void onLocationUpdated(Location location) {
+//                                    double lon = location.getLongitude();
+//                                    double lat = location.getLatitude();
+                                    fromPosition = new LatLng(location.getLatitude(), location.getLongitude());
+                                    moveCamera(new LatLng(location.getLatitude(), location.getLongitude()),
+                                       DEFAULT_ZOOM, "My Location");
+                                }
+                            });
+                }
+                catch(SecurityException se){
+                    se.printStackTrace();
+                }
             }
         } catch (SecurityException e) {
             Log.e(TAG, "getDeviceLocation: SecurityException: " + e.getMessage());

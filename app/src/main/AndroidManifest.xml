@@ -23,7 +23,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".AssistanceMode"></activity>
+        <activity android:name=".Sms"></activity>
+        <activity android:name=".AssistanceMode" />
         <activity android:name=".MicTest" />
         <activity android:name=".Bluetooth" />
         <activity android:name=".ViewTrustedContacts" />
@@ -38,7 +39,6 @@
         <activity android:name=".TestLaneActivity" />
         <activity android:name=".CameraCaptureActivity" />
         <activity android:name=".ImageProcessor" />
-
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"

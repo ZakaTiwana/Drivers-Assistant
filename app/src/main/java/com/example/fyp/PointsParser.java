@@ -5,6 +5,7 @@ import android.content.Context;
 import android.graphics.Color;
 import android.os.AsyncTask;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.PolylineOptions;
@@ -15,9 +16,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-/**
- * Created by Vishal on 10/20/2018.
- */
 
 public class PointsParser extends AsyncTask<String, Integer, List<List<HashMap<String, String>>>> {
     TaskLoadedCallback taskCallback;
@@ -34,6 +32,7 @@ public class PointsParser extends AsyncTask<String, Integer, List<List<HashMap<S
 
         JSONObject jObject;
         List<List<HashMap<String, String>>> routes = null;
+ //       ArrayList<String> stepsInfo = new ArrayList<String>();
 
         try {
             jObject = new JSONObject(jsonData[0]);
@@ -43,6 +42,8 @@ public class PointsParser extends AsyncTask<String, Integer, List<List<HashMap<S
 
             // Starts parsing data
             routes = parser.parse(jObject);
+//            stepsInfo = parser.parseSteps(jObject);
+//            Log.d("stepsinfo", ": "+stepsInfo);
             Log.d("mylog", "Executing routes");
             Log.d("mylog", routes.toString());
 
