@@ -15,6 +15,8 @@ import android.view.KeyEvent;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
 
+import androidx.core.view.GestureDetectorCompat;
+
 import com.google.android.material.snackbar.Snackbar;
 import com.example.fyp.customutilities.ImageUtilities;
 import com.example.fyp.customview.OverlayView;
@@ -27,7 +29,7 @@ import java.util.List;
 public class ImageProcessor extends CameraCaptureActivity {
 
     private static final String TAG = "ImageProcessor";
-    private static final int CROP_SIZE = 300;
+//    private static final int CROP_SIZE = Detector.OBJ_DETECTOR_INPUT_SIZE;
     private static final Size DESIRED_PREVIEW_SIZE = new Size(1280,720);
     private static final int[] pts = {650,360, 750,360, 1280,600, 100,600}; // for lane
 
@@ -35,10 +37,10 @@ public class ImageProcessor extends CameraCaptureActivity {
     private int mHeight = 0;
 
     private Bitmap rgbFrameBitmap = null;
-    private Bitmap croppedBitmap = null;
+//    private Bitmap croppedBitmap = null;
 
-    private Matrix frameToCropTransform = null;
-    private Matrix cropToFrameTransform = null;
+//    private Matrix frameToCropTransform = null;
+//    private Matrix cropToFrameTransform = null;
 
     private Detector detector = null;
     private volatile boolean computingDetection = false;
@@ -58,7 +60,7 @@ public class ImageProcessor extends CameraCaptureActivity {
 
     private OverlayView draw = null;
 
-    private List<RecoganizedObject> mappedRecognitions = null;
+    private List<RecognizedObject> mappedRecognitions = null;
 
     private Paint borderBoxPaint = null;
     private Paint borderTextPaint = null;
@@ -121,16 +123,16 @@ public class ImageProcessor extends CameraCaptureActivity {
 
         rgbFrameBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
 //        rgbFrameBitmap = Bitmap.createBitmap(DESIRED_PREVIEW_SIZE.getWidth(), DESIRED_PREVIEW_SIZE.getHeight(), Bitmap.Config.ARGB_8888);
-        croppedBitmap = Bitmap.createBitmap(CROP_SIZE, CROP_SIZE, Bitmap.Config.ARGB_8888);
+//        croppedBitmap = Bitmap.createBitmap(CROP_SIZE, CROP_SIZE, Bitmap.Config.ARGB_8888);
 
-        frameToCropTransform =
-                ImageUtilities.getTransformationMatrix(
-                        width, height,
-                        CROP_SIZE, CROP_SIZE,
-                        0, false);
-
-        cropToFrameTransform = new Matrix();
-        frameToCropTransform.invert(cropToFrameTransform);
+//        frameToCropTransform =
+//                ImageUtilities.getTransformationMatrix(
+//                        width, height,
+//                        CROP_SIZE, CROP_SIZE,
+//                        0, false);
+//
+//        cropToFrameTransform = new Matrix();
+//        frameToCropTransform.invert(cropToFrameTransform);
 
         // ------------------
 
@@ -144,19 +146,19 @@ public class ImageProcessor extends CameraCaptureActivity {
             @Override
             public void drawCallback(Canvas canvas) {
                 if (mappedRecognitions != null){
-                    for (RecoganizedObject object: mappedRecognitions){
+                    for (RecognizedObject object: mappedRecognitions){
                         if(object.getScore() >= 0.6f) {
                             RectF  location = object.getLocation();
-                            cropToFrameTransform.mapRect(location);
+//                            cropToFrameTransform.mapRect(location);
 
-                            DistanceCalculator dc = new DistanceCalculator(location,object.getLable());
+                            DistanceCalculator dc = new DistanceCalculator(location,object.getLabel());
                             float dist = dc.getDistance();
 
                             canvas.drawRect(location,borderBoxPaint);
                             canvas.drawText(
-                                    String.format("%s , %.1f %%",object.getLable(),object.getScore()*100  ),
+                                    String.format("%s , %.1f %%",object.getLabel(),object.getScore()*100  ),
                                     location.left,location.top < 50? location.top+60:location.top-10,borderTextPaint);
-                            if(object.getLable().matches("(?i)^car|bottle$")){
+                            if(object.getLabel().matches("(?i)^car|bottle$")){
                                 canvas.drawText(String.format("%.1f m", dist),location.left,
                                         location.top < 50 ? location.top + 20:location.top - 35,
                                         borderTextPaint);
@@ -215,10 +217,10 @@ public class ImageProcessor extends CameraCaptureActivity {
         laneDetector = new LaneDetector(rgbFrameBitmap);
         lanePoints = laneDetector.getResult2();
 
-        final Canvas canvas = new Canvas(croppedBitmap);
-        canvas.drawBitmap(rgbFrameBitmap,frameToCropTransform,null);
+//        final Canvas canvas = new Canvas(croppedBitmap);
+//        canvas.drawBitmap(rgbFrameBitmap,frameToCropTransform,null);
 
-        mappedRecognitions = detector.recognizeImage(croppedBitmap);
+        mappedRecognitions = detector.run(rgbFrameBitmap,true);
         draw.postInvalidate();
         computingDetection = false;
 
@@ -253,11 +255,10 @@ public class ImageProcessor extends CameraCaptureActivity {
             });
 
             try {
-                detector = Detector.create(getAssets(), CROP_SIZE, CROP_SIZE);
+                detector = Detector.create(getAssets(), Detector.OBJ_DETECTOR_MODEL);
                 Log.d(TAG, "run: detector created");
             } catch (Exception e) {
                 Log.e(TAG,"run: Exception initializing classifier!", e);
-//                finish();
             }
 
             runOnUiThread(new Runnable() {

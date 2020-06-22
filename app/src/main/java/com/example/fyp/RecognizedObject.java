@@ -2,7 +2,7 @@ package com.example.fyp;
 
 import android.graphics.RectF;
 
-public class RecoganizedObject {
+public class RecognizedObject {
     /**
      * A unique identifier for what has been recognized. Specific to the class, not the instance of
      * the object.
@@ -14,7 +14,7 @@ public class RecoganizedObject {
     private String label;
     private float score;
 
-    public RecoganizedObject (final String id, final String label,final Float score, final RectF location) {
+    public RecognizedObject(final String id, final String label, final Float score, final RectF location) {
 
         this.id = id;
         this.location = location;
@@ -30,7 +30,7 @@ public class RecoganizedObject {
         return new RectF(location);
     }
 
-    public String getLable() {return label;}
+    public String getLabel() {return label;}
     public Float getScore(){return score;}
 
 
@@ -49,7 +49,7 @@ public class RecoganizedObject {
 
         String resultString = "";
         if (id != null) {
-            resultString += String.format("[id: %s label: %s]",id,label);
+            resultString += String.format("[id: %s label: %s score: %s]",id,label,score);
         }
         return resultString.trim();
     }
