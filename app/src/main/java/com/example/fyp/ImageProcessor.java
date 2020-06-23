@@ -3,7 +3,6 @@ package com.example.fyp;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RectF;
@@ -15,12 +14,8 @@ import android.view.KeyEvent;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
 
-import androidx.core.view.GestureDetectorCompat;
-
 import com.google.android.material.snackbar.Snackbar;
-import com.example.fyp.customutilities.ImageUtilities;
 import com.example.fyp.customview.OverlayView;
-
 import org.opencv.android.OpenCVLoader;
 
 import java.util.List;
@@ -29,7 +24,6 @@ import java.util.List;
 public class ImageProcessor extends CameraCaptureActivity {
 
     private static final String TAG = "ImageProcessor";
-//    private static final int CROP_SIZE = Detector.OBJ_DETECTOR_INPUT_SIZE;
     private static final Size DESIRED_PREVIEW_SIZE = new Size(1280,720);
     private static final int[] pts = {650,360, 750,360, 1280,600, 100,600}; // for lane
 

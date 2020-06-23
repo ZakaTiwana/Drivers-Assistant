@@ -1,6 +1,5 @@
 package com.example.fyp;
 
-import android.app.Application;
 import android.content.Context;
 import android.content.res.AssetFileDescriptor;
 import android.content.res.AssetManager;
@@ -13,16 +12,13 @@ import android.graphics.RectF;
 import android.os.Trace;
 import android.util.Log;
 
-import androidx.appcompat.app.AppCompatActivity;
 
 import org.jetbrains.annotations.NotNull;
 import org.tensorflow.lite.Interpreter;
 import org.tensorflow.lite.gpu.GpuDelegate;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -30,7 +26,6 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.List;
 import java.util.Vector;
 
@@ -69,8 +64,6 @@ public class SignDetector{
 //    private int[] outputValues;
 
     private Interpreter tfLite;
-
-    private static Context mContext;
     private SignDetector(){}
 
     /** Memory-map the model file in Assets. */
@@ -87,17 +80,21 @@ public class SignDetector{
 
 
 
-    public static SignDetector create(AssetManager assetManager, Context m) throws IOException{
+    public static SignDetector create(AssetManager assetManager) throws IOException{
         SignDetector s = new SignDetector();
         s.detector =  Detector.create(assetManager,Detector.SIGN_DETECTOR_MODEL);
-        s.mContext = m;
+
         try {
             GpuDelegate delegate = new GpuDelegate();
             Interpreter.Options options = (new Interpreter.Options()).addDelegate(delegate);
             s.tfLite = new Interpreter(loadModelFile(assetManager), options);
         } catch (Exception e) {
-            Log.e(TAG, "create: exception at loading model = ",e );
-            throw new RuntimeException(e);
+            Log.e(TAG, "create: Exception when loading tflite interpreter with gpu option now trying with gpu option");
+            try {
+                s.tfLite = new Interpreter(loadModelFile(assetManager));
+            } catch (Exception ex){
+                throw e;
+            }
         }
         s.width = SIGN_CLASSIFIER_INPUT_SIZE;
         s.height = SIGN_CLASSIFIER_INPUT_SIZE;
@@ -185,8 +182,7 @@ public class SignDetector{
 //                createCustomFile(resizeBitmap,rc.getLabel()+Calendar.getInstance().getTime());
                 setImageData(resizeBitmap);
                 label = recognizeSign();
-                createCustomFile(croppedBmp,
-                        label.replaceAll("\\W+"," ")+" - "+Calendar.getInstance().getTime());
+
                 recognizedObjects.add(
                         new RecognizedObject(
                                 "" + rc.getId(),   label,
@@ -241,18 +237,5 @@ public class SignDetector{
         if (!source.isRecycled() && allowToRecycleBitmap) source.recycle();
         return resultBitmap;
     }
-    private void createCustomFile(Bitmap bmp,String fileName){
-        try {
-            File path= new File(mContext.getExternalFilesDir(null),  "Images");
-            if(!path.exists()){
-                path.mkdirs();
-            }
-            FileOutputStream outFile = new FileOutputStream(path+File.separator+ fileName + ".png");
-            bmp.compress(Bitmap.CompressFormat.PNG, 100, outFile);
-            Log.d(TAG, "createCustomFile: Bitmap saved to : "+path+File.separator+ fileName + ".png");
-            //now we can create FileOutputStream and write something to file
-        } catch (IOException e) {
-            Log.e(TAG, "Saving received message failed with", e);
-        }
-    }
+
 }
