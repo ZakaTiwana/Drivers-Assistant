@@ -1,5 +1,6 @@
 package com.example.fyp;
 
+import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -8,6 +9,7 @@ import android.graphics.Path;
 import android.graphics.RectF;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.Size;
@@ -43,25 +45,32 @@ public class ImageProcessor extends CameraCaptureActivity {
 
     private Bitmap rgbFrameBitmap = null;
 
-    private Detector detector = null;
-    private volatile boolean computingDetection = false;
+    private static Detector detector = null;
+    private static float timeTakeByObjDetector = 0;
+    private static SignDetector signDetector = null;
+    private static float timeTakeBySignDetector = 0;
+    private static volatile boolean isComputingSignDetection = false;
+    private static volatile boolean isComputingDetection = false;
+    private static volatile boolean isComputingLaneDetection = false;
 
-    private LaneDetector laneDetector = null;
-    private Double[][] lanePoints = null;
+    private static Double[][] lanePoints = null;
+    private static float timeTakeByLaneDetector = 0;
     private Paint lanePointsPaint = null;
-    private volatile boolean computingLane = false;
 
-    private volatile boolean laneGuidLines = false;
+    private static boolean laneGuidLines = false;
     private Path laneGuidPath = null;
     private Paint laneGuidPathPaint = null;
 
     private Snackbar initSnackbar = null;
     private volatile boolean initialized = false;
 
+    private boolean drawDebugInfo = false;
+    private int counterForVolumeDown = 0;
 
-    private OverlayView draw = null;
+    private static OverlayView draw = null;
 
-    private List<RecognizedObject> mappedRecognitions = null;
+    private static List<RecognizedObject>  mappedRecognitions = null;
+    private static List<RecognizedObject> mappedSignRecognitions = null;
 
     private Paint borderBoxPaint = null;
     private Paint borderTextPaint = null;
@@ -118,6 +127,7 @@ public class ImageProcessor extends CameraCaptureActivity {
 
         rgbFrameBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
 
+        //object Detection.
         draw.addCallback(new OverlayView.DrawCallback() {
             @Override
             public void drawCallback(Canvas canvas) {
@@ -125,7 +135,6 @@ public class ImageProcessor extends CameraCaptureActivity {
                     for (RecognizedObject object: mappedRecognitions){
                         if(object.getScore() >= 0.6f) {
                             RectF  location = object.getLocation();
-//                            cropToFrameTransform.mapRect(location);
 
                             DistanceCalculator dc = new DistanceCalculator(location,object.getLabel());
                             float dist = dc.getDistance();
@@ -142,10 +151,30 @@ public class ImageProcessor extends CameraCaptureActivity {
                         }
                     }
                 }
-
             }
         });
 
+        // SignDetection
+        draw.addCallback(new OverlayView.DrawCallback() {
+            @Override
+            public void drawCallback(Canvas canvas) {
+                if (mappedSignRecognitions != null){
+                    int count = 0;
+                    for (RecognizedObject object: mappedSignRecognitions){
+                        if(count >=2) break;
+                        RectF  location = object.getLocation();
+
+                        canvas.drawRect(location,borderBoxPaint);
+                        canvas.drawText(
+                                String.format("%s , %.1f %%",object.getLabel(),object.getScore()*100  ),
+                                location.left,location.top < 50? location.top+60:location.top-10,borderTextPaint);
+                        count++;
+                    }
+                }
+                }
+        });
+
+        //LaneDetection
         draw.addCallback(new OverlayView.DrawCallback() {
             @Override
             public void drawCallback(Canvas canvas) {
@@ -159,12 +188,28 @@ public class ImageProcessor extends CameraCaptureActivity {
             }
         });
 
+        // lane Mask
         draw.addCallback(new OverlayView.DrawCallback() {
             @Override
             public void drawCallback(Canvas canvas) {
 //                Log.d(TAG, "drawCallback: lanGuidLines = "+laneGuidLines);
                 if(laneGuidLines){
                     canvas.drawPath(laneGuidPath, laneGuidPathPaint);
+                }
+            }
+        });
+        // debug information
+        draw.addCallback(new OverlayView.DrawCallback() {
+            @SuppressLint("DefaultLocale")
+            @Override
+            public void drawCallback(Canvas canvas) {
+                if(drawDebugInfo){
+                    canvas.drawText(
+                            String.format("Time Taken Object Detection: %.0f",timeTakeByObjDetector),10,50,borderTextPaint);
+                    canvas.drawText(
+                            String.format( "Time Taken Sign Detection: %.0f ",timeTakeBySignDetector),10,100,borderTextPaint);
+                    canvas.drawText(
+                            String.format("Time Taken Sign Detection: %.0f ",timeTakeByLaneDetector),10,150,borderTextPaint);
                 }
             }
         });
@@ -178,32 +223,60 @@ public class ImageProcessor extends CameraCaptureActivity {
 //        Log.d(TAG, "processImage: computingDetection = "+ computingDetection + " initilazed = "+ initialized );
 
         // No mutex needed as this method is not reentrant.
-        if (computingDetection || !initialized) {
+        if (isComputingDetection || !initialized) {
+//            if (!isComputingLaneDetection || !isComputingSignDetection) {
+//                rgbFrameBitmap.setPixels(getRgbBytes(), 0, mWidth, 0, 0, mWidth, mHeight);
+//                new SignLaneTask().execute(rgbFrameBitmap.copy(Bitmap.Config.ARGB_8888, true));
+//            }
+
             readyForNextImage();
             return;
         }
-        computingDetection = true;
+        isComputingDetection = true;
         rgbFrameBitmap.setPixels(getRgbBytes(), 0, mWidth, 0, 0, mWidth, mHeight);
-//        rgbFrameBitmap.setPixels(getRgbBytes(), 0, DESIRED_PREVIEW_SIZE.getWidth(), 0, 0, DESIRED_PREVIEW_SIZE.getWidth(), DESIRED_PREVIEW_SIZE.getHeight());
+        new SignLaneTask().execute(rgbFrameBitmap.copy(Bitmap.Config.ARGB_8888,true));
         readyForNextImage();
 
-        laneDetector = null;
-        laneDetector = new LaneDetector(rgbFrameBitmap);
-        lanePoints = laneDetector.getResult2();
+//        LaneDetector laneDetector = null;
+//        laneDetector = new LaneDetector(rgbFrameBitmap);
+//        lanePoints = laneDetector.getResult2();
 
 //        final Canvas canvas = new Canvas(croppedBitmap);
 //        canvas.drawBitmap(rgbFrameBitmap,frameToCropTransform,null);
 
-        mappedRecognitions = detector.run(rgbFrameBitmap,true);
+        float start = SystemClock.currentThreadTimeMillis();
+        mappedRecognitions = detector.run(rgbFrameBitmap,false);
+//        float signStart = SystemClock.currentThreadTimeMillis();
+//        Log.d(TAG, String.format("processImage: Time take for only Object Detection = %f ms", (signStart-start)));
+//        List<RecognizedObject> signRecognitions = signDetector.run(rgbFrameBitmap,false);
+//        float signEnd = SystemClock.currentThreadTimeMillis();
+//        Log.d(TAG, String.format("processImage: Time take for only Sign Detection = %f ms", (signEnd-signStart)));
+        float end = SystemClock.currentThreadTimeMillis();
+        timeTakeByObjDetector = end - start;
+//        Log.d(TAG, String.format("processImage: Total time for Object Detection = %f ms", (end-start)));
+//        mappedRecognitions.addAll(signRecognitions);
         draw.postInvalidate();
-        computingDetection = false;
+        isComputingDetection = false;
 
     }
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if(keyCode == KeyEvent.KEYCODE_VOLUME_DOWN){
-            laneGuidLines = !laneGuidLines;
+            switch (counterForVolumeDown){
+                case 0:
+                    laneGuidLines = true;
+                    break;
+                case 1:
+                    drawDebugInfo = true;
+                    laneGuidLines = false;
+                    break;
+                case 2:
+                    drawDebugInfo = false;
+                    break;
+            }
+            counterForVolumeDown++ ;
+            counterForVolumeDown %=3 ;
             return true;
         }
 
@@ -250,6 +323,10 @@ public class ImageProcessor extends CameraCaptureActivity {
             try {
                 detector = Detector.create(getAssets(), Detector.OBJ_DETECTOR_MODEL);
                 Log.d(TAG, "run: detector created");
+
+                signDetector = SignDetector.create(getAssets());
+                Log.d(TAG, "run: SignDetector created");
+
             } catch (Exception e) {
                 Log.e(TAG,"run: Exception initializing classifier!", e);
             }
@@ -262,6 +339,37 @@ public class ImageProcessor extends CameraCaptureActivity {
             });
 
             initialized = true;
+            return null;
+        }
+    }
+
+    private static class SignLaneTask extends AsyncTask<Bitmap,Object,Object>{
+
+        @Override
+        protected Object doInBackground(Bitmap... params) {
+            if(!isComputingLaneDetection){
+                isComputingLaneDetection = true;
+                LaneDetector laneDetector = null;
+                float start = SystemClock.currentThreadTimeMillis();
+                laneDetector = new LaneDetector(params[0]);
+                lanePoints = laneDetector.getResult2();
+                float end = SystemClock.currentThreadTimeMillis();
+                timeTakeByLaneDetector = end - start;
+//                Log.d(TAG, String.format("doInBackground in SignLaneTask : lane detection time = %f ms", (end-start)));
+                draw.postInvalidate();
+                isComputingLaneDetection = false;
+            }
+
+            if (!isComputingSignDetection){
+                isComputingSignDetection = true;
+                float start  = SystemClock.currentThreadTimeMillis();
+                mappedSignRecognitions = signDetector.run(params[0],true);
+                float end = SystemClock.currentThreadTimeMillis();
+//                Log.d(TAG, String.format("doInBackground in SignLaneTask: sign detection time = %f ms", (end-start)));
+                timeTakeBySignDetector = end - start;
+                draw.postInvalidate();
+                isComputingSignDetection = false;
+            }
             return null;
         }
     }

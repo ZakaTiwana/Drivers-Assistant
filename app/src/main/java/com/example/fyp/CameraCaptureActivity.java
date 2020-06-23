@@ -389,6 +389,7 @@ public abstract class CameraCaptureActivity extends AppCompatActivity implements
         }
         try {
 //            Log.d(TAG, String.format("onImageAvailable: mWidt = %d and mHeight = %d", mWidth,mHeight));
+//            final Image image = imageReader.acquireLatestImage();
             final Image image = imageReader.acquireLatestImage();
 //            Log.d(TAG, String.format("onImageAvailable: image.width = %d and image.height = %d", image.getWidth(),image.getHeight()));
 

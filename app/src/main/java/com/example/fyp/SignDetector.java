@@ -34,7 +34,7 @@ public class SignDetector{
 
     private static final String TAG = "SignDetector";
 
-    private static final float THRESHOLD_SCORE = 0.8f;
+    private static final float THRESHOLD_SCORE = 0.9f;
     public static final String SIGN_CLASSIFIER_MODEL = "gtsrb.lite";
     private static final String SIGN_CLASSIFIER_LABEL = "gtsrb_label.txt";
     public static final int SIGN_CLASSIFIER_INPUT_SIZE = 224;
