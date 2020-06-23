@@ -20,7 +20,6 @@ import org.opencv.android.OpenCVLoader;
 
 import java.util.List;
 
-
 public class ImageProcessor extends CameraCaptureActivity {
 
     private static final String TAG = "ImageProcessor";
@@ -42,7 +41,7 @@ public class ImageProcessor extends CameraCaptureActivity {
     private LaneDetector laneDetector = null;
     private Double[][] lanePoints = null;
     private Paint lanePointsPaint = null;
-    private volatile boolean computinLane = false;
+    private volatile boolean computingLane = false;
 
     private volatile boolean laneGuidLines = false;
     private Path laneGuidPath = null;
@@ -226,6 +225,7 @@ public class ImageProcessor extends CameraCaptureActivity {
 
     @Override
     public Size getDesiredPreviewSize() {
+
         return DESIRED_PREVIEW_SIZE;
     }
 

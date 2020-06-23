@@ -1,6 +1,6 @@
 package com.example.fyp;
 
-import android.content.Context;
+
 import android.content.res.AssetFileDescriptor;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
@@ -105,7 +105,7 @@ public class SignDetector{
         br = new BufferedReader(new InputStreamReader(labelsInput));
         String line;
         while ((line = br.readLine()) != null) {
-            Log.w(TAG,line);
+//            Log.w(TAG,line);
             s.labels.add(line);
         }
         br.close();

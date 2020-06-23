@@ -143,7 +143,7 @@ public class Detector {
         br = new BufferedReader(new InputStreamReader(labelsInput));
         String line;
         while ((line = br.readLine()) != null) {
-            Log.w(TAG,line);
+//            Log.w(TAG,line);
             d.labels.add(line);
         }
         br.close();

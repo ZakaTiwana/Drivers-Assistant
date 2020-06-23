@@ -125,13 +125,9 @@ public class TestObjectDistance extends AppCompatActivity {
         startActivityForResult(intent,GALLERY_REQUEST_CODE);
     }
 
-    private void recoganizeImage() {
-
-        Bitmap croppedBitmap = Bitmap.createBitmap(CROP_SIZE,CROP_SIZE, Bitmap.Config.ARGB_8888);
-        final Canvas canvas = new Canvas(croppedBitmap);
-        canvas.drawBitmap(image,frameToCrop,null);
-        mappedRecognitions = detector.run(croppedBitmap,false);
-        Log.d(TAG, "recoganizeImage: mappedRecoganitions = " + mappedRecognitions.toString());
+    private void recognizeImage() {
+        mappedRecognitions = detector.run(image,false);
+        Log.d(TAG, "recognizeImage: mappedRecognitions = " + mappedRecognitions.toString());
     }
 
     private void processImage(Canvas canvas){
@@ -145,7 +141,6 @@ public class TestObjectDistance extends AppCompatActivity {
                 if (object.getLabel().equalsIgnoreCase("car") ||object.getLabel().equalsIgnoreCase("bottle")) {
 
                     location = object.getLocation();
-                    cropToFrame.mapRect(location);
                     canvas.drawRect(location, borderBoxPaint);
                     distanceCalculator = new DistanceCalculator(location,object.getLabel());
                     float dist = distanceCalculator.getDistance();
@@ -206,7 +201,7 @@ public class TestObjectDistance extends AppCompatActivity {
 
                     first_time = true;
                     draw.postInvalidate();
-                    recoganizeImage();
+                    recognizeImage();
                     break;
                 default:
                     break;
@@ -221,7 +216,7 @@ public class TestObjectDistance extends AppCompatActivity {
 
         if(keyCode == KeyEvent.KEYCODE_VOLUME_DOWN){
             first_time = false;
-            recoganizeImage();
+            recognizeImage();
             draw.postInvalidate();
             return true;
         }
@@ -263,4 +258,5 @@ public class TestObjectDistance extends AppCompatActivity {
             return null;
         }
     }
+
 }
