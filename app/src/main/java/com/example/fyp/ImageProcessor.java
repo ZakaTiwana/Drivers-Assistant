@@ -94,12 +94,6 @@ public class ImageProcessor extends CameraCaptureActivity {
         lanePointsPaint.setStyle(Paint.Style.STROKE);
 
 
-        if(OpenCVLoader.initDebug()){
-            Log.d(TAG, "onCreate: Opencv Loaded Successfully");
-        }else{
-            Log.d(TAG, "onCreate: Opencv Could not load");
-        }
-
         FrameLayout container = (FrameLayout) findViewById(R.id.container);
         initSnackbar = Snackbar.make(container, "Initializing...", Snackbar.LENGTH_INDEFINITE);
         Log.d(TAG, "onCreate: snackbar declared");
@@ -247,6 +241,12 @@ public class ImageProcessor extends CameraCaptureActivity {
                     initSnackbar.show();
                 }
             });
+
+            if(OpenCVLoader.initDebug()){
+                Log.d(TAG, "onCreate: Opencv Loaded Successfully");
+            }else{
+                Log.d(TAG, "onCreate: Opencv Could not load");
+            }
 
             try {
                 detector = Detector.create(getAssets(), Detector.OBJ_DETECTOR_MODEL);

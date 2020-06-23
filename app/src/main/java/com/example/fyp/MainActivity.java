@@ -61,7 +61,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         assistanceMode.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(getApplicationContext(), AssistanceMode.class);
+//                Intent intent = new Intent(getApplicationContext(), AssistanceMode.class);
+//                startActivity(intent);
+                Intent intent = new Intent(getApplicationContext(),ImageProcessor.class);
                 startActivity(intent);
             }
         });
