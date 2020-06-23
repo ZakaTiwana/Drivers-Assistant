@@ -1147,38 +1147,40 @@ public class Bluetooth extends AppCompatActivity implements AdapterView.OnItemCl
 //
                             AmbientAirTemperatureCommand atc = new AmbientAirTemperatureCommand();
 
+
+                            //         FuelLevelCommand flc = new FuelLevelCommand();
+//                            while (!Thread.currentThread().isInterrupted()) {
+
                             MyTroubleCodesCommand tcoc = new MyTroubleCodesCommand();
+                            engineRpmCommand.run(sock.getInputStream(), sock.getOutputStream());
+                            speedCommand.run(sock.getInputStream(), sock.getOutputStream());
+                            atc.run(sock.getInputStream(), sock.getOutputStream());
+                            //            flc.run(sock.getInputStream(), sock.getOutputStream());
 
-                   //         FuelLevelCommand flc = new FuelLevelCommand();
-                            while (!Thread.currentThread().isInterrupted()) {
-                                engineRpmCommand.run(sock.getInputStream(), sock.getOutputStream());
-                                speedCommand.run(sock.getInputStream(), sock.getOutputStream());
-                                atc.run(sock.getInputStream(), sock.getOutputStream());
-                    //            flc.run(sock.getInputStream(), sock.getOutputStream());
+                            tcoc.run(sock.getInputStream(), sock.getOutputStream());
+                            result = tcoc.getFormattedResult();
 
-                                tcoc.run(sock.getInputStream(), sock.getOutputStream());
-                                result = tcoc.getFormattedResult();
+                            // TODO handle commands result
+                            Log.d(TAG, "RPM: " + engineRpmCommand.getCalculatedResult());
+                            Log.d(TAG, "Speed: " + speedCommand.getCalculatedResult());
+                            Log.d(TAG, "Temp: " + atc.getCalculatedResult());
+                            //      Log.d(TAG, "Fuel level: " + flc.getFormattedResult());
 
-                                // TODO handle commands result
-                                Log.d(TAG, "RPM: " + engineRpmCommand.getCalculatedResult());
-                                Log.d(TAG, "Speed: " + speedCommand.getCalculatedResult());
-                                Log.d(TAG, "Temp: " + atc.getCalculatedResult());
-                          //      Log.d(TAG, "Fuel level: " + flc.getFormattedResult());
+                            Log.d(TAG, "Trouble codes: " + result);
 
-                                Log.d(TAG, "Trouble codes: " + result);
+                            //          if(result.contains("B1904")||result.contains("B1902")){
+//                            Intent intent = new Intent(getApplicationContext(), Sms.class);
+//                            startActivity(intent);
+//                            break;
+                            //        };
 
-                                if(result.equals("B1904")||result.equals("B1902")||result=="C0300"){
-                                    Intent intent = new Intent(getApplicationContext(), Sms.class);
-                                    startActivity(intent);
-                                    break;
-                                };
-
-                            }
-                            if(result.equals("B1904")||result.equals("B1902")||result.equals("C0300")){
+                            //       }
+                            if (result.contains("B1904") || result.contains("B1902")) {
                                 Intent intent = new Intent(getApplicationContext(), Sms.class);
                                 startActivity(intent);
                                 break;
-                            };
+                            }
+
 
                         } catch (IOException | InterruptedException e) {
                             Log.e(TAG, "write: Error reading Input Stream. " + e.getMessage());
@@ -1240,7 +1242,7 @@ public class Bluetooth extends AppCompatActivity implements AdapterView.OnItemCl
             if (result != null) {
                 Log.d(TAG, "Result obtained" + result);
                 //      requestActivity.startResultActivity(result);
-              //  resultDtcs(result);
+                //  resultDtcs(result);
             } else {
                 Log.e(TAG, "No result (Nullpointer).");
             }

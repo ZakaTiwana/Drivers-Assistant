@@ -2,18 +2,17 @@ package com.example.fyp;
 
 import com.github.pires.obd.commands.control.TroubleCodesCommand;
 
-/**
- * Created by Veronika on 13.09.2016.
- */
- class MyTroubleCodesCommand extends TroubleCodesCommand {
 
-    MyTroubleCodesCommand(){
+class MyTroubleCodesCommand extends TroubleCodesCommand {
+
+    MyTroubleCodesCommand() {
         super();
     }
 
     /**
      * Method: by Pires, Location changed
      * Removes unwanted response from output since this results in erroneous error codes
+     *
      * @return the cleaned raw data
      */
     @Override
@@ -25,7 +24,7 @@ import com.github.pires.obd.commands.control.TroubleCodesCommand;
      * Edited CAN transformation from raw data to defined error code to fit to our setup
      */
     @Override
-    protected void performCalculations(){
+    protected void performCalculations() {
         final String result = getResult();
         String workingData;
         int startIndex = 0;//Header size.
@@ -48,12 +47,15 @@ import com.github.pires.obd.commands.control.TroubleCodesCommand;
             int ch2 = ((b1 & 0x30) >> 4);
             dtc += dtcLetters[ch1];
             dtc += hexArray[ch2];
-            dtc += workingData.substring(begin+1, begin + 4);
+            dtc += workingData.substring(begin + 1, begin + 4);
             if (dtc.equals("P0000")) {
                 return;
             }
-            codes.append(dtc);
-            codes.append('\n');
+
+       //     if (!codes.toString().contains(dtc)) {
+                codes.append(dtc);
+                codes.append('\n');
+       //     }
         }
     }
 }
