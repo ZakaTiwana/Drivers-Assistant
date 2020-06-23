@@ -1,5 +1,7 @@
 package com.example.fyp;
 
+import android.app.Application;
+import android.content.Context;
 import android.content.res.AssetFileDescriptor;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
@@ -11,14 +13,16 @@ import android.graphics.RectF;
 import android.os.Trace;
 import android.util.Log;
 
-import androidx.core.view.GestureDetectorCompat;
+import androidx.appcompat.app.AppCompatActivity;
 
 import org.jetbrains.annotations.NotNull;
 import org.tensorflow.lite.Interpreter;
 import org.tensorflow.lite.gpu.GpuDelegate;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -26,11 +30,12 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Vector;
 
 import com.example.fyp.customutilities.ImageUtilities;
-public class SignDetector {
+public class SignDetector{
 
     private static final String TAG = "SignDetector";
 
@@ -48,7 +53,7 @@ public class SignDetector {
     private static final float IMAGE_MEAN = 0;
     private static final float IMAGE_STD = 255.0f;
 
-    private Detector signDetector;
+    private Detector detector;
     private int width;
     private int height;
     private boolean isModelQuantized;
@@ -65,7 +70,8 @@ public class SignDetector {
 
     private Interpreter tfLite;
 
-    private SignDetector(){ }
+    private static Context mContext;
+    private SignDetector(){}
 
     /** Memory-map the model file in Assets. */
     private static ByteBuffer loadModelFile(AssetManager assets)
@@ -81,9 +87,10 @@ public class SignDetector {
 
 
 
-    public static SignDetector create(AssetManager assetManager) throws IOException{
+    public static SignDetector create(AssetManager assetManager, Context m) throws IOException{
         SignDetector s = new SignDetector();
-        s.signDetector =  Detector.create(assetManager,Detector.SIGN_DETECTOR_MODEL);
+        s.detector =  Detector.create(assetManager,Detector.SIGN_DETECTOR_MODEL);
+        s.mContext = m;
         try {
             GpuDelegate delegate = new GpuDelegate();
             Interpreter.Options options = (new Interpreter.Options()).addDelegate(delegate);
@@ -154,7 +161,7 @@ public class SignDetector {
 
     public List<RecognizedObject> run(@NotNull Bitmap bmp, boolean allowToRecycleBitmap) {
         List<RecognizedObject> recognizedObjects = new ArrayList<>();
-        List<RecognizedObject> recognizedObjects_temp = signDetector.run(
+        List<RecognizedObject> recognizedObjects_temp = detector.run(
                 bmp.copy(Bitmap.Config.ARGB_8888,true),true);
 //        Matrix cropToFrame = ImageUtilities.getTransformationMatrix(width,height,bmp.getWidth(),
 //                bmp.getHeight(),0,false);
@@ -175,9 +182,11 @@ public class SignDetector {
                 resizeBitmap = ImageUtilities.getResizedBitmap(
                         croppedBmp.copy(Bitmap.Config.ARGB_8888,true),width,height,
                         true);
+//                createCustomFile(resizeBitmap,rc.getLabel()+Calendar.getInstance().getTime());
                 setImageData(resizeBitmap);
                 label = recognizeSign();
-
+                createCustomFile(croppedBmp,
+                        label.replaceAll("\\W+"," ")+" - "+Calendar.getInstance().getTime());
                 recognizedObjects.add(
                         new RecognizedObject(
                                 "" + rc.getId(),   label,
@@ -220,7 +229,7 @@ public class SignDetector {
         // draw background
         Paint paint = new Paint(Paint.FILTER_BITMAP_FLAG);
         paint.setColor(Color.WHITE);
-        cavas.drawRect(//from  w w  w. ja v  a  2s. c  om
+        cavas.drawRect(
                 new RectF(0, 0, cropRectF.width(), cropRectF.height()),
                 paint);
 
@@ -231,5 +240,19 @@ public class SignDetector {
 
         if (!source.isRecycled() && allowToRecycleBitmap) source.recycle();
         return resultBitmap;
+    }
+    private void createCustomFile(Bitmap bmp,String fileName){
+        try {
+            File path= new File(mContext.getExternalFilesDir(null),  "Images");
+            if(!path.exists()){
+                path.mkdirs();
+            }
+            FileOutputStream outFile = new FileOutputStream(path+File.separator+ fileName + ".png");
+            bmp.compress(Bitmap.CompressFormat.PNG, 100, outFile);
+            Log.d(TAG, "createCustomFile: Bitmap saved to : "+path+File.separator+ fileName + ".png");
+            //now we can create FileOutputStream and write something to file
+        } catch (IOException e) {
+            Log.e(TAG, "Saving received message failed with", e);
+        }
     }
 }

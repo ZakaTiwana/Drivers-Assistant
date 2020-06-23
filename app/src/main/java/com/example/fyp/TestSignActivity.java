@@ -160,7 +160,7 @@ public class TestSignActivity extends AppCompatActivity {
 
             try {
                 float start = SystemClock.currentThreadTimeMillis();
-                recoganizor = SignDetector.create(getAssets());
+                recoganizor = SignDetector.create(getAssets(),getApplicationContext());
                 float end = SystemClock.currentThreadTimeMillis();
                 Log.d(TAG, "run: detector created in "+(end-start)+"ms");
             } catch (Exception e) {
