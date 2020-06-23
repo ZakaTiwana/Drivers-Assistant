@@ -8,6 +8,7 @@ import android.graphics.Path;
 import android.graphics.RectF;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.Size;
 import android.view.KeyEvent;
@@ -23,17 +24,24 @@ import java.util.List;
 public class ImageProcessor extends CameraCaptureActivity {
 
     private static final String TAG = "ImageProcessor";
-    private static final Size DESIRED_PREVIEW_SIZE = new Size(1280,720);
+    private static final Size[] DESIRED_PREVIEW_SIZES =
+            {
+                    new Size(1280,720),
+                    new Size(640,480),
+                    new Size(720,480),
+                    new Size(960,720),
+                    new Size(1440,1080),
+                    new Size(1920,1080),
+                    new Size(2048,1152),
+                    new Size(3264,1836),
+                    new Size(4128,2322)
+            };
     private static final int[] pts = {650,360, 750,360, 1280,600, 100,600}; // for lane
 
     private int mWidth = 0;
     private int mHeight = 0;
 
     private Bitmap rgbFrameBitmap = null;
-//    private Bitmap croppedBitmap = null;
-
-//    private Matrix frameToCropTransform = null;
-//    private Matrix cropToFrameTransform = null;
 
     private Detector detector = null;
     private volatile boolean computingDetection = false;
@@ -109,26 +117,7 @@ public class ImageProcessor extends CameraCaptureActivity {
 
 
         rgbFrameBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-//        rgbFrameBitmap = Bitmap.createBitmap(DESIRED_PREVIEW_SIZE.getWidth(), DESIRED_PREVIEW_SIZE.getHeight(), Bitmap.Config.ARGB_8888);
-//        croppedBitmap = Bitmap.createBitmap(CROP_SIZE, CROP_SIZE, Bitmap.Config.ARGB_8888);
 
-//        frameToCropTransform =
-//                ImageUtilities.getTransformationMatrix(
-//                        width, height,
-//                        CROP_SIZE, CROP_SIZE,
-//                        0, false);
-//
-//        cropToFrameTransform = new Matrix();
-//        frameToCropTransform.invert(cropToFrameTransform);
-
-        // ------------------
-
-//        draw.addCallback(new OverlayView.DrawCallback() {
-//            @Override
-//            public void drawCallback(Canvas canvas) {
-//                canvas.drawBitmap(croppedBitmap.copy(Bitmap.Config.ARGB_8888,false),0,0,null);
-//            }
-//        });
         draw.addCallback(new OverlayView.DrawCallback() {
             @Override
             public void drawCallback(Canvas canvas) {
@@ -163,7 +152,8 @@ public class ImageProcessor extends CameraCaptureActivity {
                 if(lanePoints !=null){
 //                    Log.d(TAG, "drawCallback: lanePoints = "+lanePoints.toString());
                     for(Double[] line : lanePoints){
-                        canvas.drawLine(line[0].floatValue(),line[1].floatValue(),line[2].floatValue(),line[3].floatValue(),lanePointsPaint);
+                        canvas.drawLine(line[0].floatValue(),line[1].floatValue(),
+                                line[2].floatValue(),line[3].floatValue(),lanePointsPaint);
                     }
                 }
             }
@@ -179,15 +169,12 @@ public class ImageProcessor extends CameraCaptureActivity {
             }
         });
         // -----------------
-
         new Init().execute();
-
     }
 
 
     @Override
     public void processImage() {
-
 //        Log.d(TAG, "processImage: computingDetection = "+ computingDetection + " initilazed = "+ initialized );
 
         // No mutex needed as this method is not reentrant.
@@ -225,8 +212,20 @@ public class ImageProcessor extends CameraCaptureActivity {
 
     @Override
     public Size getDesiredPreviewSize() {
-
-        return DESIRED_PREVIEW_SIZE;
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        int height = displayMetrics.heightPixels;
+        int width = displayMetrics.widthPixels;
+        Log.d(TAG, String.format("getDesiredPreviewSize: device width = %d :height = %d", width,height));
+        int max = Math.max(height, width);
+        int min = Math.min(height,width);
+        int selectedSize = 0;
+        for (Size choice :
+                DESIRED_PREVIEW_SIZES) {
+            if (choice.getWidth() >= max || choice.getHeight() >= min) break;
+            selectedSize++;
+        }
+        return DESIRED_PREVIEW_SIZES[selectedSize];
     }
 
 

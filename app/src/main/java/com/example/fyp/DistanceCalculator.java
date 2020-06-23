@@ -14,7 +14,7 @@ public class DistanceCalculator {
 
     private RectF location;
 //    private float focalLength;
-    private float precived_width;
+    private float perceived_width;
     private String label;
 
     private float distance;
@@ -22,8 +22,8 @@ public class DistanceCalculator {
     public DistanceCalculator(RectF location,String label){
         this.location = location;
         this.label = label;
-        precived_width = location.width();
-        Log.d(TAG, String.format("DistanceCalculator: precived_width = %f", precived_width));
+        perceived_width = location.width();
+        Log.d(TAG, String.format("DistanceCalculator: precived_width = %f", perceived_width));
 //        this.focalLength = calculateFocalLength();
 //        Log.d(TAG, String.format("DistanceCalculator: focal length = %f",   this.focalLength ));
         distance = calculateDistance();
@@ -42,7 +42,7 @@ public class DistanceCalculator {
             ACTUAL_WIDTH = ACTUAL_WIDTH_BOTTLE;
         }
 
-        return  ( ACTUAL_WIDTH * FOCAL_LENGTH ) / this.precived_width;
+        return  ( ACTUAL_WIDTH * FOCAL_LENGTH ) / this.perceived_width;
     }
 
     public float getDistance(){

@@ -225,11 +225,9 @@ public abstract class CameraCaptureActivity extends AppCompatActivity implements
                 mHeight = desiredInput.getHeight();
 
                 Log.d(TAG, String.format("setupCamera: mWidth = %d and mHeight = %d", mWidth,mHeight));
+                assert map != null;
                 mPreviewSize = chooseOptimalSize(map.getOutputSizes(SurfaceTexture.class), mWidth, mHeight);
 
-                /*
-                    TODO preview Width & height to captured/desired width & height needs consideration
-                 */
                 onPreviewSizeSelected(mWidth,mHeight);
 
                 mImageReader = ImageReader.newInstance(mWidth,mHeight, ImageFormat.YUV_420_888, 2);
@@ -335,9 +333,9 @@ public abstract class CameraCaptureActivity extends AppCompatActivity implements
     }
 
     private static int sensorToDeviceRotation(CameraCharacteristics cameraCharacteristics, int deviceOrientation) {
-        int sensorOrienatation = cameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
+        int sensorOrientation = cameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
         deviceOrientation = ORIENTATIONS.get(deviceOrientation);
-        return (sensorOrienatation + deviceOrientation + 360) % 360;
+        return (sensorOrientation + deviceOrientation + 360) % 360;
     }
 
     private static Size chooseOptimalSize(Size[] choices, int width, int height) {
