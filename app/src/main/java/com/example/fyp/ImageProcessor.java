@@ -235,10 +235,10 @@ public class ImageProcessor extends CameraCaptureActivity {
 
         // No mutex needed as this method is not reentrant.
         if (isComputingDetection || !initialized) {
-            if (initialized && (!isComputingLaneDetection || !isComputingSignDetection) ) {
-                rgbFrameBitmap.setPixels(getRgbBytes(), 0, mWidth, 0, 0, mWidth, mHeight);
-                new SignLaneTask().execute(rgbFrameBitmap.copy(Bitmap.Config.ARGB_8888, true));
-            }
+//            if (initialized && (!isComputingLaneDetection || !isComputingSignDetection) ) {
+//                rgbFrameBitmap.setPixels(getRgbBytes(), 0, mWidth, 0, 0, mWidth, mHeight);
+//                new SignLaneTask().execute(rgbFrameBitmap.copy(Bitmap.Config.ARGB_8888, true));
+//            }
             readyForNextImage();
             return;
         }
