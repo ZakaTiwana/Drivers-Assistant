@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/black"
-    tools:context=".HomeSettings">
+    tools:context=".FeatureSettings">
 
 
     <TextView
@@ -13,7 +13,7 @@
         android:layout_width="294dp"
         android:layout_height="50dp"
         android:layout_marginBottom="100dp"
-        android:text="Mute Warnings, when toggled on, will not sound alarms of approching detected objects. "
+        android:text="Mute Warnings, when toggled on, will not sound alarms of approaching detected objects. "
         android:textColor="@color/light_grey"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -45,7 +45,7 @@
         android:id="@+id/textView6"
         android:layout_width="292dp"
         android:layout_height="50dp"
-        android:text="Lane guide will help you to stay in the middle of a lane by agumenting guiding line on your lane."
+        android:text="Lane guide will help you to stay in the middle of a lane by augmenting guiding line on your lane."
         android:textColor="@color/light_grey"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

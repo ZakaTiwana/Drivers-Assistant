@@ -19,6 +19,7 @@ import android.speech.tts.TextToSpeech;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
@@ -107,13 +108,18 @@ public class DestinationActivity extends AppCompatActivity implements OnMapReady
 
     private TextToSpeech tts;
 
+    Button btn1, btn2;
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_destination);
         mGps = (ImageView) findViewById(R.id.ic_gps2);
 
-        direction = (ImageView) findViewById(R.id.ic_direction2);
+        //  direction = (ImageView) findViewById(R.id.ic_direction2);
+        btn1 = (Button) findViewById(R.id.btn);
+        btn2 = (Button) findViewById(R.id.btn2);
+
         Bundle bundle = getIntent().getParcelableExtra("bundle");
         fromPosition = bundle.getParcelable("from_position");
         getLocationPermission();
@@ -155,12 +161,14 @@ public class DestinationActivity extends AppCompatActivity implements OnMapReady
                 //do something
                 moveCamera(new LatLng(lat, lng), DEFAULT_ZOOM,
                         "Destination");
+                btn1.setVisibility(View.VISIBLE);
             }
 
             @Override
             public void onError(Status status) {
                 // TODO: Handle the error.
                 Log.i(TAG, "An error occurred: " + status);
+
             }
         });
 
@@ -173,15 +181,36 @@ public class DestinationActivity extends AppCompatActivity implements OnMapReady
             }
         });
 
-        direction.setOnClickListener(new View.OnClickListener() {
+//        direction.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                Log.d(TAG, "onClick: clicked destination icon");
+//                mMap.addMarker(place2);
+//                new FetchURL(DestinationActivity.this).execute(getUrl(place1.getPosition(), place2.getPosition(),
+//                        "driving"), "driving");
+//            }
+//        });
+        btn1.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Log.d(TAG, "onClick: clicked destination icon");
+                Log.d(TAG, "onClick: Destination confirmed.");
                 mMap.addMarker(place2);
                 new FetchURL(DestinationActivity.this).execute(getUrl(place1.getPosition(), place2.getPosition(),
                         "driving"), "driving");
+                btn1.setVisibility(View.GONE);
+
             }
         });
+        btn2.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Log.d(TAG, "onClick: Start Directing thread started!");
+                Directions direct = new Directions(getApplicationContext());
+                direct.execute(stepsInformation, tts);
+                Toast.makeText(getApplicationContext(), "Directions started!", Toast.LENGTH_SHORT).show();
+            }
+        });
+
         place1 = new MarkerOptions().position(fromPosition).title("Location 1");
 
 
@@ -221,9 +250,10 @@ public class DestinationActivity extends AppCompatActivity implements OnMapReady
     @Override
     public void onTaskDone2(Object... values) {
         stepsInformation = (ArrayList<String>) values[0];
-        Directions direct =new Directions(getApplicationContext());
+//        Directions direct = new Directions(getApplicationContext());
         speak("Hello there!");
-        direct.execute(stepsInformation,tts);
+        btn2.setVisibility(View.VISIBLE);
+        // direct.execute(stepsInformation, tts);
     }
 
 
@@ -392,6 +422,7 @@ public class DestinationActivity extends AppCompatActivity implements OnMapReady
             tts.speak(message, TextToSpeech.QUEUE_FLUSH, null);
         }
     }
+
     @Override
     protected void onPause() {
         super.onPause();

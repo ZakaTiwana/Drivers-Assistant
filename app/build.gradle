@@ -39,6 +39,7 @@ dependencies {
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
     implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
     implementation 'org.tensorflow:tensorflow-lite:0.0.0-nightly'
+    implementation 'io.nlopez.smartlocation:library:3.3.3'
     implementation 'org.tensorflow:tensorflow-lite-gpu:0.0.0-nightly'
     implementation project(path: ':openCVLibrary343')
     testImplementation 'junit:junit:4.12'
