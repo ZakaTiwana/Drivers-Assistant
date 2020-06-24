@@ -2,6 +2,7 @@ package com.example.fyp;
 
 import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -17,6 +18,7 @@ import android.view.KeyEvent;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
 
+import com.example.fyp.customutilities.ImageUtilities;
 import com.google.android.material.snackbar.Snackbar;
 import com.example.fyp.customview.OverlayView;
 import org.opencv.android.OpenCVLoader;
@@ -147,6 +149,14 @@ public class ImageProcessor extends CameraCaptureActivity {
                                 canvas.drawText(String.format("%.1f m", dist),location.left,
                                         location.top < 50 ? location.top + 20:location.top - 35,
                                         borderTextPaint);
+                                // display warning if car some minimum distance
+                                if(dist < 10){
+                                    Bitmap bmp = BitmapFactory.decodeResource(getResources(),R.drawable.warning_for_distance);
+                                    Bitmap bmp_resized = ImageUtilities.getResizedBitmap(bmp,(int)(location.width() - 5),
+                                            (int)(location.height() -5),true);
+                                    canvas.drawBitmap(bmp_resized,location.left + 5,
+                                            location.top + 5,null);
+                                }
                             }
                         }
                     }
@@ -156,6 +166,7 @@ public class ImageProcessor extends CameraCaptureActivity {
 
         // SignDetection
         draw.addCallback(new OverlayView.DrawCallback() {
+            @SuppressLint("DefaultLocale")
             @Override
             public void drawCallback(Canvas canvas) {
                 if (mappedSignRecognitions != null){
@@ -205,11 +216,11 @@ public class ImageProcessor extends CameraCaptureActivity {
             public void drawCallback(Canvas canvas) {
                 if(drawDebugInfo){
                     canvas.drawText(
-                            String.format("Time Taken Object Detection: %.0f",timeTakeByObjDetector),10,50,borderTextPaint);
+                            String.format("Time Taken Object Detection: %.0f ms",timeTakeByObjDetector),10,50,borderTextPaint);
                     canvas.drawText(
-                            String.format( "Time Taken Sign Detection: %.0f ",timeTakeBySignDetector),10,100,borderTextPaint);
+                            String.format( "Time Taken Sign Detection: %.0f ms",timeTakeBySignDetector),10,100,borderTextPaint);
                     canvas.drawText(
-                            String.format("Time Taken Sign Detection: %.0f ",timeTakeByLaneDetector),10,150,borderTextPaint);
+                            String.format("Time Taken Lane Detection: %.0f ms",timeTakeByLaneDetector),10,150,borderTextPaint);
                 }
             }
         });
@@ -224,14 +235,14 @@ public class ImageProcessor extends CameraCaptureActivity {
 
         // No mutex needed as this method is not reentrant.
         if (isComputingDetection || !initialized) {
-//            if (!isComputingLaneDetection || !isComputingSignDetection) {
-//                rgbFrameBitmap.setPixels(getRgbBytes(), 0, mWidth, 0, 0, mWidth, mHeight);
-//                new SignLaneTask().execute(rgbFrameBitmap.copy(Bitmap.Config.ARGB_8888, true));
-//            }
-
+            if (initialized && (!isComputingLaneDetection || !isComputingSignDetection) ) {
+                rgbFrameBitmap.setPixels(getRgbBytes(), 0, mWidth, 0, 0, mWidth, mHeight);
+                new SignLaneTask().execute(rgbFrameBitmap.copy(Bitmap.Config.ARGB_8888, true));
+            }
             readyForNextImage();
             return;
         }
+
         isComputingDetection = true;
         rgbFrameBitmap.setPixels(getRgbBytes(), 0, mWidth, 0, 0, mWidth, mHeight);
         new SignLaneTask().execute(rgbFrameBitmap.copy(Bitmap.Config.ARGB_8888,true));

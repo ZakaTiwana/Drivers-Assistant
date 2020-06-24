@@ -90,6 +90,7 @@ public abstract class CameraCaptureActivity extends AppCompatActivity implements
         public void onOpened(CameraDevice camera) {
             mCameraDevice = camera;
             startPreview();
+            Log.d(TAG,"At mCameraDeviceStateCallback onOpened");
         }
 
         @Override
@@ -108,10 +109,10 @@ public abstract class CameraCaptureActivity extends AppCompatActivity implements
 
         @Override
         public void onClosed(@NonNull CameraDevice camera) {
-            super.onClosed(camera);
+//            super.onClosed(camera);
 //            camera.close();
             mCameraDevice = null;
-            Log.e(TAG,"At mCameraDeviceStateCallback close closed.");
+            Log.e(TAG,"At mCameraDeviceStateCallback onClose.");
         }
     };
     private HandlerThread mBackgroundHandlerThread;
