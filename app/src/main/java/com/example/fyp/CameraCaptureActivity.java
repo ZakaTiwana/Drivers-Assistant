@@ -29,6 +29,7 @@ import android.view.TextureView;
 import android.view.View;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
@@ -89,6 +90,7 @@ public abstract class CameraCaptureActivity extends AppCompatActivity implements
         public void onOpened(CameraDevice camera) {
             mCameraDevice = camera;
             startPreview();
+            Log.d(TAG,"At mCameraDeviceStateCallback onOpened");
         }
 
         @Override
@@ -103,6 +105,14 @@ public abstract class CameraCaptureActivity extends AppCompatActivity implements
             camera.close();
             mCameraDevice = null;
             Log.e(TAG,"At mCameraDeviceStateCallback onError error = "+error);
+        }
+
+        @Override
+        public void onClosed(@NonNull CameraDevice camera) {
+//            super.onClosed(camera);
+//            camera.close();
+            mCameraDevice = null;
+            Log.e(TAG,"At mCameraDeviceStateCallback onClose.");
         }
     };
     private HandlerThread mBackgroundHandlerThread;
@@ -156,9 +166,7 @@ public abstract class CameraCaptureActivity extends AppCompatActivity implements
     @Override
     protected void onResume() {
         super.onResume();
-
         startBackgroundThread();
-
         if(mTextureView.isAvailable()) {
             Log.d(TAG, String.format("onResume: mTextureView.width = %d and height = %d", mTextureView.getWidth(),mTextureView.getHeight()));
             setupCamera(mTextureView.getWidth(), mTextureView.getHeight());
@@ -184,9 +192,7 @@ public abstract class CameraCaptureActivity extends AppCompatActivity implements
     @Override
     protected void onPause() {
         closeCamera();
-
         stopBackgroundThread();
-
         super.onPause();
     }
 
@@ -220,11 +226,9 @@ public abstract class CameraCaptureActivity extends AppCompatActivity implements
                 mHeight = desiredInput.getHeight();
 
                 Log.d(TAG, String.format("setupCamera: mWidth = %d and mHeight = %d", mWidth,mHeight));
+                assert map != null;
                 mPreviewSize = chooseOptimalSize(map.getOutputSizes(SurfaceTexture.class), mWidth, mHeight);
 
-                /*
-                    TODO preview Width & height to captured/desired width & height needs consideration
-                 */
                 onPreviewSizeSelected(mWidth,mHeight);
 
                 mImageReader = ImageReader.newInstance(mWidth,mHeight, ImageFormat.YUV_420_888, 2);
@@ -262,7 +266,7 @@ public abstract class CameraCaptureActivity extends AppCompatActivity implements
         }
     }
 
-    private void startPreview() {
+    private synchronized void startPreview() {
         SurfaceTexture surfaceTexture = mTextureView.getSurfaceTexture();
         surfaceTexture.setDefaultBufferSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
         Surface previewSurface = new Surface(surfaceTexture);
@@ -280,7 +284,8 @@ public abstract class CameraCaptureActivity extends AppCompatActivity implements
                             Log.d(TAG, "onConfigured: startPreview");
                             mPreviewCaptureSession = session;
                             try {
-                                mPreviewCaptureSession.setRepeatingRequest(mPreviewRequestBuilder.build(),
+                                if (mCameraDevice != null)
+                                 mPreviewCaptureSession.setRepeatingRequest(mPreviewRequestBuilder.build(),
                                         null, mBackgroundHandler); // mPreviewCaptureCallback
 
                             } catch (CameraAccessException e) {
@@ -329,9 +334,9 @@ public abstract class CameraCaptureActivity extends AppCompatActivity implements
     }
 
     private static int sensorToDeviceRotation(CameraCharacteristics cameraCharacteristics, int deviceOrientation) {
-        int sensorOrienatation = cameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
+        int sensorOrientation = cameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
         deviceOrientation = ORIENTATIONS.get(deviceOrientation);
-        return (sensorOrienatation + deviceOrientation + 360) % 360;
+        return (sensorOrientation + deviceOrientation + 360) % 360;
     }
 
     private static Size chooseOptimalSize(Size[] choices, int width, int height) {
@@ -385,6 +390,7 @@ public abstract class CameraCaptureActivity extends AppCompatActivity implements
         }
         try {
 //            Log.d(TAG, String.format("onImageAvailable: mWidt = %d and mHeight = %d", mWidth,mHeight));
+//            final Image image = imageReader.acquireLatestImage();
             final Image image = imageReader.acquireLatestImage();
 //            Log.d(TAG, String.format("onImageAvailable: image.width = %d and image.height = %d", image.getWidth(),image.getHeight()));
 

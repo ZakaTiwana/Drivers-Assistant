@@ -23,8 +23,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".Sms"></activity>
-        <activity android:name=".AssistanceMode" />
+        <activity android:name=".AssistanceMode"/>
+        <activity android:name=".Sms"/>
         <activity android:name=".MicTest" />
         <activity android:name=".Bluetooth" />
         <activity android:name=".ViewTrustedContacts" />

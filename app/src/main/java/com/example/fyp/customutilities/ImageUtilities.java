@@ -1,12 +1,17 @@
 package com.example.fyp.customutilities;
 
+import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.os.Environment;
 import android.util.Log;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 
 
 public class ImageUtilities {
@@ -323,5 +328,34 @@ public class ImageUtilities {
         }
 
         return matrix;
+    }
+
+    public static Bitmap getResizedBitmap(@NotNull Bitmap bmp,int newWidth,int newHeight,boolean allowToRecycleBitmap){
+        Matrix frameToCropTransform ;
+//        Matrix cropToFrameTransform = new Matrix();
+        Bitmap resized = Bitmap.createBitmap(newWidth,newHeight,Bitmap.Config.ARGB_8888);
+        frameToCropTransform = ImageUtilities.getTransformationMatrix(bmp.getWidth(),bmp.getHeight(),
+                newWidth,newHeight,0,false);
+//        frameToCropTransform.invert(cropToFrameTransform);
+        Canvas canvas = new Canvas(resized);
+        canvas.drawBitmap(bmp,frameToCropTransform,null);
+//        Log.d(TAG, "getResizedBitmap: bitmap width and heihg");
+        if(!bmp.isRecycled() && allowToRecycleBitmap) bmp.recycle();
+        return resized;
+    }
+
+    private static void createCustomFile(@NotNull Context context, Bitmap bmp, String fileName){
+        try {
+            File path= new File(context.getExternalFilesDir(null),  "Images");
+            if(!path.exists()){
+                path.mkdirs();
+            }
+            FileOutputStream outFile = new FileOutputStream(path+File.separator+ fileName + ".png");
+            bmp.compress(Bitmap.CompressFormat.PNG, 100, outFile);
+            Log.d(TAG, "createCustomFile: Bitmap saved to : "+path+File.separator+ fileName + ".png");
+            //now we can create FileOutputStream and write something to file
+        } catch (IOException e) {
+            Log.e(TAG, "Saving received message failed with", e);
+        }
     }
 }

@@ -9,17 +9,15 @@ import android.widget.Button;
 
 public class AssistanceMode extends AppCompatActivity {
 
-    private Button btn_camera,btn_lane,btn_to_sign ,btn_distance;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_assistance_mode);
 
-        btn_camera = findViewById(R.id.btn_camera);
-        btn_lane = findViewById(R.id.btn_lane);
-        btn_to_sign = findViewById(R.id.btn_to_sign);
-        btn_distance = findViewById(R.id.btn_to_distance);
+        Button btn_camera = findViewById(R.id.btn_camera);
+        Button btn_lane = findViewById(R.id.btn_lane);
+        Button btn_to_sign = findViewById(R.id.btn_to_sign);
+        Button btn_distance = findViewById(R.id.btn_to_distance);
 
         btn_camera.setOnClickListener(new View.OnClickListener() {
             @Override

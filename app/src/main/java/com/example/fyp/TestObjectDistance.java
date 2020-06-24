@@ -13,7 +13,9 @@ import android.graphics.Paint;
 import android.graphics.RectF;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.ParcelFileDescriptor;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.util.Size;
@@ -26,6 +28,7 @@ import com.google.android.material.snackbar.Snackbar;
 import com.example.fyp.customutilities.ImageUtilities;
 import com.example.fyp.customview.OverlayView;
 
+import java.io.IOException;
 import java.util.List;
 
 public class TestObjectDistance extends AppCompatActivity {
@@ -47,7 +50,7 @@ public class TestObjectDistance extends AppCompatActivity {
     private OverlayView draw;
 
     private Detector detector;
-    private List<RecoganizedObject> mappedRecognitions;
+    private List<RecognizedObject> mappedRecognitions;
 
     private DistanceCalculator distanceCalculator =null;
     private Paint borderBoxPaint,textPaint;
@@ -73,22 +76,24 @@ public class TestObjectDistance extends AppCompatActivity {
         textPaint.setColor(Color.BLUE);
         textPaint.setTextSize(22);
 
-        image = Bitmap.createBitmap(DESIZRED_SIZE.getWidth(),DESIZRED_SIZE.getHeight(), Bitmap.Config.ARGB_8888);
+//        image = Bitmap.createBitmap(DESIZRED_SIZE.getWidth(),DESIZRED_SIZE.getHeight(), Bitmap.Config.ARGB_8888);
         Bitmap bitmap = BitmapFactory.decodeResource(getApplicationContext().getResources(),
                 R.drawable.road_lane_test_3);
 
         // resize
-        imageToDesired = ImageUtilities.getTransformationMatrix(bitmap.getWidth(),bitmap.getHeight(),
-                DESIZRED_SIZE.getWidth(), DESIZRED_SIZE.getHeight(),0,false);
-
-        frameToCrop = ImageUtilities.getTransformationMatrix(DESIZRED_SIZE.getWidth(),DESIZRED_SIZE.getHeight(),
-                CROP_SIZE, CROP_SIZE,0,false);
-
-        cropToFrame = new Matrix();
-        frameToCrop.invert(cropToFrame);
-
-        Canvas canvas = new Canvas(image);
-        canvas.drawBitmap(bitmap,imageToDesired,null);
+//        imageToDesired = ImageUtilities.getTransformationMatrix(bitmap.getWidth(),bitmap.getHeight(),
+//                DESIZRED_SIZE.getWidth(), DESIZRED_SIZE.getHeight(),0,false);
+//
+//        frameToCrop = ImageUtilities.getTransformationMatrix(DESIZRED_SIZE.getWidth(),DESIZRED_SIZE.getHeight(),
+//                CROP_SIZE, CROP_SIZE,0,false);
+//
+//        cropToFrame = new Matrix();
+//        frameToCrop.invert(cropToFrame);
+//
+//        Canvas canvas = new Canvas(image);
+//        canvas.drawBitmap(bitmap,imageToDesired,null);
+        image = ImageUtilities.getResizedBitmap(bitmap,DESIZRED_SIZE.getWidth(),
+                DESIZRED_SIZE.getHeight(),true);
 
         FrameLayout container = findViewById(R.id.container_distance);
         initSnackbar = Snackbar.make(container, "Initializing...", Snackbar.LENGTH_INDEFINITE);
@@ -120,13 +125,9 @@ public class TestObjectDistance extends AppCompatActivity {
         startActivityForResult(intent,GALLERY_REQUEST_CODE);
     }
 
-    private void recoganizeImage() {
-
-        Bitmap croppedBitmap = Bitmap.createBitmap(CROP_SIZE,CROP_SIZE, Bitmap.Config.ARGB_8888);
-        final Canvas canvas = new Canvas(croppedBitmap);
-        canvas.drawBitmap(image,frameToCrop,null);
-        mappedRecognitions = detector.recognizeImage(croppedBitmap);
-        Log.d(TAG, "recoganizeImage: mappedRecoganitions = " + mappedRecognitions.toString());
+    private void recognizeImage() {
+        mappedRecognitions = detector.run(image,false);
+        Log.d(TAG, "recognizeImage: mappedRecognitions = " + mappedRecognitions.toString());
     }
 
     private void processImage(Canvas canvas){
@@ -135,14 +136,13 @@ public class TestObjectDistance extends AppCompatActivity {
                 return;
             }
 
-            for (RecoganizedObject object : mappedRecognitions){
+            for (RecognizedObject object : mappedRecognitions){
 
-                if (object.getLable().equalsIgnoreCase("car") ||object.getLable().equalsIgnoreCase("bottle")) {
+                if (object.getLabel().equalsIgnoreCase("car") ||object.getLabel().equalsIgnoreCase("bottle")) {
 
                     location = object.getLocation();
-                    cropToFrame.mapRect(location);
                     canvas.drawRect(location, borderBoxPaint);
-                    distanceCalculator = new DistanceCalculator(location,object.getLable());
+                    distanceCalculator = new DistanceCalculator(location,object.getLabel());
                     float dist = distanceCalculator.getDistance();
                     canvas.drawText(String.format("%.1f m", dist),location.left,
                             location.top < 10 ? location.top+20:location.top-20,
@@ -165,29 +165,43 @@ public class TestObjectDistance extends AppCompatActivity {
                     // Get the cursor
                     Cursor cursor = getContentResolver().query(selectedImage, filePathColumn, null, null, null);
                     // Move to first row
-                    cursor.moveToFirst();
-                    //Get the column index of MediaStore.Images.Media.DATA
-                    int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
-                    //Gets the String value in the column
-                    filepath = cursor.getString(columnIndex);
-                    cursor.close();
+                    Bitmap bitmap = null;
+                    if(cursor.moveToFirst()){
+                        if (Build.VERSION.SDK_INT >= 29) {
+                            // now that you have the media URI, you can decode it to a bitmap
+                            try (ParcelFileDescriptor pfd = this.getContentResolver().openFileDescriptor(selectedImage, "r")) {
+                                if (pfd != null) {
+                                    bitmap = BitmapFactory.decodeFileDescriptor(pfd.getFileDescriptor());
+                                }
+                            } catch (IOException ex) {
 
-                    Bitmap bitmap = BitmapFactory.decodeFile(filepath);
+                            }
+                        } else {
+                            //Get the column index of MediaStore.Images.Media.DATA
+                            int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
+                            //Gets the String value in the column
+                            String filepath = cursor.getString(columnIndex);
+                            bitmap = BitmapFactory.decodeFile(filepath);
+                        }
+                    }
+                    if(bitmap == null) return;
 
-                    image = null;
-                    image = Bitmap.createBitmap(DESIZRED_SIZE.getWidth(),DESIZRED_SIZE.getHeight(), Bitmap.Config.ARGB_8888);
-
-                    imageToDesired = ImageUtilities.getTransformationMatrix(bitmap.getWidth(),bitmap.getHeight(),
-                            DESIZRED_SIZE.getWidth(), DESIZRED_SIZE.getHeight(),0,false);
-                    Canvas canvas = new Canvas(image);
-                    canvas.drawBitmap(bitmap,imageToDesired,null);
-
-                    // Set the Image in ImageView after decoding the String
+                    image = ImageUtilities.getResizedBitmap(bitmap,DESIZRED_SIZE.getWidth(),
+                            DESIZRED_SIZE.getHeight(),true);
+//                    image = null;
+//                    image = Bitmap.createBitmap(DESIZRED_SIZE.getWidth(),DESIZRED_SIZE.getHeight(), Bitmap.Config.ARGB_8888);
+//
+//                    imageToDesired = ImageUtilities.getTransformationMatrix(bitmap.getWidth(),bitmap.getHeight(),
+//                            DESIZRED_SIZE.getWidth(), DESIZRED_SIZE.getHeight(),0,false);
+//                    Canvas canvas = new Canvas(image);
+//                    canvas.drawBitmap(bitmap,imageToDesired,null);
+//
+//                    // Set the Image in ImageView after decoding the String
                     mappedRecognitions = null;
 
                     first_time = true;
                     draw.postInvalidate();
-                    recoganizeImage();
+                    recognizeImage();
                     break;
                 default:
                     break;
@@ -202,7 +216,7 @@ public class TestObjectDistance extends AppCompatActivity {
 
         if(keyCode == KeyEvent.KEYCODE_VOLUME_DOWN){
             first_time = false;
-            recoganizeImage();
+            recognizeImage();
             draw.postInvalidate();
             return true;
         }
@@ -226,7 +240,7 @@ public class TestObjectDistance extends AppCompatActivity {
             });
 
             try {
-                 detector= Detector.create(getAssets(), CROP_SIZE, CROP_SIZE);
+                 detector= Detector.create(getAssets(), Detector.OBJ_DETECTOR_MODEL);
                 Log.d(TAG, "run: detector created");
             } catch (Exception e) {
                 Log.e(TAG,"run: Exception initializing classifier!", e);
@@ -244,4 +258,5 @@ public class TestObjectDistance extends AppCompatActivity {
             return null;
         }
     }
+
 }

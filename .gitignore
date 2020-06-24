@@ -13,5 +13,6 @@
 .externalNativeBuild
 .cxx
 /app/src/main/assets/*.tflite
+/app/src/main/assets/*.pb
 /app/src/main/assets/*.lite
 /app/src/main/res/values/api_key.xml

@@ -27,6 +27,8 @@ public class HomeSettings extends AppCompatActivity implements View.OnClickListe
 
     TextView featureSettingsText;
 
+    TextView homeSettingText;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -36,6 +38,8 @@ public class HomeSettings extends AppCompatActivity implements View.OnClickListe
         accidentDetector = findViewById(R.id.switch1);
 
         voiceCommands = findViewById(R.id.switch2);
+
+        homeSettingText = findViewById(R.id.textView2);
 
         SharedPreferences settings = getSharedPreferences("home_settings", 0);
 
@@ -96,6 +100,8 @@ public class HomeSettings extends AppCompatActivity implements View.OnClickListe
 
         featureSettingsText.setOnClickListener(this);
 
+        homeSettingText.setOnClickListener(this);
+
     }
 
     @Override
@@ -113,6 +119,10 @@ public class HomeSettings extends AppCompatActivity implements View.OnClickListe
         }
         else if(v.getId()==contactSettings.getId()){
             Intent intent = new Intent(this, ContactsSettings.class);
+            startActivity(intent);
+        }
+        else if(v.getId() == homeSettingText.getId()){
+            Intent intent = new Intent(this, AssistanceMode.class);
             startActivity(intent);
         }
     }
