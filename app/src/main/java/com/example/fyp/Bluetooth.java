@@ -16,6 +16,8 @@ import android.content.IntentFilter;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
@@ -24,15 +26,30 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.github.pires.obd.commands.control.TroubleCodesCommand;
-import com.github.pires.obd.*;
+//import com.github.pires.obd.commands.control.TroubleCodesCommand;
+//import com.github.pires.obd.*;
+//import com.github.pires.obd.commands.protocol.EchoOffCommand;
+//import com.github.pires.obd.commands.protocol.LineFeedOffCommand;
+//import com.github.pires.obd.commands.protocol.ObdResetCommand;
+//import com.github.pires.obd.commands.protocol.ResetTroubleCodesCommand;
+//import com.github.pires.obd.commands.protocol.SelectProtocolCommand;
+//import com.github.pires.obd.enums.ObdProtocols;
+//import com.github.pires.obd.exceptions.MisunderstoodCommandException;
+//import com.github.pires.obd.exceptions.NoDataException;
+//import com.github.pires.obd.exceptions.UnableToConnectException;
+
+import com.example.fyp.api.ApiHelper;
+import com.github.pires.obd.commands.SpeedCommand;
+import com.github.pires.obd.commands.engine.RPMCommand;
+import com.github.pires.obd.commands.fuel.FuelLevelCommand;
 import com.github.pires.obd.commands.protocol.EchoOffCommand;
-import com.github.pires.obd.commands.protocol.LineFeedOffCommand;
 import com.github.pires.obd.commands.protocol.ObdResetCommand;
 import com.github.pires.obd.commands.protocol.SelectProtocolCommand;
+import com.github.pires.obd.commands.temperature.AmbientAirTemperatureCommand;
 import com.github.pires.obd.enums.ObdProtocols;
 import com.github.pires.obd.exceptions.MisunderstoodCommandException;
 import com.github.pires.obd.exceptions.NoDataException;
@@ -40,8 +57,11 @@ import com.github.pires.obd.exceptions.UnableToConnectException;
 
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -57,11 +77,88 @@ public class Bluetooth extends AppCompatActivity implements AdapterView.OnItemCl
 
 
     private static final UUID MY_UUID_INSECURE = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
+    //private static final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
+
 
     BluetoothDevice mBTDevice;
     BluetoothConnectionService mBluetoothConnection;
 
     private GetTroubleCodesTask gtct;
+
+
+//    private static final int NO_BLUETOOTH_DEVICE_SELECTED = 0;
+//    private static final int CANNOT_CONNECT_TO_DEVICE = 1;
+//    private static final int NO_DATA = 3;
+//    private static final int DATA_OK = 4;
+//    private static final int CLEAR_DTC = 5;
+//    private static final int OBD_COMMAND_FAILURE = 10;
+//    private static final int OBD_COMMAND_FAILURE_IO = 11;
+//    private static final int OBD_COMMAND_FAILURE_UTC = 12;
+//    private static final int OBD_COMMAND_FAILURE_IE = 13;
+//    private static final int OBD_COMMAND_FAILURE_MIS = 14;
+//    private static final int OBD_COMMAND_FAILURE_NODATA = 15;
+//    private BluetoothSocket sock = null;
+//    private BluetoothDevice dev = null;
+//    private ProgressDialog progressDialog;
+//
+//
+//    private Handler mHandler = new Handler(new Handler.Callback() {
+//
+//
+//        public boolean handleMessage(Message msg) {
+//            Log.e("activity","TroubleCodesActivity.java : Handler : handleMessage");
+//            Log.d(TAG, "Message received on handler");
+//            switch (msg.what) {
+//                case NO_BLUETOOTH_DEVICE_SELECTED:
+//                   makeToast("getString(R.string.text_bluetooth_nodevice)");
+//                    finish();
+//                    break;
+//                case CANNOT_CONNECT_TO_DEVICE:
+//                    makeToast("getString(R.string.text_bluetooth_error_connecting)");
+//                    finish();
+//                    break;
+//
+//                case OBD_COMMAND_FAILURE:
+//                  makeToast("getString(R.string.text_obd_command_failure)");
+//                    finish();
+//                    break;
+//                case OBD_COMMAND_FAILURE_IO:
+//                  makeToast("getString(R.string.text_obd_command_failure) +  IO");
+//                    finish();
+//                    break;
+//                case OBD_COMMAND_FAILURE_IE:
+//                   makeToast("getString(R.string.text_obd_command_failure) +  IE");
+//                    finish();
+//                    break;
+//                case OBD_COMMAND_FAILURE_MIS:
+//                   makeToast("getString(R.string.text_obd_command_failure) +  MIS");
+//                    finish();
+//                    break;
+//                case OBD_COMMAND_FAILURE_UTC:
+//                  makeToast("getString(R.string.text_obd_command_failure) +  UTC");
+//                    finish();
+//                    break;
+//                case OBD_COMMAND_FAILURE_NODATA:
+//                   makeToastLong("getString(R.string.text_noerrors)");
+//                    finish();
+//                    break;
+//
+//                case NO_DATA:
+//                  makeToast("getString(R.string.text_dtc_no_data)");
+//                    ///finish();
+//                    break;
+//                case DATA_OK:
+//                 dataOk((String) msg.obj);
+//                    break;
+//
+//            }
+//            return false;
+//        }
+//    });
+
+    public Bluetooth() {
+        gtct = new GetTroubleCodesTask();
+    }
 
     private BroadcastReceiver mBroadcastReceiver3 = new BroadcastReceiver() {
         @Override
@@ -114,7 +211,7 @@ public class Bluetooth extends AppCompatActivity implements AdapterView.OnItemCl
                 //case1: bonded already
                 if (mDevice.getBondState() == BluetoothDevice.BOND_BONDED) {
                     Log.d(TAG, "BroadcastReceiver: BOND_BONDED.");
-                    Toast.makeText(getApplicationContext(),"Paired Sucessfully",Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "Paired Sucessfully", Toast.LENGTH_SHORT).show();
                     mBTDevice = mDevice;
                 }
                 //case2: creating a bone
@@ -164,13 +261,17 @@ public class Bluetooth extends AppCompatActivity implements AdapterView.OnItemCl
                 if (Build.VERSION.SDK_INT > Build.VERSION_CODES.JELLY_BEAN_MR2) {
                     Log.d(TAG, "Trying to pair with " + deviceName);
                     //  mBTDevices2.get(i).createBond();
-                                 mBTDevices.get(i).createBond();
+                    //mBTDevices.get(i).createBond();
                     mBTDevice = mBTDevices.get(i);
-                    mBluetoothConnection = new BluetoothConnectionService(Bluetooth.this);
+                    //    mBluetoothConnection = new BluetoothConnectionService(Bluetooth.this);
 
 //                    gtct = new GetTroubleCodesTask();
-//                    gtct.execute();
-                  //  startConnection();
+//                    gtct.execute(mBTDevice.getAddress());
+//                    gtct = new GetTroubleCodesTask();
+                    gtct.execute(mBTDevice.getAddress());
+                    //          startConnection();
+
+                    //           connectToDevice();
 
                 }
             }
@@ -230,7 +331,7 @@ public class Bluetooth extends AppCompatActivity implements AdapterView.OnItemCl
     public void startBTConnection(BluetoothDevice device, UUID uuid) {
         Log.d(TAG, "startBTConnection: Initializing RFCOM Bluetooth Connection.");
 
-        mBluetoothConnection.startClient(device, uuid);
+        mBluetoothConnection.startClient(device.getAddress(), uuid);
     }
 
     @Override
@@ -251,10 +352,14 @@ public class Bluetooth extends AppCompatActivity implements AdapterView.OnItemCl
             Log.d(TAG, "Trying to pair with " + deviceName2);
             //  mBTDevices2.get(i).createBond();
             mBTDevices2.get(i).createBond();
-           // Toast.makeText(this,"Paired Successfully!",Toast.LENGTH_SHORT).show();
+            // Toast.makeText(this,"Paired Successfully!",Toast.LENGTH_SHORT).show();
             mBTDevice = mBTDevices2.get(i);
-            mBluetoothConnection = new BluetoothConnectionService(Bluetooth.this);
-          //  startConnection();
+            //        mBluetoothConnection = new BluetoothConnectionService(Bluetooth.this);
+//            gtct = new GetTroubleCodesTask();
+//            gtct.execute("remoteDevice");
+
+            //    startConnection();
+            //connectToDevice();
         }
 
 //        String deviceName = mBTDevices.get(i).getName();
@@ -354,72 +459,652 @@ public class Bluetooth extends AppCompatActivity implements AdapterView.OnItemCl
         }
     }
 
-    public class ModifiedTroubleCodesObdCommand extends TroubleCodesCommand {
-        @Override
-        public String getResult() {
-            // remove unwanted response from output since this results in erroneous error codes
-            return rawData.replace("SEARCHING...", "").replace("NODATA", "");
+
+//    private void  connectBtDevice(){
+//        try {
+//            BluetoothSocket sockFallback = null;
+//
+//            Log.d(TAG, "Starting Bluetooth connection..");
+//            try {
+//                sock = mBTDevice.createRfcommSocketToServiceRecord(MY_UUID_INSECURE);
+//                sock.connect();
+//            } catch (Exception e1) {
+//                Log.e(TAG, "There was an error while establishing Bluetooth connection. Falling back..", e1);
+//                Class<?> clazz = sock.getRemoteDevice().getClass();
+//                Class<?>[] paramTypes = new Class<?>[]{Integer.TYPE};
+//                try {
+//                    Method m = clazz.getMethod("createRfcommSocket", paramTypes);
+//                    Object[] params = new Object[]{Integer.valueOf(1)};
+//                    sockFallback = (BluetoothSocket) m.invoke(sock.getRemoteDevice(), params);
+//                    sockFallback.connect();
+//                    sock = sockFallback;
+//                } catch (Exception e2) {
+//                    Log.e(TAG, "Couldn't fallback while establishing Bluetooth connection.", e2);
+//                    throw new IOException(e2.getMessage());
+//                }
+//            }
+//        } catch (Exception e) {
+//            Log.e(
+//                    TAG,
+//                    "There was an error while establishing connection. -> "
+//                            + e.getMessage()
+//            );
+//            Log.d(TAG, "Message received on handler here");
+//  ///          mHandler.obtainMessage(CANNOT_CONNECT_TO_DEVICE).sendToTarget();
+//  ///          return true;
+//        }
+//        try {
+//
+//            Log.d("TESTRESET", "Trying reset");
+//            //new ObdResetCommand().run(sock.getInputStream(), sock.getOutputStream());
+//            ResetTroubleCodesCommand clear = new ResetTroubleCodesCommand();
+//            clear.run(sock.getInputStream(), sock.getOutputStream());
+//            String result = clear.getFormattedResult();
+//            Log.d("TESTRESET", "Trying reset result: " + result);
+//        } catch (Exception e) {
+//            Log.e(
+//                    TAG,
+//                    "There was an error while establishing connection. -> "
+//                            + e.getMessage()
+//            );
+//        }
+//        gtct.closeSocket(sock);
+//        // Refresh main activity upon close of dialog box
+//        Intent refresh = new Intent(this, Bluetooth.class);
+//        startActivity(refresh);
+//        this.finish(); //
+//
+//    }
+//
+//    public class ModifiedTroubleCodesObdCommand extends TroubleCodesCommand {
+//        @Override
+//        public String getResult() {
+//            // remove unwanted response from output since this results in erroneous error codes
+//            return rawData.replace("SEARCHING...", "").replace("NODATA", "");
+//        }
+//    }
+//
+//    private ProgressDialog progressDialog;
+//    private BluetoothSocket sock = null;
+//
+//    private class GetTroubleCodesTask extends AsyncTask<String, Integer, String> {
+//
+//        @Override
+//        protected void onPreExecute() {
+//            //Create a new progress dialog
+//            progressDialog = new ProgressDialog(Bluetooth.this);
+//            //Set the progress dialog to display a horizontal progress bar
+//            progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+//            //Set the dialog title to 'Loading...'
+//            progressDialog.setTitle("getString(R.string.dialog_loading_title)");
+//            //Set the dialog message to 'Loading application View, please wait...'
+//            progressDialog.setMessage("getString(R.string.dialog_loading_body)");
+//            //This dialog can't be canceled by pressing the back key
+//            progressDialog.setCancelable(false);
+//            //This dialog isn't indeterminate
+//            progressDialog.setIndeterminate(false);
+//            //The maximum number of items is 100
+//            progressDialog.setMax(5);
+//            //Set the current progress to zero
+//            progressDialog.setProgress(0);
+//            //Display the progress dialog
+//            progressDialog.show();
+//        }
+//
+//        @Override
+//        protected String doInBackground(String... params) {
+//            String result = "kuch nai aya";
+//
+//            //Get the current thread's token
+//            synchronized (this) {
+//                Log.d(TAG, "Starting service..");
+//                // get the remote Bluetooth device
+//
+//                final BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
+//
+//
+//                Log.d(TAG, "Stopping Bluetooth discovery.");
+//                btAdapter.cancelDiscovery();
+//
+//                Log.d(TAG, "Starting OBD connection..");
+//
+//                // Instantiate a BluetoothSocket for the remote device and connect it.
+//                try {
+//
+//                    sock = mBTDevice.createRfcommSocketToServiceRecord(MY_UUID_INSECURE);
+//                    sock.connect();
+//                    Log.d(TAG, "run: ConnectThread connected.");
+//                } catch (Exception e) {
+//                    Log.e(
+//                            TAG,
+//                            "There was an error while establishing connection. -> "
+//                                    + e.getMessage()
+//                    );
+//                    Log.d(TAG, "Message received on handler here");
+//                    // mHandler.obtainMessage(CANNOT_CONNECT_TO_DEVICE).sendToTarget();
+//                    return null;
+//                }
+//
+//                try {
+//                    // Let's configure the connection.
+//                    Log.d(TAG, "Queueing jobs for connection configuration..");
+//
+//                    //    onProgressUpdate(1);
+//
+//                    new ObdResetCommand().run(sock.getInputStream(), sock.getOutputStream());
+//
+//
+//                    //     onProgressUpdate(2);
+//
+//                    new EchoOffCommand().run(sock.getInputStream(), sock.getOutputStream());
+//
+//                    //      onProgressUpdate(3);
+//
+//                    new LineFeedOffCommand().run(sock.getInputStream(), sock.getOutputStream());
+//
+//                    //        onProgressUpdate(4);
+//
+//                    new SelectProtocolCommand(ObdProtocols.AUTO).run(sock.getInputStream(), sock.getOutputStream());
+//
+//                    //       onProgressUpdate(5);
+//
+//                    ModifiedTroubleCodesObdCommand tcoc = new ModifiedTroubleCodesObdCommand();
+//                    tcoc.run(sock.getInputStream(), sock.getOutputStream());
+//                    result = tcoc.getFormattedResult();
+//
+//                    onProgressUpdate(6);
+//
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                    Log.e("DTCERR1", e.getMessage());
+//                    //  mHandler.obtainMessage(OBD_COMMAND_FAILURE_IO).sendToTarget();
+//                    return null;
+//                } catch (InterruptedException e) {
+//                    e.printStackTrace();
+//                    Log.e("DTCERR2", e.getMessage());
+//                    //   mHandler.obtainMessage(OBD_COMMAND_FAILURE_IE).sendToTarget();
+//                    return null;
+//                } catch (UnableToConnectException e) {
+//                    e.printStackTrace();
+//                    Log.e("DTCERR3", e.getMessage());
+//                    //   mHandler.obtainMessage(OBD_COMMAND_FAILURE_UTC).sendToTarget();
+//                    return null;
+//                } catch (MisunderstoodCommandException e) {
+//                    e.printStackTrace();
+//                    Log.e("DTCERR4", e.getMessage());
+//                    //     mHandler.obtainMessage(OBD_COMMAND_FAILURE_MIS).sendToTarget();
+//                    return null;
+//                } catch (NoDataException e) {
+//                    Log.e("DTCERR5", e.getMessage());
+//                    //     mHandler.obtainMessage(OBD_COMMAND_FAILURE_NODATA).sendToTarget();
+//                    return null;
+//                } catch (Exception e) {
+//                    Log.e("DTCERR6", e.getMessage());
+//                    //      mHandler.obtainMessage(OBD_COMMAND_FAILURE).sendToTarget();
+//                } finally {
+//
+//                    // close socket
+//                    closeSocket(sock);
+//                }
+//
+//            }
+//
+//            return result;
+//        }
+//
+//        public void closeSocket(BluetoothSocket sock) {
+//            if (sock != null)
+//                // close socket
+//                try {
+//                    sock.close();
+//                } catch (IOException e) {
+//                    Log.e(TAG, e.getMessage());
+//                }
+//        }
+//
+//        @Override
+//        protected void onProgressUpdate(Integer... values) {
+//            super.onProgressUpdate(values);
+//            progressDialog.setProgress(values[0]);
+//        }
+//
+//        @Override
+//        protected void onPostExecute(String result) {
+//            progressDialog.dismiss();
+//
+//
+//            //  mHandler.obtainMessage(DATA_OK, result).sendToTarget();
+//            //    setContentView(R.layout.trouble_codes);
+//            Log.d(TAG, "Trouble codes" + result);
+//
+//        }
+//    }
+
+
+//    Map<String, String> getDict(int keyId, int valId) {
+//        Log.e("activity", "TroubleCodesActivity.java : getDict");
+//        String[] keys = getResources().getStringArray(keyId);
+//        String[] vals = getResources().getStringArray(valId);
+//
+//        Map<String, String> dict = new HashMap<String, String>();
+//        for (int i = 0, l = keys.length; i < l; i++) {
+//            dict.put(keys[i], vals[i]);
+//        }
+//
+//        return dict;
+//    }
+
+
+//    public void makeToast(String text) {
+//        Log.e("activity","TroubleCodesActivity.java : makeToast");
+//        Toast toast = Toast.makeText(getApplicationContext(), text, Toast.LENGTH_SHORT);
+//        toast.show();
+//    }
+//    public void makeToastLong(String text) {
+//        Log.e("activity","TroubleCodesActivity.java : makeToastLong");
+//        Toast toast = Toast.makeText(getApplicationContext(), text, Toast.LENGTH_LONG);
+//        toast.show();
+//    }
+//    private void dataOk(String res) {
+//        Log.e("activity","TroubleCodesActivity.java : dataOk");
+//     //   ListView lv = (ListView) findViewById(R.id.listView);
+//    //    Map<String, String> dtcVals = getDict(R.array.dtc_keys, R.array.dtc_values);
+//        //TODO replace below codes (res) with aboce dtcVals
+//        //String tmpVal = dtcVals.get(res.split("\n"));
+//        //String[] dtcCodes = new String[]{};
+//        ArrayList<String> dtcCodes = new ArrayList<String>();
+//        //int i =1;
+//        if (res != null) {
+//            for (String dtcCode : res.split("\n")) {
+//       //         dtcCodes.add(dtcCode + " : " + dtcVals.get(dtcCode));
+//     //           Log.d("TEST", dtcCode + " : " + dtcVals.get(dtcCode));
+//            }
+//        } else {
+//            dtcCodes.add("There are no errors");
+//        }
+//        //ArrayAdapter<String> myarrayAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, dtcCodes);
+//        //lv.setAdapter(myarrayAdapter);
+//        //lv.setTextFilterEnabled(true);
+//    }
+//
+//
+//    public class ModifiedTroubleCodesObdCommand extends TroubleCodesCommand {
+//        @Override
+//        public String getResult() {
+//            Log.e("activity","TroubleCodesActivity.java : ModifiedTroubleCodesObdCommand : getResult");
+//            // remove unwanted response from output since this results in erroneous error codes
+//            return rawData.replace("SEARCHING...", "").replace("NODATA", "");
+//        }
+//    }
+//
+//    public class ClearDTC extends ResetTroubleCodesCommand {
+//        @Override
+//        public String getResult() {
+//            Log.e("activity","TroubleCodesActivity.java : ClearDTC : getResult");
+//            return rawData;
+//        }
+//    }
+//
+//
+//    private class GetTroubleCodesTask extends AsyncTask<String, Integer, String> {
+//
+//        @Override
+//        protected void onPreExecute() {
+//            Log.e("activity","TroubleCodesActivity.java : GetTroubleCodesTask : onPreExecute");
+//            //Create a new progress dialog
+//            progressDialog = new ProgressDialog(Bluetooth.this);
+//            //Set the progress dialog to display a horizontal progress bar
+//            progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+//            //Set the dialog title to 'Loading...'
+//            progressDialog.setTitle("getString(R.string.dialog_loading_title)");
+//            //Set the dialog message to 'Loading application View, please wait...'
+//            progressDialog.setMessage("getString(R.string.dialog_loading_body)");
+//            //This dialog can't be canceled by pressing the back key
+//            progressDialog.setCancelable(false);
+//            //This dialog isn't indeterminate
+//            progressDialog.setIndeterminate(false);
+//            //The maximum number of items is 100
+//            progressDialog.setMax(5);
+//            //Set the current progress to zero
+//            progressDialog.setProgress(0);
+//            //Display the progress dialog
+//            progressDialog.show();
+//        }
+//
+//        @Override
+//        protected String doInBackground(String... params) {
+//            Log.e("activity","TroubleCodesActivity.java : GetTroubleCodesTask : doInBackground");
+//            String result = "";
+//
+//            //Get the current thread's token
+//            synchronized (this) {
+//                Log.d(TAG, "Starting service..");
+//                // get the remote Bluetooth device
+//
+//                final BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
+//                Log.d("Check", "address"+params[0]);
+//                dev = btAdapter.getRemoteDevice(params[0]);
+//
+//                Log.d(TAG, "Stopping Bluetooth discovery.");
+//                btAdapter.cancelDiscovery();
+//
+//                Log.d(TAG, "Starting OBD connection..");
+//
+//                // Instantiate a BluetoothSocket for the remote device and connect it.
+//                try {
+//                    sock = BluetoothManager.connect(dev);
+//                } catch (Exception e) {
+//                    Log.e(
+//                            TAG,
+//                            "There was an error while establishing connection. -> "
+//                                    + e.getMessage()
+//                    );
+//                    Log.d(TAG, "Message received on handler here");
+//                    mHandler.obtainMessage(CANNOT_CONNECT_TO_DEVICE).sendToTarget();
+//                    return null;
+//                }
+//
+//
+//                // Instantiate a BluetoothSocket for the remote device and connect it.
+////                try {
+////                    Log.e("io","BluetoothManager.java : connect");
+////                    BluetoothSocket sock = null;
+////                    BluetoothSocket sockFallback = null;
+////
+////                    Log.d(TAG, "Starting Bluetooth connection..");
+////                    try {
+////                        Log.d(TAG, "device"+mBTDevice.getName());
+////                        sock = mBTDevice.createRfcommSocketToServiceRecord(MY_UUID_INSECURE);
+////                        sock.connect();
+////                    } catch (Exception e1) {
+////                        Log.e(TAG, "There was an error while establishing Bluetooth connection. Falling back..", e1);
+////                        Class<?> clazz = sock.getRemoteDevice().getClass();
+////                        Class<?>[] paramTypes = new Class<?>[]{Integer.TYPE};
+////                        try {
+////                            Method m = clazz.getMethod("createRfcommSocket", paramTypes);
+////                            Object[] params = new Object[]{Integer.valueOf(1)};
+////                            sockFallback = (BluetoothSocket) m.invoke(sock.getRemoteDevice(), params);
+////                            sockFallback.connect();
+////                            sock = sockFallback;
+////                        } catch (Exception e2) {
+////                            Log.e(TAG, "Couldn't fallback while establishing Bluetooth connection.", e2);
+////                            throw new IOException(e2.getMessage());
+////                        }
+////                    }
+////                    //return sock;
+////                } catch (Exception e) {
+////                    Log.e(
+////                            TAG,
+////                            "There was an error while establishing connection. -> "
+////                                    + e.getMessage()
+////                    );
+////                    Log.d(TAG, "Message received on handler here");
+////                    mHandler.obtainMessage(CANNOT_CONNECT_TO_DEVICE).sendToTarget();
+////                    return null;
+////                }
+//
+//
+//                try {
+//                    // Let's configure the connection.
+//                    Log.d(TAG, "Queueing jobs for connection configuration..");
+//
+//                    onProgressUpdate(1);
+//
+//                    new ObdResetCommand().run(sock.getInputStream(), sock.getOutputStream());
+//
+//
+//                    onProgressUpdate(2);
+//
+//                    new EchoOffCommand().run(sock.getInputStream(), sock.getOutputStream());
+//
+//                    onProgressUpdate(3);
+//
+//                    new LineFeedOffCommand().run(sock.getInputStream(), sock.getOutputStream());
+//
+//                    onProgressUpdate(4);
+//
+//                    new SelectProtocolCommand(ObdProtocols.AUTO).run(sock.getInputStream(), sock.getOutputStream());
+//
+//                    onProgressUpdate(5);
+//
+//                    ModifiedTroubleCodesObdCommand tcoc = new ModifiedTroubleCodesObdCommand();
+//                    tcoc.run(sock.getInputStream(), sock.getOutputStream());
+//                    result = tcoc.getFormattedResult();
+//
+//                    onProgressUpdate(6);
+//
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                    Log.e("DTCERR", e.getMessage());
+//                    mHandler.obtainMessage(OBD_COMMAND_FAILURE_IO).sendToTarget();
+//                    return null;
+//                } catch (InterruptedException e) {
+//                    e.printStackTrace();
+//                    Log.e("DTCERR", e.getMessage());
+//                    mHandler.obtainMessage(OBD_COMMAND_FAILURE_IE).sendToTarget();
+//                    return null;
+//                } catch (UnableToConnectException e) {
+//                    e.printStackTrace();
+//                    Log.e("DTCERR", e.getMessage());
+//                    mHandler.obtainMessage(OBD_COMMAND_FAILURE_UTC).sendToTarget();
+//                    return null;
+//                } catch (MisunderstoodCommandException e) {
+//                    e.printStackTrace();
+//                    Log.e("DTCERR", e.getMessage());
+//                    mHandler.obtainMessage(OBD_COMMAND_FAILURE_MIS).sendToTarget();
+//                    return null;
+//                } catch (NoDataException e) {
+//                    Log.e("DTCERR", e.getMessage());
+//                    mHandler.obtainMessage(OBD_COMMAND_FAILURE_NODATA).sendToTarget();
+//                    return null;
+//                } catch (Exception e) {
+//                    Log.e("DTCERR", e.getMessage());
+//                    mHandler.obtainMessage(OBD_COMMAND_FAILURE).sendToTarget();
+//                } finally {
+//
+//                    // close socket
+//                    closeSocket(sock);
+//                }
+//
+//            }
+//
+//            return result;
+//        }
+//
+//        public void closeSocket(BluetoothSocket sock) {
+//            Log.e("activity","TroubleCodesActivity.java : GetTroubleCodesTask : closeSocket");
+//            if (sock != null)
+//                // close socket
+//                try {
+//                    sock.close();
+//                } catch (IOException e) {
+//                    Log.e(TAG, e.getMessage());
+//                }
+//        }
+//
+//        @Override
+//        protected void onProgressUpdate(Integer... values) {
+//            super.onProgressUpdate(values);
+//            Log.e("activity","TroubleCodesActivity.java : GetTroubleCodesTask : onProgressUpdate");
+//            progressDialog.setProgress(values[0]);
+//        }
+//
+//        @Override
+//        protected void onPostExecute(String result) {
+//            Log.e("activity","TroubleCodesActivity.java : GetTroubleCodesTask : onPostExecute");
+//            progressDialog.dismiss();
+//
+//
+//            mHandler.obtainMessage(DATA_OK, result).sendToTarget();
+//         //   setContentView(R.layout.trouble_codes);
+//
+//        }
+//    }
+
+    //private static final String TAG = ObdHelper.class.getSimpleName();
+    // private static final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
+
+    private static final int NO_BLUETOOTH_DEVICE_SELECTED = 0;
+    private static final int CANNOT_CONNECT_TO_DEVICE = 1;
+    private static final int NO_DATA = 3;
+    private static final int OBD_COMMAND_FAILURE = 10;
+    private static final int OBD_COMMAND_FAILURE_IO = 11;
+    private static final int OBD_COMMAND_FAILURE_UTC = 12;
+    private static final int OBD_COMMAND_FAILURE_IE = 13;
+    private static final int OBD_COMMAND_FAILURE_MIS = 14;
+    private static final int OBD_COMMAND_FAILURE_NODATA = 15;
+
+
+    private Handler mHandler = new Handler(new Handler.Callback() {
+
+        public boolean handleMessage(Message msg) {
+            Log.d(TAG, "Message received on handler");
+            Log.d(TAG, "Message: " + msg.what);
+            switch (msg.what) {
+                case NO_BLUETOOTH_DEVICE_SELECTED:
+                    makeToast("getString(R.string.text_bluetooth_nodevice)");
+                    Log.d(TAG, "getString(R.string.text_bluetooth_nodevice)");
+                    break;
+                case CANNOT_CONNECT_TO_DEVICE:
+                    makeToast("getString(R.string.text_bluetooth_error_connecting)");
+                    Log.d(TAG, "getString(R.string.text_bluetooth_error_connecting)");
+                    break;
+                case OBD_COMMAND_FAILURE:
+                    makeToast("getString(R.string.text_obd_command_failure)");
+                    Log.d(TAG, "getString(R.string.text_obd_command_failure)");
+                    break;
+                case OBD_COMMAND_FAILURE_IO:
+                    makeToast("getString(R.string.text_obd_command_failure) +  IO");
+                    Log.d(TAG, "getString(R.string.text_obd_command_failure) +  IO");
+                    break;
+                case OBD_COMMAND_FAILURE_IE:
+                    makeToast("getString(R.string.text_obd_command_failure) +  IE");
+                    Log.d(TAG, "getString(R.string.text_obd_command_failure) +  IE");
+                    break;
+                case OBD_COMMAND_FAILURE_MIS:
+                    makeToast("getString(R.string.text_obd_command_failure) +  MIS");
+                    Log.d(TAG, "getString(R.string.text_obd_command_failure) +  MIS");
+                    break;
+                case OBD_COMMAND_FAILURE_UTC:
+                    makeToast("getString(R.string.text_obd_command_failure) +  UTC");
+                    Log.d(TAG, "getString(R.string.text_obd_command_failure) +  UTC");
+                    break;
+                case OBD_COMMAND_FAILURE_NODATA:
+                    makeToastLong("getString(R.string.text_noerrors)");
+                    Log.d(TAG, "getString(R.string.text_noerrors)");
+                    break;
+                case NO_DATA:
+                    makeToast("getString(R.string.text_dtc_no_data)");
+                    Log.d(TAG, "Message received on handler");
+                    break;
+            }
+            resetAcitivityState();
+            return false;
         }
+    });
+
+    private void resetAcitivityState() {
+        //progressBar.setProgress(0);
+        //    sendBtn.setEnabled(true);
     }
 
-    private ProgressDialog progressDialog;
-    private BluetoothSocket sock = null;
+    private void makeToast(String text) {
+        Toast toast = Toast.makeText(getApplicationContext(), text, Toast.LENGTH_SHORT);
+        toast.show();
+    }
+
+    private void makeToastLong(String text) {
+        Toast toast = Toast.makeText(getApplicationContext(), text, Toast.LENGTH_LONG);
+        toast.show();
+    }
+
+
+    // private RequestActivity requestActivity;
+    // private ProgressBar progressBar;
+    //  private Handler mHandler;
+
+    // private static BluetoothAdapter bluetoothAdapter;
+    // private static Set<BluetoothDevice> pairedDevices;
+
+    private final Runnable mQueueCommands = new Runnable() {
+        public void run() {
+            new Handler().postDelayed(mQueueCommands, 400);
+        }
+    };
+
+//    private GetTroubleCodesTask gtct;
+
+//    public ObdHelper(Handler mHandler, RequestActivity requestActivity) {
+//        this.requestActivity = requestActivity;
+//        this.mHandler = mHandler;
+//        gtct = new GetTroubleCodesTask();
+//    }
+
+    public void connectToDevice() {
+        String remoteDevice = mBTDevice.getAddress();
+        if (remoteDevice == null | "".equals(remoteDevice))
+            Log.e(TAG, "No bt device is paired.");
+        else
+            gtct.execute(remoteDevice);
+    }
+
+//    private static void connectViaBluetooth() {
+//        if (bluetoothAdapter == null)
+//            bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+//    }
+
+//    public static int checkBluetoothEnabled() {
+//        connectViaBluetooth();
+//        if (bluetoothAdapter == null)
+//            return -1;
+//        else if (!bluetoothAdapter.isEnabled()) {
+//            return 0;
+//        } else {
+//            return 1;
+//        }
+//    }
+//
+//    public static Set<BluetoothDevice> getPairedDevice() {
+//        if(bluetoothAdapter==null)
+//            bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+//        if (bluetoothAdapter.getState() == BluetoothAdapter.STATE_ON)
+//            pairedDevices = bluetoothAdapter.getBondedDevices();
+//        return pairedDevices;
+//    }
 
     private class GetTroubleCodesTask extends AsyncTask<String, Integer, String> {
-
         @Override
         protected void onPreExecute() {
-            //Create a new progress dialog
-            progressDialog = new ProgressDialog(Bluetooth.this);
-            //Set the progress dialog to display a horizontal progress bar
-            progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-            //Set the dialog title to 'Loading...'
-            progressDialog.setTitle("getString(R.string.dialog_loading_title)");
-            //Set the dialog message to 'Loading application View, please wait...'
-            progressDialog.setMessage("getString(R.string.dialog_loading_body)");
-            //This dialog can't be canceled by pressing the back key
-            progressDialog.setCancelable(false);
-            //This dialog isn't indeterminate
-            progressDialog.setIndeterminate(false);
-            //The maximum number of items is 100
-            progressDialog.setMax(5);
-            //Set the current progress to zero
-            progressDialog.setProgress(0);
-            //Display the progress dialog
-            progressDialog.show();
+            //   progressBar = requestActivity.getProgressBar();
+//            progressBar.setMax(8);
         }
 
         @Override
         protected String doInBackground(String... params) {
-            String result = "kuch nai aya";
-
+            String result = "";
+            BluetoothDevice dev;
             //Get the current thread's token
             synchronized (this) {
                 Log.d(TAG, "Starting service..");
+                onProgressUpdate(1);
                 // get the remote Bluetooth device
-
                 final BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
-
+                dev = btAdapter.getRemoteDevice(params[0]);
 
                 Log.d(TAG, "Stopping Bluetooth discovery.");
                 btAdapter.cancelDiscovery();
 
                 Log.d(TAG, "Starting OBD connection..");
-
+                onProgressUpdate(2);
+                BluetoothSocket sock;
                 // Instantiate a BluetoothSocket for the remote device and connect it.
                 try {
-
-                    sock = mBTDevice.createRfcommSocketToServiceRecord(MY_UUID_INSECURE);
-                    sock.connect();
-                    Log.d(TAG, "run: ConnectThread connected.");
+                    Log.d("Checkaddress", "device address:" + dev);
+                    sock = connect(dev);
                 } catch (Exception e) {
-                    Log.e(
-                            TAG,
-                            "There was an error while establishing connection. -> "
-                                    + e.getMessage()
-                    );
+                    Log.e(TAG, "There was an error while establishing connection. -> " + e.getMessage());
                     Log.d(TAG, "Message received on handler here");
-                    // mHandler.obtainMessage(CANNOT_CONNECT_TO_DEVICE).sendToTarget();
+                    mHandler.obtainMessage(CANNOT_CONNECT_TO_DEVICE).sendToTarget();
                     return null;
                 }
 
@@ -427,72 +1112,118 @@ public class Bluetooth extends AppCompatActivity implements AdapterView.OnItemCl
                     // Let's configure the connection.
                     Log.d(TAG, "Queueing jobs for connection configuration..");
 
-                //    onProgressUpdate(1);
+                    onProgressUpdate(3);
 
                     new ObdResetCommand().run(sock.getInputStream(), sock.getOutputStream());
+                    Log.d(TAG, "ObdResetCommand successs");
 
-
-               //     onProgressUpdate(2);
+                    onProgressUpdate(4);
 
                     new EchoOffCommand().run(sock.getInputStream(), sock.getOutputStream());
+                    Log.d(TAG, " EchoOffCommand succcess");
 
-              //      onProgressUpdate(3);
-
-                    new LineFeedOffCommand().run(sock.getInputStream(), sock.getOutputStream());
-
-            //        onProgressUpdate(4);
-
-                    new SelectProtocolCommand(ObdProtocols.AUTO).run(sock.getInputStream(), sock.getOutputStream());
-
-             //       onProgressUpdate(5);
-
-                    ModifiedTroubleCodesObdCommand tcoc = new ModifiedTroubleCodesObdCommand();
-                    tcoc.run(sock.getInputStream(), sock.getOutputStream());
-                    result = tcoc.getFormattedResult();
+                    onProgressUpdate(5);
 
                     onProgressUpdate(6);
 
+                    new SelectProtocolCommand(ObdProtocols.AUTO).run(sock.getInputStream(), sock.getOutputStream());
+                    Log.d(TAG, "SelectProtocolCommand success");
+
+                    onProgressUpdate(7);
+                    Log.d(TAG, "nothing");
+
+//                    MyTroubleCodesCommand tcoc = new MyTroubleCodesCommand();
+//                    tcoc.run(sock.getInputStream(), sock.getOutputStream());
+//                    onProgressUpdate(8);
+//                    result = tcoc.getFormattedResult();
+
+                    while (true) {
+                        //       Read from the InputStream
+                        try {
+
+                            RPMCommand engineRpmCommand = new RPMCommand();
+
+                            SpeedCommand speedCommand = new SpeedCommand();
+//
+                            AmbientAirTemperatureCommand atc = new AmbientAirTemperatureCommand();
+
+
+                            //         FuelLevelCommand flc = new FuelLevelCommand();
+//                            while (!Thread.currentThread().isInterrupted()) {
+
+                            MyTroubleCodesCommand tcoc = new MyTroubleCodesCommand();
+                            engineRpmCommand.run(sock.getInputStream(), sock.getOutputStream());
+                            speedCommand.run(sock.getInputStream(), sock.getOutputStream());
+                            atc.run(sock.getInputStream(), sock.getOutputStream());
+                            //            flc.run(sock.getInputStream(), sock.getOutputStream());
+
+                            tcoc.run(sock.getInputStream(), sock.getOutputStream());
+                            result = tcoc.getFormattedResult();
+
+                            // TODO handle commands result
+                            Log.d(TAG, "RPM: " + engineRpmCommand.getCalculatedResult());
+                            Log.d(TAG, "Speed: " + speedCommand.getCalculatedResult());
+                            Log.d(TAG, "Temp: " + atc.getCalculatedResult());
+                            //      Log.d(TAG, "Fuel level: " + flc.getFormattedResult());
+
+                            Log.d(TAG, "Trouble codes: " + result);
+
+                            //          if(result.contains("B1904")||result.contains("B1902")){
+//                            Intent intent = new Intent(getApplicationContext(), Sms.class);
+//                            startActivity(intent);
+//                            break;
+                            //        };
+
+                            //       }
+                            if (result.contains("B1904") || result.contains("B1902")) {
+                                Intent intent = new Intent(getApplicationContext(), Sms.class);
+                                startActivity(intent);
+                                break;
+                            }
+
+
+                        } catch (IOException | InterruptedException e) {
+                            Log.e(TAG, "write: Error reading Input Stream. " + e.getMessage());
+                            break;
+                        }
+                    }
+
                 } catch (IOException e) {
                     e.printStackTrace();
-                    Log.e("DTCERR1", e.getMessage());
-                    //  mHandler.obtainMessage(OBD_COMMAND_FAILURE_IO).sendToTarget();
+                    Log.e("DTCERR", e.getMessage());
+                    mHandler.obtainMessage(OBD_COMMAND_FAILURE_IO).sendToTarget();
                     return null;
                 } catch (InterruptedException e) {
                     e.printStackTrace();
-                    Log.e("DTCERR2", e.getMessage());
-                    //   mHandler.obtainMessage(OBD_COMMAND_FAILURE_IE).sendToTarget();
+                    Log.e("DTCERR", e.getMessage());
+                    mHandler.obtainMessage(OBD_COMMAND_FAILURE_IE).sendToTarget();
                     return null;
                 } catch (UnableToConnectException e) {
                     e.printStackTrace();
-                    Log.e("DTCERR3", e.getMessage());
-                    //   mHandler.obtainMessage(OBD_COMMAND_FAILURE_UTC).sendToTarget();
+                    Log.e("DTCERR", e.getMessage());
+                    mHandler.obtainMessage(OBD_COMMAND_FAILURE_UTC).sendToTarget();
                     return null;
                 } catch (MisunderstoodCommandException e) {
                     e.printStackTrace();
-                    Log.e("DTCERR4", e.getMessage());
-                    //     mHandler.obtainMessage(OBD_COMMAND_FAILURE_MIS).sendToTarget();
+                    Log.e("DTCERR", e.getMessage());
+                    mHandler.obtainMessage(OBD_COMMAND_FAILURE_MIS).sendToTarget();
                     return null;
                 } catch (NoDataException e) {
-                    Log.e("DTCERR5", e.getMessage());
-                    //     mHandler.obtainMessage(OBD_COMMAND_FAILURE_NODATA).sendToTarget();
+                    Log.e("DTCERR", e.getMessage());
+                    mHandler.obtainMessage(OBD_COMMAND_FAILURE_NODATA).sendToTarget();
                     return null;
                 } catch (Exception e) {
-                    Log.e("DTCERR6", e.getMessage());
-                    //      mHandler.obtainMessage(OBD_COMMAND_FAILURE).sendToTarget();
+                    Log.e("DTCERR", e.getMessage());
+                    mHandler.obtainMessage(OBD_COMMAND_FAILURE).sendToTarget();
                 } finally {
-
-                    // close socket
                     closeSocket(sock);
                 }
-
             }
-
             return result;
         }
 
-        public void closeSocket(BluetoothSocket sock) {
+        private void closeSocket(BluetoothSocket sock) {
             if (sock != null)
-                // close socket
                 try {
                     sock.close();
                 } catch (IOException e) {
@@ -503,20 +1234,72 @@ public class Bluetooth extends AppCompatActivity implements AdapterView.OnItemCl
         @Override
         protected void onProgressUpdate(Integer... values) {
             super.onProgressUpdate(values);
-            progressDialog.setProgress(values[0]);
+//            progressBar.setProgress(values[0]);
         }
 
         @Override
         protected void onPostExecute(String result) {
-            progressDialog.dismiss();
-
-
-            //  mHandler.obtainMessage(DATA_OK, result).sendToTarget();
-            //    setContentView(R.layout.trouble_codes);
-            Log.d(TAG, "Trouble codes" + result);
-
+            if (result != null) {
+                Log.d(TAG, "Result obtained" + result);
+                //      requestActivity.startResultActivity(result);
+                //  resultDtcs(result);
+            } else {
+                Log.e(TAG, "No result (Nullpointer).");
+            }
         }
     }
 
+    /**
+     * Instantiates a BluetoothSocket for the remote device and connects it.
+     * See http://stackoverflow.com/questions/18657427/ioexception-read-failed-socket-might-closed-bluetooth-on-android-4-3/18786701#18786701
+     *
+     * @param dev The remote device to connect to
+     * @return The BluetoothSocket
+     * @throws IOException
+     */
+    private static BluetoothSocket connect(BluetoothDevice dev) throws IOException {
+        BluetoothSocket sock = null;
+        BluetoothSocket sockFallback;
+
+        Log.d(TAG, "Starting Bluetooth connection..");
+        try {
+            sock = dev.createRfcommSocketToServiceRecord(MY_UUID_INSECURE);
+            sock.connect();
+        } catch (Exception e1) {
+            Log.e(TAG, "There was an error while establishing Bluetooth connection. Falling back..", e1);
+            if (sock != null) {
+                Class<?> clazz = sock.getRemoteDevice().getClass();
+                Class<?>[] paramTypes = new Class<?>[]{Integer.TYPE};
+                try {
+                    Method m = clazz.getMethod("createRfcommSocket", paramTypes);
+                    Object[] params = new Object[]{Integer.valueOf(1)};
+                    sockFallback = (BluetoothSocket) m.invoke(sock.getRemoteDevice(), params);
+                    sockFallback.connect();
+                    sock = sockFallback;
+                } catch (Exception e2) {
+                    Log.e(TAG, "Couldn't fallback while establishing Bluetooth connection.", e2);
+                    throw new IOException(e2.getMessage());
+                }
+            }
+        }
+        return sock;
+
+    }
+//
+//    public void resultDtcs(String dtcs) {
+//
+//        if (dtcs == null)
+//            dtcs = "";
+//        if (!dtcs.equals("")) {
+//            String[] dtcArray = dtcs.split("\\n");
+//            String language = "english";
+//            String vin = "NHP102360619";
+//            //   ApiHelper api = new ApiHelper(getApplicationContext());
+//            //   api.getErrorCodeTranslation(dtcArray, vin , language);
+//        } else {
+//            Log.d(TAG, "No error code received");
+//        }
+//
+//    }
 
 }

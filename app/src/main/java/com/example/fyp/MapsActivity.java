@@ -21,6 +21,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
@@ -48,6 +49,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import io.nlopez.smartlocation.OnLocationUpdatedListener;
+import io.nlopez.smartlocation.SmartLocation;
+import io.nlopez.smartlocation.location.config.LocationAccuracy;
+import io.nlopez.smartlocation.location.config.LocationParams;
+
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
@@ -63,28 +69,28 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         if (mLocationPermissionsGranted) {
             LocationManager manager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 //            if (manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-         //       Toast.makeText(this, "gps check " + gpscheck, Toast.LENGTH_SHORT).show();
-                //statusCheck();
+            //       Toast.makeText(this, "gps check " + gpscheck, Toast.LENGTH_SHORT).show();
+            //statusCheck();
 //                LocationManager manager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
-                if (!manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-                   // Toast.makeText(this, "Enable gps", Toast.LENGTH_SHORT).show();
-                    buildAlertMessageNoGps();
+            if (!manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                // Toast.makeText(this, "Enable gps", Toast.LENGTH_SHORT).show();
+                buildAlertMessageNoGps();
 
-                } else {
-                    getDeviceLocation();
-                }
+            } else {
+                getDeviceLocation();
+            }
 
 
-                if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                        != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this,
-                        Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                    return;
-                }
-                mMap.setMyLocationEnabled(true);
-                mMap.getUiSettings().setMyLocationButtonEnabled(false);
-                init();
-           // }
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                    != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this,
+                    Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                return;
+            }
+            mMap.setMyLocationEnabled(true);
+            mMap.getUiSettings().setMyLocationButtonEnabled(false);
+            init();
+            // }
         }
 
     }
@@ -104,6 +110,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private GoogleMap mMap;
     private FusedLocationProviderClient mFusedLocationProviderClient;
 
+    Button btn1;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -111,8 +118,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         setContentView(R.layout.activity_maps);
         mGps = (ImageView) findViewById(R.id.ic_gps);
 
-        direction = (ImageView) findViewById(R.id.ic_direction);
+ //       direction = (ImageView) findViewById(R.id.ic_direction);
         getLocationPermission();
+        btn1 = (Button) findViewById(R.id.btn);
+
 
     }
 
@@ -188,10 +197,25 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 getDeviceLocation();
             }
         });
-        direction.setOnClickListener(new View.OnClickListener() {
+//        direction.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                Log.d(TAG, "onClick: clicked destination icon");
+//                Intent intent = new Intent(MapsActivity.this, DestinationActivity.class);
+//                //intent.putExtra("sum", sum + "");
+//                Bundle args = new Bundle();
+//                args.putParcelable("from_position", fromPosition);
+//                intent.putExtra("bundle", args);
+//
+//                startActivity(intent);
+//                Toast.makeText(MapsActivity.this, "Direction clicked", Toast.LENGTH_SHORT).show();
+//            }
+//        });
+
+        btn1.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Log.d(TAG, "onClick: clicked destination icon");
+                Log.d(TAG, "onClick: Start Location confirmed!");
                 Intent intent = new Intent(MapsActivity.this, DestinationActivity.class);
                 //intent.putExtra("sum", sum + "");
                 Bundle args = new Bundle();
@@ -199,7 +223,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 intent.putExtra("bundle", args);
 
                 startActivity(intent);
-                Toast.makeText(MapsActivity.this, "Direction clicked", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MapsActivity.this, "Start Location Confirmed!", Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -215,29 +239,56 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         try {
             if (mLocationPermissionsGranted) {
 
-                final Task location = mFusedLocationProviderClient.getLastLocation();
-                location.addOnCompleteListener(new OnCompleteListener() {
-                    @Override
-                    public void onComplete(@NonNull Task task) {
-                        if (task.isSuccessful()) {
-                            Log.d(TAG, "onComplete: found location!");
-                            Location currentLocation = (Location) task.getResult();
-                            if (currentLocation == null) {
-                                Toast.makeText(getApplicationContext(), "unable to get current location. wait for a few minutes and restart the app", Toast.LENGTH_SHORT).show();
 
-                            } else {
-                                fromPosition = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
-
-                                moveCamera(new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude()),
-                                        DEFAULT_ZOOM, "My Location");
-                            }
-
-                        } else {
-                            Log.d(TAG, "onComplete: current location is null");
-                            Toast.makeText(MapsActivity.this, "unable to get current location", Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                });
+//                final Task location = mFusedLocationProviderClient.getLastLocation();
+//                location.addOnCompleteListener(new OnCompleteListener() {
+//                    @Override
+//                    public void onComplete(@NonNull Task task) {
+//                        if (task.isSuccessful()) {
+//                            Log.d(TAG, "onComplete: found location!");
+//                            Location currentLocation = (Location) task.getResult();
+//                            if (currentLocation == null) {
+//                                Toast.makeText(getApplicationContext(), "unable to get current location. wait for a few minutes and restart the app", Toast.LENGTH_SHORT).show();
+//
+//                            } else {
+//                                fromPosition = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
+//
+//                                moveCamera(new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude()),
+//                                        DEFAULT_ZOOM, "My Location");
+//                            }
+//
+//                        } else {
+//                            Log.d(TAG, "onComplete: current location is null");
+//                            Toast.makeText(MapsActivity.this, "unable to get current location", Toast.LENGTH_SHORT).show();
+//                        }
+//                    }
+//                });
+                SmartLocation smartLocation = null;
+                LocationParams.Builder builder;
+                smartLocation = new SmartLocation.Builder(this).logging(true).build();
+                builder = new LocationParams.Builder()
+                        .setAccuracy(LocationAccuracy.HIGH)
+                        .setDistance(0)
+                        .setInterval(5000);
+                try {
+                    smartLocation.with(this)
+                            .location()
+                            .config(LocationParams.BEST_EFFORT)
+                            .continuous()
+                            .config(builder.build())
+                            .start(new OnLocationUpdatedListener() {
+                                @Override
+                                public void onLocationUpdated(Location location) {
+//                                    double lon = location.getLongitude();
+//                                    double lat = location.getLatitude();
+                                    fromPosition = new LatLng(location.getLatitude(), location.getLongitude());
+                                    moveCamera(new LatLng(location.getLatitude(), location.getLongitude()),
+                                            DEFAULT_ZOOM, "My Location");
+                                }
+                            });
+                } catch (SecurityException se) {
+                    se.printStackTrace();
+                }
             }
         } catch (SecurityException e) {
             Log.e(TAG, "getDeviceLocation: SecurityException: " + e.getMessage());
@@ -271,25 +322,25 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         Log.d(TAG, "getLocationPermission: getting location permissions");
         String[] permissions = {Manifest.permission.ACCESS_FINE_LOCATION,
                 Manifest.permission.ACCESS_COARSE_LOCATION};
-     //   Toast.makeText(this, "check1", Toast.LENGTH_SHORT).show();
+        //   Toast.makeText(this, "check1", Toast.LENGTH_SHORT).show();
         if (ContextCompat.checkSelfPermission(this.getApplicationContext(),
                 FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             if (ContextCompat.checkSelfPermission(this.getApplicationContext(),
                     COURSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
                 mLocationPermissionsGranted = true;
-        //        Toast.makeText(this, "check2", Toast.LENGTH_SHORT).show();
+                //        Toast.makeText(this, "check2", Toast.LENGTH_SHORT).show();
                 initMap();
             } else {
                 ActivityCompat.requestPermissions(this,
                         permissions,
                         LOCATION_PERMISSION_REQUEST_CODE);
-     //           Toast.makeText(this, "a", Toast.LENGTH_SHORT).show();
+                //           Toast.makeText(this, "a", Toast.LENGTH_SHORT).show();
             }
         } else {
             ActivityCompat.requestPermissions(this,
                     permissions,
                     LOCATION_PERMISSION_REQUEST_CODE);
-      //      Toast.makeText(this, "b", Toast.LENGTH_SHORT).show();
+            //      Toast.makeText(this, "b", Toast.LENGTH_SHORT).show();
         }
     }
 
