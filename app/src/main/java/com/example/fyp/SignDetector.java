@@ -85,9 +85,10 @@ public class SignDetector{
         s.detector =  Detector.create(assetManager,Detector.SIGN_DETECTOR_MODEL);
 
         try {
-            GpuDelegate delegate = new GpuDelegate();
-            Interpreter.Options options = (new Interpreter.Options()).addDelegate(delegate);
-            s.tfLite = new Interpreter(loadModelFile(assetManager), options);
+//            GpuDelegate delegate = new GpuDelegate();
+//            Interpreter.Options options = (new Interpreter.Options()).addDelegate(delegate);
+//            s.tfLite = new Interpreter(loadModelFile(assetManager), options);
+            s.tfLite = new Interpreter(loadModelFile(assetManager));
         } catch (Exception e) {
             Log.e(TAG, "create: Exception when loading tflite interpreter with gpu option now trying with gpu option");
             try {

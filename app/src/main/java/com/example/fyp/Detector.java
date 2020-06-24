@@ -103,9 +103,10 @@ public class Detector {
 
         final Detector d = new Detector();
         try {
-            GpuDelegate delegate = new GpuDelegate();
-            Interpreter.Options options = (new Interpreter.Options()).addDelegate(delegate);
-            d.tfLite = new Interpreter(loadModelFile(assetManager,model), options);
+//            GpuDelegate delegate = new GpuDelegate();
+//            Interpreter.Options options = (new Interpreter.Options()).addDelegate(delegate);
+//            d.tfLite = new Interpreter(loadModelFile(assetManager,model), options);
+            d.tfLite = new Interpreter(loadModelFile(assetManager,model));
         } catch (Exception e) {
             Log.e(TAG, "create: Exception when loading tflite interpreter with gpu option now trying with gpu option");
             try {
