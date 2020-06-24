@@ -107,8 +107,12 @@ public class Detector {
             Interpreter.Options options = (new Interpreter.Options()).addDelegate(delegate);
             d.tfLite = new Interpreter(loadModelFile(assetManager,model), options);
         } catch (Exception e) {
-            Log.e(TAG, "create: exception at loading model = ",e );
-            throw new RuntimeException(e);
+            Log.e(TAG, "create: Exception when loading tflite interpreter with gpu option now trying with gpu option");
+            try {
+                d.tfLite = new Interpreter(loadModelFile(assetManager,model));
+            } catch (Exception ex){
+                throw e;
+            }
         }
 
         int inputWidth ;
