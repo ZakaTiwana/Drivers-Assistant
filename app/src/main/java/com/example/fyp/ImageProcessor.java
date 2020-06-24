@@ -381,6 +381,7 @@ public class ImageProcessor extends CameraCaptureActivity {
                 draw.postInvalidate();
                 isComputingSignDetection = false;
             }
+            if(!params[0].isRecycled()) params[0].recycle();
             return null;
         }
     }
