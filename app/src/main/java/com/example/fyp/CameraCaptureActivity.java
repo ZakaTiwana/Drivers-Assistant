@@ -24,16 +24,21 @@ import android.os.Trace;
 import android.util.Log;
 import android.util.Size;
 import android.util.SparseIntArray;
+import android.view.Gravity;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
+import android.view.WindowManager;
+import android.widget.FrameLayout;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
 import com.example.fyp.customutilities.ImageUtilities;
+import com.example.fyp.customview.OverlayView;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -60,7 +65,9 @@ public abstract class CameraCaptureActivity extends AppCompatActivity implements
     private Runnable imageConverter;
 
     private TextureView mTextureView;
+    private OverlayView mOverlayView;
     private TextureView.SurfaceTextureListener mSurfaceTextureListener = new TextureView.SurfaceTextureListener() {
+        @RequiresApi(api = Build.VERSION_CODES.M)
         @Override
         public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
             Log.d(TAG, String.format("onSurfaceTextureAvailable: width = %d and height = %d", width,height));
@@ -159,10 +166,12 @@ public abstract class CameraCaptureActivity extends AppCompatActivity implements
         this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
 
         mTextureView = (TextureView) findViewById(R.id.textureView);
+        mOverlayView = findViewById(R.id.overlay);
 
 
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onResume() {
         super.onResume();
@@ -210,6 +219,7 @@ public abstract class CameraCaptureActivity extends AppCompatActivity implements
         }
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.M)
     private void setupCamera(int width, int height) {
         CameraManager cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
         try {
@@ -225,18 +235,23 @@ public abstract class CameraCaptureActivity extends AppCompatActivity implements
                 mWidth = desiredInput.getWidth();
                 mHeight = desiredInput.getHeight();
 
-                Log.d(TAG, String.format("setupCamera: mWidth = %d and mHeight = %d", mWidth,mHeight));
+                Log.d(TAG, String.format("setupCamera: (device resolution) mWidth = %d and mHeight = %d", mWidth,mHeight));
                 assert map != null;
                 mPreviewSize = chooseOptimalSize(map.getOutputSizes(SurfaceTexture.class), mWidth, mHeight);
 
                 onPreviewSizeSelected(mWidth,mHeight);
+                // set overlay and texture view width and height
+                FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
+                        mPreviewSize.getWidth(),mPreviewSize.getHeight());
+                params.gravity = Gravity.CENTER_HORIZONTAL;
+
+                mTextureView.setLayoutParams(params);
+                mOverlayView.setLayoutParams(params);
 
                 mImageReader = ImageReader.newInstance(mWidth,mHeight, ImageFormat.YUV_420_888, 2);
                 mImageReader.setOnImageAvailableListener(this, mBackgroundHandler);
                 mCameraId = cameraId;
 
-                //Texture view preview size
-//                mTextureView.setLayoutParams(new FrameLayout.LayoutParams(mPreviewSize.getWidth(),mPreviewSize.getHeight()));
                 return;
             }
         } catch (CameraAccessException e) {
