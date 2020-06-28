@@ -1,13 +1,17 @@
 package com.example.fyp;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
 import androidx.core.app.ActivityCompat;
 
 import android.Manifest;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.CompoundButton;
@@ -32,6 +36,7 @@ public class HomeSettings extends AppCompatActivity implements View.OnClickListe
 
     TextView homeSettingText;
 
+    private static final int MY_PERMISSIONS_REQUEST_SEND_SMS = 1;
     private static final int MY_PERMISSIONS_REQUEST_RECORD_AUDIO = 4;
 
     @Override
@@ -58,17 +63,47 @@ public class HomeSettings extends AppCompatActivity implements View.OnClickListe
             @Override
             public void onCheckedChanged(CompoundButton buttonView,
                                          boolean isChecked) {
-
-                if (isChecked) {
-
-                    Toast.makeText(getApplicationContext(), "Accident Detector Settings Enabled", Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(getApplicationContext(), "Accident Detector Settings Disabled", Toast.LENGTH_SHORT).show();
-                }
                 SharedPreferences settings = getSharedPreferences("home_settings", 0);
                 SharedPreferences.Editor editor = settings.edit();
-                editor.putBoolean("accident_detector_settings", isChecked);
-                editor.commit();
+                if (isChecked) {
+                    if (ActivityCompat.checkSelfPermission(getApplicationContext(),
+                            Manifest.permission.SEND_SMS) !=
+                            PackageManager.PERMISSION_GRANTED) {
+                        // Permission not yet granted. Use requestPermissions().
+                        // MY_PERMISSIONS_REQUEST_SEND_SMS is an
+                        // app-defined int constant. The callback method gets the
+                        // result of the request.
+                        accidentDetector.setChecked(false);
+
+                        ActivityCompat.requestPermissions(HomeSettings.this,
+                                new String[]{Manifest.permission.SEND_SMS},
+                                MY_PERMISSIONS_REQUEST_SEND_SMS);
+                        Toast.makeText(getApplicationContext(), "Please Enable SMS permission first.", Toast.LENGTH_LONG).show();
+
+                    } else {
+                        LocationManager manager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+
+                        if (!manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                            accidentDetector.setChecked(false);
+                            Toast.makeText(getApplicationContext(), "Please Enable GPS permission first.", Toast.LENGTH_LONG).show();
+                            //    Toast.makeText(this, "Turn on Gps", Toast.LENGTH_SHORT).show();
+                            buildAlertMessageNoGps();
+                        } else {
+//                            Intent intent = new Intent(this, Sms.class);
+//                            startActivity(intent);
+                            editor.putBoolean("accident_detector_settings", true);
+                            editor.commit();
+                            Toast.makeText(getApplicationContext(), "Accident Detector Settings Enabled", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+//                    Toast.makeText(getApplicationContext(), "Accident Detector Settings Enabled", Toast.LENGTH_SHORT).show();
+                } else {
+                    editor.putBoolean("accident_detector_settings", false);
+                    editor.commit();
+                    Toast.makeText(getApplicationContext(), "Accident Detector Settings Disabled", Toast.LENGTH_SHORT).show();
+                }
+
+
             }
         });
 
@@ -84,9 +119,11 @@ public class HomeSettings extends AppCompatActivity implements View.OnClickListe
                             Manifest.permission.RECORD_AUDIO) !=
                             PackageManager.PERMISSION_GRANTED) {
                         voiceCommands.setChecked(false);
+
                         ActivityCompat.requestPermissions(HomeSettings.this,
                                 new String[]{Manifest.permission.RECORD_AUDIO},
                                 MY_PERMISSIONS_REQUEST_RECORD_AUDIO);
+                        Toast.makeText(getApplicationContext(), "Please Enable Microphone permission first.", Toast.LENGTH_LONG).show();
                     } else {
                         editor.putBoolean("voice_commands_settings", true);
                         editor.commit();
@@ -147,5 +184,23 @@ public class HomeSettings extends AppCompatActivity implements View.OnClickListe
             Intent intent = new Intent(this, AssistanceMode.class);
             startActivity(intent);
         }
+    }
+
+    private void buildAlertMessageNoGps() {
+        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage("Your GPS seems to be disabled, do you want to enable it?")
+                .setCancelable(false)
+                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    public void onClick(final DialogInterface dialog, final int id) {
+                        startActivity(new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS));
+                    }
+                })
+                .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                    public void onClick(final DialogInterface dialog, final int id) {
+                        dialog.cancel();
+                    }
+                });
+        final AlertDialog alert = builder.create();
+        alert.show();
     }
 }
