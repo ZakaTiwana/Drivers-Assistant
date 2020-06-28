@@ -1,9 +1,11 @@
 package com.example.fyp;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import android.Manifest;
 import android.content.Context;
@@ -13,6 +15,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.CompoundButton;
 import android.widget.ImageView;
@@ -38,6 +41,9 @@ public class HomeSettings extends AppCompatActivity implements View.OnClickListe
 
     private static final int MY_PERMISSIONS_REQUEST_SEND_SMS = 1;
     private static final int MY_PERMISSIONS_REQUEST_RECORD_AUDIO = 4;
+
+    private Boolean MicrophonePermissionsGranted = false;
+    private Boolean SmsPermissionsGranted = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,43 +72,28 @@ public class HomeSettings extends AppCompatActivity implements View.OnClickListe
                 SharedPreferences settings = getSharedPreferences("home_settings", 0);
                 SharedPreferences.Editor editor = settings.edit();
                 if (isChecked) {
-                    if (ActivityCompat.checkSelfPermission(getApplicationContext(),
-                            Manifest.permission.SEND_SMS) !=
-                            PackageManager.PERMISSION_GRANTED) {
-                        // Permission not yet granted. Use requestPermissions().
-                        // MY_PERMISSIONS_REQUEST_SEND_SMS is an
-                        // app-defined int constant. The callback method gets the
-                        // result of the request.
+                    getSmsPermission();
+                    if (!SmsPermissionsGranted) {
                         accidentDetector.setChecked(false);
-
-                        ActivityCompat.requestPermissions(HomeSettings.this,
-                                new String[]{Manifest.permission.SEND_SMS},
-                                MY_PERMISSIONS_REQUEST_SEND_SMS);
-                        Toast.makeText(getApplicationContext(), "Please Enable SMS permission first.", Toast.LENGTH_LONG).show();
-
                     } else {
                         LocationManager manager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
                         if (!manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
                             accidentDetector.setChecked(false);
                             Toast.makeText(getApplicationContext(), "Please Enable GPS permission first.", Toast.LENGTH_LONG).show();
-                            //    Toast.makeText(this, "Turn on Gps", Toast.LENGTH_SHORT).show();
                             buildAlertMessageNoGps();
                         } else {
-//                            Intent intent = new Intent(this, Sms.class);
-//                            startActivity(intent);
                             editor.putBoolean("accident_detector_settings", true);
                             editor.commit();
                             Toast.makeText(getApplicationContext(), "Accident Detector Settings Enabled", Toast.LENGTH_SHORT).show();
                         }
                     }
-//                    Toast.makeText(getApplicationContext(), "Accident Detector Settings Enabled", Toast.LENGTH_SHORT).show();
+
                 } else {
                     editor.putBoolean("accident_detector_settings", false);
                     editor.commit();
                     Toast.makeText(getApplicationContext(), "Accident Detector Settings Disabled", Toast.LENGTH_SHORT).show();
                 }
-
 
             }
         });
@@ -115,35 +106,20 @@ public class HomeSettings extends AppCompatActivity implements View.OnClickListe
                 SharedPreferences settings = getSharedPreferences("home_settings", 0);
                 SharedPreferences.Editor editor = settings.edit();
                 if (isChecked) {
-                    if (ActivityCompat.checkSelfPermission(getApplicationContext(),
-                            Manifest.permission.RECORD_AUDIO) !=
-                            PackageManager.PERMISSION_GRANTED) {
+                    getMicrophonePermission();
+                    if (!MicrophonePermissionsGranted) {
                         voiceCommands.setChecked(false);
-
-                        ActivityCompat.requestPermissions(HomeSettings.this,
-                                new String[]{Manifest.permission.RECORD_AUDIO},
-                                MY_PERMISSIONS_REQUEST_RECORD_AUDIO);
-                        Toast.makeText(getApplicationContext(), "Please Enable Microphone permission first.", Toast.LENGTH_LONG).show();
                     } else {
                         editor.putBoolean("voice_commands_settings", true);
                         editor.commit();
                         Toast.makeText(getApplicationContext(), "Voice Commands Enabled", Toast.LENGTH_SHORT).show();
                     }
-//                    if (ActivityCompat.checkSelfPermission(getApplicationContext(),
-//                            Manifest.permission.RECORD_AUDIO) ==
-//                            PackageManager.PERMISSION_GRANTED) {
-//                        editor.putBoolean("voice_commands_settings", true);
-//                        editor.commit();
-//                        voiceCommands.setChecked(true);
-//                        Toast.makeText(getApplicationContext(), "Voice Commands Enabled", Toast.LENGTH_SHORT).show();
-//                    }
+
                 } else {
                     editor.putBoolean("voice_commands_settings", false);
                     editor.commit();
                     Toast.makeText(getApplicationContext(), "Voice Commands Disabled", Toast.LENGTH_SHORT).show();
                 }
-
-
             }
         });
 
@@ -203,4 +179,97 @@ public class HomeSettings extends AppCompatActivity implements View.OnClickListe
         final AlertDialog alert = builder.create();
         alert.show();
     }
+
+
+    private void getSmsPermission() {
+        Log.d("TAG", "getSmsPermission: getting sms permission");
+        if (ActivityCompat.checkSelfPermission(getApplicationContext(),
+                Manifest.permission.SEND_SMS) ==
+                PackageManager.PERMISSION_GRANTED) {
+            // Permission not yet granted. Use requestPermissions().
+            // MY_PERMISSIONS_REQUEST_SEND_SMS is an
+            // app-defined int constant. The callback method gets the
+            // result of the request.
+            SmsPermissionsGranted = true;
+        } else {
+            ActivityCompat.requestPermissions(HomeSettings.this,
+                    new String[]{Manifest.permission.SEND_SMS},
+                    MY_PERMISSIONS_REQUEST_SEND_SMS);
+        }
+    }
+
+    private void getMicrophonePermission() {
+        Log.d("TAG", "getMicrophonePermission: getting microphone permission");
+        SharedPreferences settings = getSharedPreferences("home_settings", 0);
+        SharedPreferences.Editor editor = settings.edit();
+        if (ActivityCompat.checkSelfPermission(getApplicationContext(),
+                Manifest.permission.RECORD_AUDIO) ==
+                PackageManager.PERMISSION_GRANTED) {
+            MicrophonePermissionsGranted = true;
+        } else {
+            ActivityCompat.requestPermissions(HomeSettings.this,
+                    new String[]{Manifest.permission.RECORD_AUDIO},
+                    MY_PERMISSIONS_REQUEST_RECORD_AUDIO);
+        }
+    }
+
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        Log.d("TAG", "onRequestPermissionsResult: called.");
+
+        switch (requestCode) {
+            case MY_PERMISSIONS_REQUEST_SEND_SMS: {
+                SharedPreferences settings = getSharedPreferences("home_settings", 0);
+                SharedPreferences.Editor editor = settings.edit();
+                if (grantResults.length > 0) {
+                    for (int i = 0; i < grantResults.length; i++) {
+                        if (grantResults[i] != PackageManager.PERMISSION_GRANTED) {
+                            SmsPermissionsGranted = false;
+                            Log.d("TAG", "onRequestPermissionsResult: permission failed");
+                            Toast.makeText(getApplicationContext(), "Please Enable SMS permission first.", Toast.LENGTH_LONG).show();
+                            return;
+                        }
+                    }
+                    Log.d("TAG", "onRequestPermissionsResult: permission granted");
+                    SmsPermissionsGranted = true;
+                    LocationManager manager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+
+                    if (!manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                        accidentDetector.setChecked(false);
+                        Toast.makeText(getApplicationContext(), "Please Enable GPS permission first.", Toast.LENGTH_LONG).show();
+                        buildAlertMessageNoGps();
+                    } else {
+                        accidentDetector.setChecked(true);
+                        editor.putBoolean("accident_detector_settings", true);
+                        editor.commit();
+                        Toast.makeText(getApplicationContext(), "Accident Detector Settings Enabled", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                }
+            }
+            case MY_PERMISSIONS_REQUEST_RECORD_AUDIO: {
+                SharedPreferences settings = getSharedPreferences("home_settings", 0);
+                SharedPreferences.Editor editor = settings.edit();
+                if (grantResults.length > 0) {
+                    for (int i = 0; i < grantResults.length; i++) {
+                        if (grantResults[i] != PackageManager.PERMISSION_GRANTED) {
+                            MicrophonePermissionsGranted = false;
+                            Log.d("TAG", "onRequestPermissionsResult: permission failed");
+                            Toast.makeText(getApplicationContext(), "Please Enable Microphone permission first.", Toast.LENGTH_LONG).show();
+                            return;
+                        }
+                    }
+                    voiceCommands.setChecked(true);
+                    Log.d("TAG", "onRequestPermissionsResult: permission granted");
+                    MicrophonePermissionsGranted = true;
+                    editor.putBoolean("voice_commands_settings", true);
+                    editor.commit();
+                    Toast.makeText(getApplicationContext(), "Voice Commands Enabled", Toast.LENGTH_SHORT).show();
+                }
+            }
+        }
+    }
+
+
 }

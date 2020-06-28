@@ -1,7 +1,9 @@
 package com.example.fyp;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import android.Manifest;
 import android.app.AlertDialog;
@@ -28,7 +30,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     Button btn1, assistanceMode;
     ImageView imgv1;
 
-    private static final int MY_PERMISSIONS_REQUEST_CAMERA_ACCESS = 3;
+    private static final int MY_PERMISSIONS_REQUEST_CAMERA_ACCESS = 5;
+
+    private static final String FINE_LOCATION = Manifest.permission.ACCESS_FINE_LOCATION;
+    private static final String COURSE_LOCATION = Manifest.permission.ACCESS_COARSE_LOCATION;
+    private static final int LOCATION_PERMISSION_REQUEST_CODE = 6;
+    private Boolean mLocationPermissionsGranted = false;
+    private Boolean CameraPermissionsGranted = false;
 
     private final BroadcastReceiver mBroadcastReceiver1 = new BroadcastReceiver() {
         public void onReceive(Context context, Intent intent) {
@@ -144,22 +152,99 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public void onClick(View v) {
         if (v.getId() == btn1.getId()) {
-            Intent intent = new Intent(this, MapsActivity.class);
-            startActivity(intent);
+            getLocationPermission();
+            if (mLocationPermissionsGranted) {
+                Intent intent = new Intent(this, MapsActivity.class);
+                startActivity(intent);
+            }
         } else if (v.getId() == imgv1.getId()) {
+
             Intent intent = new Intent(this, HomeSettings.class);
             startActivity(intent);
+
         } else if (v.getId() == assistanceMode.getId()) {
-            if (ActivityCompat.checkSelfPermission(getApplicationContext(),
-                    Manifest.permission.CAMERA) !=
-                    PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.CAMERA},
-                        MY_PERMISSIONS_REQUEST_CAMERA_ACCESS);
-                Toast.makeText(getApplicationContext(), "Please Enable Camera permission first.", Toast.LENGTH_LONG).show();
-            } else {
+            getCameraPermission();
+            if (CameraPermissionsGranted) {
                 Intent intent = new Intent(getApplicationContext(), ImageProcessor.class);
                 startActivity(intent);
+            }
+        }
+    }
+
+    private void getCameraPermission() {
+        Log.d("TAG", "getCameraPermission: getting camera permissions");
+        if (ActivityCompat.checkSelfPermission(getApplicationContext(),
+                Manifest.permission.CAMERA) ==
+                PackageManager.PERMISSION_GRANTED) {
+            CameraPermissionsGranted=true;
+
+        } else {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.CAMERA},
+                    MY_PERMISSIONS_REQUEST_CAMERA_ACCESS);
+        }
+    }
+
+
+    private void getLocationPermission() {
+        Log.d("TAG", "getLocationPermission: getting location permissions");
+        String[] permissions = {Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION};
+        if (ContextCompat.checkSelfPermission(this.getApplicationContext(),
+                FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            if (ContextCompat.checkSelfPermission(this.getApplicationContext(),
+                    COURSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                mLocationPermissionsGranted = true;
+            } else {
+                ActivityCompat.requestPermissions(this,
+                        permissions,
+                        LOCATION_PERMISSION_REQUEST_CODE);
+            }
+        } else {
+            ActivityCompat.requestPermissions(this,
+                    permissions,
+                    LOCATION_PERMISSION_REQUEST_CODE);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        Log.d(TAG, "onRequestPermissionsResult: called.");
+        mLocationPermissionsGranted = false;
+
+        switch (requestCode) {
+            case LOCATION_PERMISSION_REQUEST_CODE: {
+                if (grantResults.length > 0) {
+                    for (int i = 0; i < grantResults.length; i++) {
+                        if (grantResults[i] != PackageManager.PERMISSION_GRANTED) {
+                            mLocationPermissionsGranted = false;
+                            Toast.makeText(getApplicationContext(), "Please Enable Location permission first.", Toast.LENGTH_LONG).show();
+                            Log.d(TAG, "onRequestPermissionsResult: permission failed");
+                            return;
+                        }
+                    }
+                    Log.d(TAG, "onRequestPermissionsResult: permission granted");
+                    mLocationPermissionsGranted = true;
+                    Intent intent = new Intent(this, MapsActivity.class);
+                    startActivity(intent);
+                    return;
+                }
+            }
+            case MY_PERMISSIONS_REQUEST_CAMERA_ACCESS: {
+                if (grantResults.length > 0) {
+                    for (int i = 0; i < grantResults.length; i++) {
+                        if (grantResults[i] != PackageManager.PERMISSION_GRANTED) {
+                            CameraPermissionsGranted = false;
+                            Log.d(TAG, "onRequestPermissionsResult: permission failed");
+                            Toast.makeText(getApplicationContext(), "Please Enable Camera permission first.", Toast.LENGTH_LONG).show();
+                            return;
+                        }
+                    }
+                    Log.d(TAG, "onRequestPermissionsResult: permission granted");
+                    CameraPermissionsGranted = true;
+                    Intent intent = new Intent(getApplicationContext(), ImageProcessor.class);
+                    startActivity(intent);
+                }
             }
         }
     }

@@ -68,7 +68,7 @@ public class Sms extends AppCompatActivity {
             public void onClick(View v) {
                 Toast.makeText(getApplicationContext(), "Cancelled!", Toast.LENGTH_SHORT).show();
                 sendMsgFlag = false;
-
+                text1.setText("False Alarm Cancelled Successfully!       ");
             }
         });
         LocationManager manager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
@@ -78,14 +78,17 @@ public class Sms extends AppCompatActivity {
             //    Toast.makeText(this, "Turn on Gps", Toast.LENGTH_SHORT).show();
             buildAlertMessageNoGps();
         } else {
-            sendMsgFlag = true;
             new CountDownTimer(15000, 1000) {
 
                 @Override
                 public void onTick(long millisUntilFinished) {
                     seconds = (millisUntilFinished / 1000);
                     //     Toast.makeText(getApplicationContext(), "seconds remaining: " + millisUntilFinished / 1000, Toast.LENGTH_SHORT).show();
-                    timer.setText("Seconds left: " + seconds + "");
+                    if(sendMsgFlag) {
+                        timer.setText("Seconds left: " + seconds + "");
+                    }else {
+                        timer.setText("");
+                    }
                 }
 
                 @Override
