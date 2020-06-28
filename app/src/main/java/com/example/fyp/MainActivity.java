@@ -9,12 +9,14 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
@@ -81,8 +83,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
 
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        enableDisableBT();
-
+        SharedPreferences settings = getSharedPreferences("home_settings", 0);
+        if(settings.getBoolean("accident_detector_settings",false)){
+          //  Toast.makeText(getApplicationContext(), "Accident Detector Settings Enabled", Toast.LENGTH_SHORT).show();
+            enableDisableBT();
+        }
+//        Toast.makeText(getApplicationContext(), "Accident Detector Settings Disabled", Toast.LENGTH_SHORT).show();
     }
 
     @Override

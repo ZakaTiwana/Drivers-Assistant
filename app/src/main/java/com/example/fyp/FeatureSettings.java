@@ -60,9 +60,9 @@ public class FeatureSettings extends AppCompatActivity implements View.OnClickLi
                                          boolean isChecked) {
 
                 if (isChecked) {
-                    Toast.makeText(getApplicationContext(), "true", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "Lane Guide Enabled", Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(getApplicationContext(), "false", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "Lane Guide Disabled", Toast.LENGTH_SHORT).show();
                 }
                 SharedPreferences settings = getSharedPreferences("feature_settings", 0);
                 SharedPreferences.Editor editor = settings.edit();
@@ -77,9 +77,9 @@ public class FeatureSettings extends AppCompatActivity implements View.OnClickLi
                                          boolean isChecked) {
 
                 if (isChecked) {
-                    Toast.makeText(getApplicationContext(), "true", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "Distance Calculator Enabled", Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(getApplicationContext(), "false", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "Distance Calculator Disabled", Toast.LENGTH_SHORT).show();
                 }
                 SharedPreferences settings = getSharedPreferences("feature_settings", 0);
                 SharedPreferences.Editor editor = settings.edit();
@@ -94,9 +94,9 @@ public class FeatureSettings extends AppCompatActivity implements View.OnClickLi
                                          boolean isChecked) {
 
                 if (isChecked) {
-                    Toast.makeText(getApplicationContext(), "true", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "Object Detector Enabled", Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(getApplicationContext(), "false", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "Object Detector Disabled", Toast.LENGTH_SHORT).show();
                 }
                 SharedPreferences settings = getSharedPreferences("feature_settings", 0);
                 SharedPreferences.Editor editor = settings.edit();
@@ -111,9 +111,9 @@ public class FeatureSettings extends AppCompatActivity implements View.OnClickLi
                                          boolean isChecked) {
 
                 if (isChecked) {
-                    Toast.makeText(getApplicationContext(), "true", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "Sign Detector Enabled", Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(getApplicationContext(), "false", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "Sign Detector Disabled", Toast.LENGTH_SHORT).show();
                 }
                 SharedPreferences settings = getSharedPreferences("feature_settings", 0);
                 SharedPreferences.Editor editor = settings.edit();
@@ -128,9 +128,9 @@ public class FeatureSettings extends AppCompatActivity implements View.OnClickLi
                                          boolean isChecked) {
 
                 if (isChecked) {
-                    Toast.makeText(getApplicationContext(), "true", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "Mute Warnings Enabled", Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(getApplicationContext(), "false", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "Mute Warning Disabled", Toast.LENGTH_SHORT).show();
                 }
                 SharedPreferences settings = getSharedPreferences("feature_settings", 0);
                 SharedPreferences.Editor editor = settings.edit();

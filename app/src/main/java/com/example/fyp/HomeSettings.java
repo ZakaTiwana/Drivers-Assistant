@@ -55,9 +55,9 @@ public class HomeSettings extends AppCompatActivity implements View.OnClickListe
                                          boolean isChecked) {
 
                 if (isChecked) {
-                    Toast.makeText(getApplicationContext(), "true", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "Accident Detector Settings Enabled", Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(getApplicationContext(), "false", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "Accident Detector Settings Disabled", Toast.LENGTH_SHORT).show();
                 }
                 SharedPreferences settings = getSharedPreferences("home_settings", 0);
                 SharedPreferences.Editor editor = settings.edit();
@@ -73,9 +73,9 @@ public class HomeSettings extends AppCompatActivity implements View.OnClickListe
                                          boolean isChecked) {
 
                 if (isChecked) {
-                    Toast.makeText(getApplicationContext(), "true", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "Voice Commands Enabled", Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(getApplicationContext(), "false", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "Voice Commands Disabled", Toast.LENGTH_SHORT).show();
                 }
                 SharedPreferences settings = getSharedPreferences("home_settings", 0);
                 SharedPreferences.Editor editor = settings.edit();
