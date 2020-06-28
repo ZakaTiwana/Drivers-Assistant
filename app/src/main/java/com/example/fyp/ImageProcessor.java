@@ -13,6 +13,7 @@ import android.os.Bundle;
 import android.os.SystemClock;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.util.Range;
 import android.util.Size;
 import android.view.KeyEvent;
 import android.view.WindowManager;
@@ -30,10 +31,10 @@ public class ImageProcessor extends CameraCaptureActivity {
     private static final String TAG = "ImageProcessor";
     private static final Size[] DESIRED_PREVIEW_SIZES =
             {
-                    new Size(1280,720),
                     new Size(640,480),
                     new Size(720,480),
                     new Size(960,720),
+                    new Size(1280,720),
                     new Size(1440,1080),
                     new Size(1920,1080),
                     new Size(2048,1152),
@@ -231,14 +232,9 @@ public class ImageProcessor extends CameraCaptureActivity {
 
     @Override
     public void processImage() {
-//        Log.d(TAG, "processImage: computingDetection = "+ computingDetection + " initilazed = "+ initialized );
 
         // No mutex needed as this method is not reentrant.
         if (isComputingDetection || !initialized) {
-//            if (initialized && (!isComputingLaneDetection || !isComputingSignDetection) ) {
-//                rgbFrameBitmap.setPixels(getRgbBytes(), 0, mWidth, 0, 0, mWidth, mHeight);
-//                new SignLaneTask().execute(rgbFrameBitmap.copy(Bitmap.Config.ARGB_8888, true));
-//            }
             readyForNextImage();
             return;
         }
@@ -248,24 +244,12 @@ public class ImageProcessor extends CameraCaptureActivity {
         new SignLaneTask().execute(rgbFrameBitmap.copy(Bitmap.Config.ARGB_8888,true));
         readyForNextImage();
 
-//        LaneDetector laneDetector = null;
-//        laneDetector = new LaneDetector(rgbFrameBitmap);
-//        lanePoints = laneDetector.getResult2();
-
-//        final Canvas canvas = new Canvas(croppedBitmap);
-//        canvas.drawBitmap(rgbFrameBitmap,frameToCropTransform,null);
-
         float start = SystemClock.currentThreadTimeMillis();
         mappedRecognitions = detector.run(rgbFrameBitmap,false);
-//        float signStart = SystemClock.currentThreadTimeMillis();
-//        Log.d(TAG, String.format("processImage: Time take for only Object Detection = %f ms", (signStart-start)));
-//        List<RecognizedObject> signRecognitions = signDetector.run(rgbFrameBitmap,false);
-//        float signEnd = SystemClock.currentThreadTimeMillis();
-//        Log.d(TAG, String.format("processImage: Time take for only Sign Detection = %f ms", (signEnd-signStart)));
+
         float end = SystemClock.currentThreadTimeMillis();
         timeTakeByObjDetector = end - start;
-//        Log.d(TAG, String.format("processImage: Total time for Object Detection = %f ms", (end-start)));
-//        mappedRecognitions.addAll(signRecognitions);
+
         draw.postInvalidate();
         isComputingDetection = false;
 
@@ -300,15 +284,20 @@ public class ImageProcessor extends CameraCaptureActivity {
         getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
         int height = displayMetrics.heightPixels;
         int width = displayMetrics.widthPixels;
-        Log.d(TAG, String.format("getDesiredPreviewSize: device width = %d :height = %d", width,height));
+        Log.d(TAG, String.format("getDesiredPreviewSize: (device resolution) device width = %d :height = %d", width,height));
         int max = Math.max(height, width);
-        int min = Math.min(height,width);
+        Log.d(TAG, String.format("getDesiredPreviewSize: (device resolution) max %d", max));
         int selectedSize = 0;
+        Range<Integer> check = Range.create(max -20,max+20);
         for (Size choice :
                 DESIRED_PREVIEW_SIZES) {
-            if (choice.getWidth() >= max || choice.getHeight() >= min) break;
+            Log.d(TAG, String.format("getDesiredPreviewSize: (device resolution) selectedSize %d", selectedSize));
+            if (check.contains(choice.getWidth())) break;
             selectedSize++;
         }
+        selectedSize= selectedSize == 0 ? 0 : selectedSize -1;
+        Log.d(TAG, String.format("getDesiredPreviewSize: (device resolution) chosen width = %d :height = %d",
+                DESIRED_PREVIEW_SIZES[selectedSize].getWidth(),DESIRED_PREVIEW_SIZES[selectedSize].getHeight()));
         return DESIRED_PREVIEW_SIZES[selectedSize];
     }
 
