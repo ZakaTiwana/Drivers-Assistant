@@ -42,8 +42,8 @@ import io.nlopez.smartlocation.location.config.LocationAccuracy;
 import io.nlopez.smartlocation.location.config.LocationParams;
 
 public class Sms extends AppCompatActivity {
-    private static final int MY_PERMISSIONS_REQUEST_SEND_SMS = 1;
-    private static final int MY_PERMISSIONS_REQUEST_READ_CONTACTS = 2;
+//    private static final int MY_PERMISSIONS_REQUEST_SEND_SMS = 1;
+//    private static final int MY_PERMISSIONS_REQUEST_READ_CONTACTS = 2;
 
     LatLng fromPosition = new LatLng(0.0, 0.0);
 

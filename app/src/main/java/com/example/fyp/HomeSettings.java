@@ -2,9 +2,12 @@ package com.example.fyp;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
+import androidx.core.app.ActivityCompat;
 
+import android.Manifest;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.CompoundButton;
@@ -29,6 +32,8 @@ public class HomeSettings extends AppCompatActivity implements View.OnClickListe
 
     TextView homeSettingText;
 
+    private static final int MY_PERMISSIONS_REQUEST_RECORD_AUDIO = 4;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -49,12 +54,13 @@ public class HomeSettings extends AppCompatActivity implements View.OnClickListe
         boolean voice_commands_value = settings.getBoolean("voice_commands_settings", false);
         voiceCommands.setChecked(voice_commands_value);
 
-       accidentDetector.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        accidentDetector.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView,
                                          boolean isChecked) {
 
                 if (isChecked) {
+
                     Toast.makeText(getApplicationContext(), "Accident Detector Settings Enabled", Toast.LENGTH_SHORT).show();
                 } else {
                     Toast.makeText(getApplicationContext(), "Accident Detector Settings Disabled", Toast.LENGTH_SHORT).show();
@@ -71,32 +77,52 @@ public class HomeSettings extends AppCompatActivity implements View.OnClickListe
             @Override
             public void onCheckedChanged(CompoundButton buttonView,
                                          boolean isChecked) {
-
-                if (isChecked) {
-                    Toast.makeText(getApplicationContext(), "Voice Commands Enabled", Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(getApplicationContext(), "Voice Commands Disabled", Toast.LENGTH_SHORT).show();
-                }
                 SharedPreferences settings = getSharedPreferences("home_settings", 0);
                 SharedPreferences.Editor editor = settings.edit();
-                editor.putBoolean("voice_commands_settings", isChecked);
-                editor.commit();
+                if (isChecked) {
+                    if (ActivityCompat.checkSelfPermission(getApplicationContext(),
+                            Manifest.permission.RECORD_AUDIO) !=
+                            PackageManager.PERMISSION_GRANTED) {
+                        voiceCommands.setChecked(false);
+                        ActivityCompat.requestPermissions(HomeSettings.this,
+                                new String[]{Manifest.permission.RECORD_AUDIO},
+                                MY_PERMISSIONS_REQUEST_RECORD_AUDIO);
+                    } else {
+                        editor.putBoolean("voice_commands_settings", true);
+                        editor.commit();
+                        Toast.makeText(getApplicationContext(), "Voice Commands Enabled", Toast.LENGTH_SHORT).show();
+                    }
+//                    if (ActivityCompat.checkSelfPermission(getApplicationContext(),
+//                            Manifest.permission.RECORD_AUDIO) ==
+//                            PackageManager.PERMISSION_GRANTED) {
+//                        editor.putBoolean("voice_commands_settings", true);
+//                        editor.commit();
+//                        voiceCommands.setChecked(true);
+//                        Toast.makeText(getApplicationContext(), "Voice Commands Enabled", Toast.LENGTH_SHORT).show();
+//                    }
+                } else {
+                    editor.putBoolean("voice_commands_settings", false);
+                    editor.commit();
+                    Toast.makeText(getApplicationContext(), "Voice Commands Disabled", Toast.LENGTH_SHORT).show();
+                }
+
+
             }
         });
 
-        backbutton=(ImageView)findViewById(R.id.backbtn1);
+        backbutton = (ImageView) findViewById(R.id.backbtn1);
 
         backbutton.setOnClickListener(this);
 
-        featureSettings=(TextView)findViewById(R.id.tv);
+        featureSettings = (TextView) findViewById(R.id.tv);
 
         featureSettings.setOnClickListener(this);
 
-        contactSettings=(TextView)findViewById(R.id.tv1);
+        contactSettings = (TextView) findViewById(R.id.tv1);
 
         contactSettings.setOnClickListener(this);
 
-        featureSettingsText=(TextView)findViewById(R.id.tv3);
+        featureSettingsText = (TextView) findViewById(R.id.tv3);
 
         featureSettingsText.setOnClickListener(this);
 
@@ -106,22 +132,18 @@ public class HomeSettings extends AppCompatActivity implements View.OnClickListe
 
     @Override
     public void onClick(View v) {
-        if(v.getId()==backbutton.getId()){
+        if (v.getId() == backbutton.getId()) {
             finish();
-        }
-        else if(v.getId()==featureSettings.getId()){
+        } else if (v.getId() == featureSettings.getId()) {
             Intent intent = new Intent(this, FeatureSettings.class);
             startActivity(intent);
-        }
-        else if(v.getId()==featureSettingsText.getId()){
+        } else if (v.getId() == featureSettingsText.getId()) {
             Intent intent = new Intent(this, FeatureSettings.class);
             startActivity(intent);
-        }
-        else if(v.getId()==contactSettings.getId()){
+        } else if (v.getId() == contactSettings.getId()) {
             Intent intent = new Intent(this, ContactsSettings.class);
             startActivity(intent);
-        }
-        else if(v.getId() == homeSettingText.getId()){
+        } else if (v.getId() == homeSettingText.getId()) {
             Intent intent = new Intent(this, AssistanceMode.class);
             startActivity(intent);
         }

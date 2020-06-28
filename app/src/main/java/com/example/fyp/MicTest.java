@@ -29,7 +29,7 @@ import java.util.Locale;
 public class MicTest extends AppCompatActivity {
 
 
-    private static final int MY_PERMISSIONS_REQUEST_RECORD_AUDIO = 1;
+    private static final int MY_PERMISSIONS_REQUEST_RECORD_AUDIO = 4;
     private TextToSpeech tts;
     private SpeechRecognizer speechRecog;
 

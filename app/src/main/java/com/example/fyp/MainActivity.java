@@ -1,7 +1,9 @@
 package com.example.fyp;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 
+import android.Manifest;
 import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.content.BroadcastReceiver;
@@ -10,6 +12,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.util.Log;
@@ -24,6 +27,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     BluetoothAdapter mBluetoothAdapter;
     Button btn1, assistanceMode;
     ImageView imgv1;
+
+    private static final int MY_PERMISSIONS_REQUEST_CAMERA_ACCESS = 3;
 
     private final BroadcastReceiver mBroadcastReceiver1 = new BroadcastReceiver() {
         public void onReceive(Context context, Intent intent) {
@@ -60,15 +65,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         btn1 = (Button) findViewById(R.id.btn);
         assistanceMode = findViewById(R.id.btn1);
 
-        assistanceMode.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-//                Intent intent = new Intent(getApplicationContext(), AssistanceMode.class);
-//                startActivity(intent);
-                Intent intent = new Intent(getApplicationContext(),ImageProcessor.class);
-                startActivity(intent);
-            }
-        });
+        assistanceMode.setOnClickListener(this);
+
+//        assistanceMode.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+////                Intent intent = new Intent(getApplicationContext(), AssistanceMode.class);
+////                startActivity(intent);
+//
+////                Intent intent = new Intent(getApplicationContext(),ImageProcessor.class);
+////                startActivity(intent);
+//
+//        });
 
         btn1.setOnClickListener(this);
 
@@ -84,8 +92,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         SharedPreferences settings = getSharedPreferences("home_settings", 0);
-        if(settings.getBoolean("accident_detector_settings",false)){
-          //  Toast.makeText(getApplicationContext(), "Accident Detector Settings Enabled", Toast.LENGTH_SHORT).show();
+        if (settings.getBoolean("accident_detector_settings", false)) {
+            //  Toast.makeText(getApplicationContext(), "Accident Detector Settings Enabled", Toast.LENGTH_SHORT).show();
             enableDisableBT();
         }
 //        Toast.makeText(getApplicationContext(), "Accident Detector Settings Disabled", Toast.LENGTH_SHORT).show();
@@ -141,6 +149,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         } else if (v.getId() == imgv1.getId()) {
             Intent intent = new Intent(this, HomeSettings.class);
             startActivity(intent);
+        } else if (v.getId() == assistanceMode.getId()) {
+            if (ActivityCompat.checkSelfPermission(getApplicationContext(),
+                    Manifest.permission.CAMERA) !=
+                    PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.CAMERA},
+                        MY_PERMISSIONS_REQUEST_CAMERA_ACCESS);
+            } else {
+                Intent intent = new Intent(getApplicationContext(), ImageProcessor.class);
+                startActivity(intent);
+            }
         }
     }
 }
+
