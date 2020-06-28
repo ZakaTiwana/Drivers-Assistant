@@ -67,7 +67,7 @@ public class TestLaneActivity extends AppCompatActivity {
        Canvas canvas = new Canvas(crropedBitmap);
        canvas.drawBitmap(copyBitmap,frameToCrop,null);
 
-       ld = new LaneDetector(crropedBitmap);
+//       ld = new LaneDetector(crropedBitmap);
 
        draw.addCallback(new OverlayView.DrawCallback() {
            @Override

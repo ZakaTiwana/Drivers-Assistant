@@ -126,7 +126,7 @@ public class TestObjectDistance extends AppCompatActivity {
     }
 
     private void recognizeImage() {
-        mappedRecognitions = detector.run(image,false);
+//        mappedRecognitions = detector.run(image,false);
         Log.d(TAG, "recognizeImage: mappedRecognitions = " + mappedRecognitions.toString());
     }
 

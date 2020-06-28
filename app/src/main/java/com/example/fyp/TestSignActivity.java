@@ -181,21 +181,21 @@ public class TestSignActivity extends AppCompatActivity {
         }
     }
     private void processImage(){
-        float start = SystemClock.currentThreadTimeMillis();
-        List<RecognizedObject> recs = recoganizor.run(copyBitmap.copy(Bitmap.Config.ARGB_8888,true),true);
-        float end = SystemClock.currentThreadTimeMillis();
-        Log.d(TAG, "processImage: time take to detect sign : "+ (end-start) +" ms");
-        String to_show="";
-        Canvas canvas1 = new Canvas(copyBitmap);
-        for (RecognizedObject rc :
-                recs) {
-            RectF location = rc.getLocation();
-            canvas1.drawRect(location,borderBoxPaint);
-            to_show += rc.getLabel()+" ; ";
-        }
-        result.setText(to_show);
-        imageView.setImageBitmap(copyBitmap);
-        if(image != null && !image.isRecycled()) image.recycle();
+//        float start = SystemClock.currentThreadTimeMillis();
+////        List<RecognizedObject> recs = recoganizor.run(copyBitmap.copy(Bitmap.Config.ARGB_8888,true),true);
+//        float end = SystemClock.currentThreadTimeMillis();
+//        Log.d(TAG, "processImage: time take to detect sign : "+ (end-start) +" ms");
+//        String to_show="";
+//        Canvas canvas1 = new Canvas(copyBitmap);
+//        for (RecognizedObject rc :
+//                recs) {
+//            RectF location = rc.getLocation();
+//            canvas1.drawRect(location,borderBoxPaint);
+//            to_show += rc.getLabel()+" ; ";
+//        }
+//        result.setText(to_show);
+//        imageView.setImageBitmap(copyBitmap);
+//        if(image != null && !image.isRecycled()) image.recycle();
     }
 
 

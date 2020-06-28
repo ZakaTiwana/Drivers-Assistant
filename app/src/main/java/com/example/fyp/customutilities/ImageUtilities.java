@@ -344,7 +344,7 @@ public class ImageUtilities {
         return resized;
     }
 
-    private static void createCustomFile(@NotNull Context context, Bitmap bmp, String fileName){
+    public static void createCustomFile(@NotNull Context context, Bitmap bmp, String fileName){
         try {
             File path= new File(context.getExternalFilesDir(null),  "Images");
             if(!path.exists()){

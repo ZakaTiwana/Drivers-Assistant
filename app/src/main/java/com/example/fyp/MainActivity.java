@@ -58,30 +58,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         btn1 = (Button) findViewById(R.id.btn);
         assistanceMode = findViewById(R.id.btn1);
 
-        assistanceMode.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-//                Intent intent = new Intent(getApplicationContext(), AssistanceMode.class);
-//                startActivity(intent);
-                Intent intent = new Intent(getApplicationContext(),ImageProcessor.class);
-                startActivity(intent);
-            }
-        });
-
+        assistanceMode.setOnClickListener(this);
         btn1.setOnClickListener(this);
 
         imgv1 = (ImageView) findViewById(R.id.backbtn1);
 
         imgv1.setOnClickListener(this);
-        LocationManager manager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        if (!manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-            // Toast.makeText(this, "Enable gps", Toast.LENGTH_SHORT).show();
-            buildAlertMessageNoGps();
+//        LocationManager manager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+//        if (!manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+//            // Toast.makeText(this, "Enable gps", Toast.LENGTH_SHORT).show();
+//            buildAlertMessageNoGps();
+//
+//        }
 
-        }
-
-        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        enableDisableBT();
+//        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+//        enableDisableBT();
 
     }
 
@@ -123,13 +114,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             IntentFilter BTIntent = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
             registerReceiver(mBroadcastReceiver1, BTIntent);
         }
-
-
     }
 
     @Override
     public void onClick(View v) {
-        if (v.getId() == btn1.getId()) {
+        if (v.getId() == assistanceMode.getId()){
+            Intent intent = new Intent(this,ImageProcessor.class);
+            startActivity(intent);
+        } if (v.getId() == btn1.getId()) {
             Intent intent = new Intent(this, MapsActivity.class);
             startActivity(intent);
         } else if (v.getId() == imgv1.getId()) {
@@ -137,4 +129,5 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             startActivity(intent);
         }
     }
+
 }

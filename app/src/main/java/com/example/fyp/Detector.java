@@ -177,11 +177,13 @@ public class Detector {
 
     private Detector() {}
 
-    public List<RecognizedObject> run(@NotNull Bitmap bmp,boolean allowToRecycleBitmap){
-        int srcWidth = bmp.getWidth();
-        int srcHeight = bmp.getHeight();
-        bmp = ImageUtilities.getResizedBitmap(bmp.copy(Bitmap.Config.ARGB_8888,true),
-                width,height,true);
+    public List<RecognizedObject> run(@NotNull Bitmap bmp,
+                                      int srcWidth, int srcHeight,
+                                      boolean allowToRecycleBitmap){
+//        int srcWidth = bmp.getWidth();
+//        int srcHeight = bmp.getHeight();
+//        bmp = ImageUtilities.getResizedBitmap(bmp.copy(Bitmap.Config.ARGB_8888,true),
+//                width,height,true);
         setImageData(bmp);
         List<RecognizedObject> recs = detectObjectsInImage(srcWidth,srcHeight);
         if (!bmp.isRecycled() && allowToRecycleBitmap) bmp.recycle();

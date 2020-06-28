@@ -55,7 +55,18 @@ public abstract class CameraCaptureActivity extends AppCompatActivity implements
 
     private int mWidth  = 0;
     private int mHeight = 0;
-
+    private static final Size[] DESIRED_PREVIEW_SIZES =
+            {
+                    new Size(640,480),
+                    new Size(720,480),
+                    new Size(960,720),
+                    new Size(1280,720),
+                    new Size(1440,1080),
+                    new Size(1920,1080),
+                    new Size(2048,1152),
+                    new Size(3264,1836),
+                    new Size(4128,2322)
+            };
     private boolean isProcessingFrame = false;
     private byte[][] yuvBytes = new byte[3][];
     private int[] rgbBytes = null;
@@ -234,6 +245,8 @@ public abstract class CameraCaptureActivity extends AppCompatActivity implements
 
                 mWidth = desiredInput.getWidth();
                 mHeight = desiredInput.getHeight();
+//                mWidth = DESIRED_PREVIEW_SIZES[0].getWidth();
+//                mHeight = DESIRED_PREVIEW_SIZES[0].getHeight();
 
                 Log.d(TAG, String.format("setupCamera: (device resolution) mWidth = %d and mHeight = %d", mWidth,mHeight));
                 assert map != null;
@@ -248,7 +261,12 @@ public abstract class CameraCaptureActivity extends AppCompatActivity implements
                 mTextureView.setLayoutParams(params);
                 mOverlayView.setLayoutParams(params);
 
-                mImageReader = ImageReader.newInstance(mWidth,mHeight, ImageFormat.YUV_420_888, 2);
+//                mImageReader = ImageReader.newInstance(mWidth,mHeight, ImageFormat.YUV_420_888, 2);
+                Size imageReaderSize = getDesiredImageReaderSize();
+                mImageReader = ImageReader.newInstance(
+                        imageReaderSize.getWidth(),imageReaderSize.getHeight(),ImageFormat.YUV_420_888,2);
+//                mImageReader = ImageReader.newInstance(DESIRED_PREVIEW_SIZES[0].getWidth(),
+//                        DESIRED_PREVIEW_SIZES[0].getHeight(), ImageFormat.YUV_420_888, 2);
                 mImageReader.setOnImageAvailableListener(this, mBackgroundHandler);
                 mCameraId = cameraId;
 
@@ -288,11 +306,11 @@ public abstract class CameraCaptureActivity extends AppCompatActivity implements
 
         try {
             mPreviewRequestBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
+//            mPreviewRequestBuilder.addTarget(previewSurface);
+            mPreviewRequestBuilder.addTarget(mImageReader.getSurface());
             mPreviewRequestBuilder.addTarget(previewSurface);
 
-            mPreviewRequestBuilder.addTarget(mImageReader.getSurface());
-
-            mCameraDevice.createCaptureSession(Arrays.asList(previewSurface ,mImageReader.getSurface()),
+            mCameraDevice.createCaptureSession(Arrays.asList( mImageReader.getSurface(),previewSurface),
                     new CameraCaptureSession.StateCallback() {
                         @Override
                         public void onConfigured(CameraCaptureSession session) {
@@ -400,19 +418,21 @@ public abstract class CameraCaptureActivity extends AppCompatActivity implements
         if (mWidth == 0 || mHeight == 0) {
             return;
         }
-        if (rgbBytes == null) {
-            rgbBytes = new int[mWidth * mHeight];
-        }
+
         try {
 //            Log.d(TAG, String.format("onImageAvailable: mWidt = %d and mHeight = %d", mWidth,mHeight));
 //            final Image image = imageReader.acquireLatestImage();
             final Image image = imageReader.acquireLatestImage();
-//            Log.d(TAG, String.format("onImageAvailable: image.width = %d and image.height = %d", image.getWidth(),image.getHeight()));
-
             if (image == null) {
                 return;
             }
-
+            final int aqWidth = image.getWidth();
+            final int aqHeight = image.getHeight();
+            Log.d(TAG, String.format("onImageAvailable: image.width = %d and image.height = %d", aqWidth,aqHeight));
+            if (rgbBytes == null) {
+//            rgbBytes = new int[mWidth * mHeight];
+                rgbBytes = new int[aqWidth * aqHeight];
+            }
             if (isProcessingFrame) {
                 image.close();
                 return;
@@ -432,8 +452,8 @@ public abstract class CameraCaptureActivity extends AppCompatActivity implements
                             yuvBytes[0],
                             yuvBytes[1],
                             yuvBytes[2],
-                            mWidth,
-                            mHeight,
+                            aqWidth,//mWidth,
+                            aqHeight,//mHeight,
                             yRowStride,
                             uvRowStride,
                             uvPixelStride,
@@ -448,7 +468,7 @@ public abstract class CameraCaptureActivity extends AppCompatActivity implements
                     isProcessingFrame = false;
                 }
             };
-            processImage();
+            processImage(aqWidth,aqHeight);
         } catch (final Exception e) {
             Log.e(TAG, String.format("onImageAvailable: Exception %s", e.toString()) );
             Trace.endSection();
@@ -463,7 +483,7 @@ public abstract class CameraCaptureActivity extends AppCompatActivity implements
         for (int i = 0; i < planes.length; ++i) {
             final ByteBuffer buffer = planes[i].getBuffer();
             if (yuvBytes[i] == null) {
-//                Log.d(TAG, String.format("fillBytes: Initilalizing buffer %d at size %d", i,buffer.capacity()));
+                Log.d(TAG, String.format("fillBytes: Initilalizing buffer %d at size %d", i,buffer.capacity()));
                 yuvBytes[i] = new byte[buffer.capacity()];
             }
             buffer.get(yuvBytes[i]);
@@ -487,7 +507,8 @@ public abstract class CameraCaptureActivity extends AppCompatActivity implements
     }
 
     public abstract void onPreviewSizeSelected(int width, int height);
-    public abstract void processImage();
+    public abstract void processImage(int aqWidth,int aqHeight);
     public abstract Size getDesiredPreviewSize();
+    public abstract Size getDesiredImageReaderSize();
 
 }

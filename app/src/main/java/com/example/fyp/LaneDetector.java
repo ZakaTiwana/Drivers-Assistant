@@ -1,10 +1,13 @@
 package com.example.fyp;
 
 import android.graphics.Bitmap;
+import android.graphics.Matrix;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
+import com.example.fyp.customutilities.ImageUtilities;
 
 import org.opencv.android.Utils;
 import org.opencv.core.Core;
@@ -28,20 +31,42 @@ public class LaneDetector {
     // HT : Hough Transform (below are variables for houghLinesP)
 
     // shape for roi
-    private static final int[] pts = {650,360, 750,360, 1280,600, 100,600}; // {x1,y1, x2,y2, x3,y3 ,x4,y4}
-
+    private static final float[] pts = {650,360, 750,360, 1280,600, 100,600}; // {x1,y1, x2,y2, x3,y3 ,x4,y4}
+    private static float [] pts_resized ;
+    //--- old for original image threshold
+/*
     private static final int HT_THRESHOLD = 50;
     private static final int HT_MIN_LINE_LENGTH = 50;
     private static final int HT_MAX_LINE_GAP = 200;
+*/
+
+    // resized image thresholds
+    private static final int HT_THRESHOLD = 10;
+    private static final int HT_MIN_LINE_LENGTH = 5;
+    private static final int HT_MAX_LINE_GAP = 10;
 
     private final Scalar lower_yellow = new Scalar(20,100,100);
     private final Scalar upper_yellow = new Scalar(30,255,255);
 
     private Mat image;
+    private Matrix cropToFrame;
 
-    public LaneDetector(@NonNull Bitmap image){
+    public LaneDetector(int srcWidth, int srcHeight, int cropWidth, int cropHeight){
         this.image  = new Mat();
-        Utils.bitmapToMat(image.copy(Bitmap.Config.ARGB_8888,true),this.image);
+        cropToFrame = ImageUtilities.getTransformationMatrix(
+                cropWidth,cropHeight,
+                srcWidth,srcHeight,
+                0,false
+        );
+
+        Matrix frameToCrop = ImageUtilities.getTransformationMatrix(
+                srcWidth, srcHeight,
+                cropWidth, cropHeight,
+                0, false
+        );
+        pts_resized = pts.clone();
+        frameToCrop.mapPoints(pts_resized);
+
     }
 
 
@@ -95,13 +120,15 @@ public class LaneDetector {
         return result;
     }
 
-    public Double[][] getResult2() {
-        if (this.image.empty())return null;
+    public float[][] getResult2(Bitmap bmp) {
+//        if (this.image.empty())return null;
+        Utils.bitmapToMat(bmp,this.image);
 
         Mat edge_m = edgeDetection(convertToGrayScale());
         roiSeperation2(edge_m);
 //        Mat result_m = drawLines(edge_m);
-        Double[][] points = drawLinesOnImageAndRetrunPoints(edge_m);
+        float[][] points = drawLinesOnImageAndRetrunPoints(edge_m);
+        if(!this.image.empty()) this.image.release();
         return points;
     }
 
@@ -128,11 +155,11 @@ public class LaneDetector {
         mask.setTo(new Scalar(0));
 
 
-        Point p1 = new Point(pts[0],pts[1]);
-        Point p2 = new Point(pts[2],pts[3]);
+        Point p1 = new Point(pts_resized[0],pts_resized[1]);
+        Point p2 = new Point(pts_resized[2],pts_resized[3]);
 
-        Point p3 = new Point(pts[4],pts[5]);
-        Point p4 = new Point(pts[6],pts[7]);
+        Point p3 = new Point(pts_resized[4],pts_resized[5]);
+        Point p4 = new Point(pts_resized[6],pts_resized[7]);
 
 // test
 
@@ -260,7 +287,7 @@ public class LaneDetector {
         return result;
     }
 
-    private Double[][] drawLinesOnImageAndRetrunPoints(Mat edge){
+    private float[][] drawLinesOnImageAndRetrunPoints(Mat edge){
 
         Mat lines = new Mat();
         Imgproc.HoughLinesP(edge, lines, 1, Math.PI / 180, HT_THRESHOLD, HT_MIN_LINE_LENGTH, HT_MAX_LINE_GAP);
@@ -286,7 +313,7 @@ public class LaneDetector {
             angle = angle *180/Math.PI;
 //            float angle = fastAtan2(deltaY,deltaX);
             Log.d(TAG, String.format("drawLinesOnImageAndRetrunPoints: angle of line %d = %f", i, angle));
-            if (Math.abs(angle) > 19 && Math.abs(angle) < 51) {
+            if (Math.abs(angle) > 30 && Math.abs(angle) < 40) {
                 temp.add(x1);
                 temp.add(y1);
                 temp.add(x2);
@@ -296,15 +323,19 @@ public class LaneDetector {
 
         }
 
-        Double[][] result = new Double[line_no][4];
+        float[][] result = new float[line_no][4];
         line_no = 0;
         for (int i = 0 ; i<temp.size() ; i+=4){
-            result[line_no][0] = temp.get(i);
-            result[line_no][1] = temp.get(i+1);
-            result[line_no][2] = temp.get(i+2);
-            result[line_no][3] = temp.get(i+3);
+            result[line_no][0] = temp.get(i).floatValue();
+            result[line_no][1] = temp.get(i+1).floatValue();
+            result[line_no][2] = temp.get(i+2).floatValue();
+            result[line_no][3] = temp.get(i+3).floatValue();
 
             line_no++;
+        }
+
+        for (float[] row : result) {
+            cropToFrame.mapPoints(row);
         }
 
         return result;

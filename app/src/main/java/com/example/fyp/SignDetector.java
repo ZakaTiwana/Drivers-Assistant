@@ -157,12 +157,20 @@ public class SignDetector{
     }
 
 
-    public List<RecognizedObject> run(@NotNull Bitmap bmp, boolean allowToRecycleBitmap) {
+    public List<RecognizedObject> run(@NotNull Bitmap bmp,int srcWidth,int srcHeight,boolean allowToRecycleBitmap) {
         List<RecognizedObject> recognizedObjects = new ArrayList<>();
         List<RecognizedObject> recognizedObjects_temp = detector.run(
-                bmp.copy(Bitmap.Config.ARGB_8888,true),true);
-//        Matrix cropToFrame = ImageUtilities.getTransformationMatrix(width,height,bmp.getWidth(),
-//                bmp.getHeight(),0,false);
+                bmp,srcWidth,srcHeight,false);
+        Matrix frameToCrop = ImageUtilities.getTransformationMatrix(
+                srcWidth,srcHeight,
+                Detector.SIGN_DETECTOR_INPUT_SIZE,Detector.SIGN_DETECTOR_INPUT_SIZE,
+                0,false
+        );
+        Matrix cropToFrame = ImageUtilities.getTransformationMatrix(
+                Detector.OBJ_DETECTOR_INPUT_SIZE,Detector.OBJ_DETECTOR_INPUT_SIZE,
+                srcWidth,srcHeight,
+                0,false
+        );
         Bitmap resizeBitmap = null;
         Bitmap croppedBmp = null ;
         RectF location;
@@ -172,18 +180,19 @@ public class SignDetector{
             if(rc.getScore() >= THRESHOLD_SCORE) {
 
                 location = rc.getLocation();
-//                cropToFrame.mapRect(location);
+                frameToCrop.mapRect(location);
 
-                croppedBmp = getCropBitmapByCPU(bmp.copy(Bitmap.Config.ARGB_8888,true),
-                        location,true);
+                croppedBmp = getCropBitmapByCPU(bmp,
+                        location,false);
 
-                resizeBitmap = ImageUtilities.getResizedBitmap(
-                        croppedBmp.copy(Bitmap.Config.ARGB_8888,true),width,height,
+                resizeBitmap = ImageUtilities.getResizedBitmap(croppedBmp,
+                        width,height,
                         true);
 //                createCustomFile(resizeBitmap,rc.getLabel()+Calendar.getInstance().getTime());
                 setImageData(resizeBitmap);
                 label = recognizeSign();
 
+                cropToFrame.mapRect(location);
                 recognizedObjects.add(
                         new RecognizedObject(
                                 "" + rc.getId(),   label,
@@ -192,7 +201,7 @@ public class SignDetector{
                 Log.d(TAG, "run: label : "+rc.getLabel());
 
                 if (!resizeBitmap.isRecycled()) resizeBitmap.recycle();
-                if (!croppedBmp.isRecycled()) resizeBitmap.recycle();
+                if (!croppedBmp.isRecycled()) croppedBmp.recycle();
             }
         }
         if (!bmp.isRecycled() && allowToRecycleBitmap) bmp.recycle();
