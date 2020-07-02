@@ -42,7 +42,7 @@
         android:id="@+id/btn1"
         android:layout_width="218dp"
         android:layout_height="68dp"
-        android:layout_marginTop="544dp"
+        android:layout_marginTop="556dp"
         android:background="@drawable/custom_button"
         android:text="View Trusted Contacts"
         android:textAllCaps="false"
@@ -61,19 +61,21 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:srcCompat="@drawable/ic_back_button2" />
+
     <TextView
         android:id="@+id/contactText"
-        android:layout_width="230dp"
-        android:layout_height="60dp"
+        android:layout_width="265dp"
+        android:layout_height="59dp"
         android:layout_marginTop="12dp"
+        android:clickable="true"
         android:text="Contacts Settings"
         android:textAlignment="center"
         android:textColor="@color/light_teal"
         android:textSize="28dp"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.6"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        android:clickable="true"/>
+        app:layout_constraintTop_toTopOf="parent" />
 
     <ImageView
         android:id="@+id/imageView4"

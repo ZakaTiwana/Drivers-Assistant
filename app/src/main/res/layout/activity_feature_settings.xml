@@ -151,19 +151,21 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:srcCompat="@drawable/ic_back_button2" />
+
     <TextView
         android:id="@+id/textView2"
-        android:layout_width="230dp"
-        android:layout_height="60dp"
+        android:layout_width="239dp"
+        android:layout_height="61dp"
         android:layout_marginTop="12dp"
+        android:clickable="true"
         android:text="Feature Settings"
         android:textAlignment="center"
         android:textColor="@color/light_teal"
         android:textSize="28dp"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.6"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        android:clickable="true"/>
+        app:layout_constraintTop_toTopOf="parent" />
 
 
 
