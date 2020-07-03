@@ -75,7 +75,7 @@
         android:background="@drawable/custom_button"
         android:text="Confirm Start Location"
         android:textAllCaps="false"
-        android:textColor="@color/light_grey"
+        android:textColor="@color/dark_teal"
         android:textSize="18dp"
         map:layout_constraintBottom_toBottomOf="parent"
         map:layout_constraintEnd_toEndOf="parent"

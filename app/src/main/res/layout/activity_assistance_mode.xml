@@ -17,7 +17,7 @@
         android:background="@drawable/custom_button"
         android:padding="10dp"
         android:text="To Camera"
-        android:textColor="@color/light_grey"
+        android:textColor="@color/dark_teal"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -30,7 +30,7 @@
         android:background="@drawable/custom_button"
         android:padding="10dp"
         android:text="To Lane"
-        android:textColor="@color/light_grey"
+        android:textColor="@color/dark_teal"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -43,7 +43,7 @@
         android:background="@drawable/custom_button"
         android:padding="10dp"
         android:text="To Sign"
-        android:textColor="@color/light_grey"
+        android:textColor="@color/dark_teal"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -56,7 +56,7 @@
         android:background="@drawable/custom_button"
         android:padding="10dp"
         android:text="To Distance"
-        android:textColor="@color/light_grey"
+        android:textColor="@color/dark_teal"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />

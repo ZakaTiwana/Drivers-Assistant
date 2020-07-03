@@ -27,6 +27,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 public class AddContacts extends AppCompatActivity implements AdapterView.OnItemClickListener, View.OnClickListener {
 
@@ -221,6 +224,10 @@ public class AddContacts extends AppCompatActivity implements AdapterView.OnItem
         public CustomList(Context context, int resource, ArrayList<String> objects) {
             super(context, resource, objects);
             Customcontacts=objects;
+            Set<String> set = new HashSet<>(Customcontacts);
+            Customcontacts.clear();
+            Customcontacts.addAll(set);
+            Collections.sort(Customcontacts);
         }
 
         @Override
