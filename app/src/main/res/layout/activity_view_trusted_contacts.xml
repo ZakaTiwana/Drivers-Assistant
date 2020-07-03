@@ -50,7 +50,7 @@
     <ListView
         android:id="@+id/lv"
         android:layout_width="407dp"
-        android:layout_height="537dp"
+        android:layout_height="585dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
