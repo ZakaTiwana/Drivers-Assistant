@@ -48,6 +48,19 @@
         app:layout_constraintTop_toBottomOf="@+id/btn_lane" />
 
     <Button
+        android:id="@+id/btn_to_video"
+        android:layout_width="155dp"
+        android:layout_height="44dp"
+        android:layout_marginStart="130dp"
+        android:layout_marginTop="40dp"
+        android:background="@drawable/custom_button"
+        android:padding="10dp"
+        android:text="To video"
+        android:textColor="@color/light_grey"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/btn_to_sign" />
+
+    <Button
         android:id="@+id/btn_to_distance"
         android:layout_width="155dp"
         android:layout_height="44dp"

@@ -53,7 +53,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        //--remove aster testing video activity
+        Intent i = new Intent(getApplicationContext(),TestVideoActivity.class);
+        startActivity(i);
+        //---
         setContentView(R.layout.activity_main);
+
 
         btn1 = (Button) findViewById(R.id.btn);
         assistanceMode = findViewById(R.id.btn1);
