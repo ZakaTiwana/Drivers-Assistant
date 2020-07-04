@@ -20,6 +20,7 @@ import android.graphics.Color;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -101,6 +102,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             imgv1.setImageResource(R.drawable.ic_settings_black);
             btn1.setTextColor(getResources().getColor(R.color.light_grey));
             assistanceMode.setTextColor(getResources().getColor(R.color.light_grey));
+            ImageView img2=(ImageView)findViewById(R.id.imageView3);
+            img2.setImageResource(R.drawable.app_icon_grey);
         }
 
 
@@ -125,7 +128,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onDestroy() {
         Log.d(TAG, "onDestroy: called.");
         super.onDestroy();
-        unregisterReceiver(mBroadcastReceiver1);
+        try {
+            unregisterReceiver(mBroadcastReceiver1);
+            //Register or UnRegister your broadcast receiver here
+
+        } catch(IllegalArgumentException e) {
+
+            e.printStackTrace();
+        }
+
 
     }
 
@@ -160,8 +171,24 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             registerReceiver(mBroadcastReceiver1, BTIntent);
         }
 
-
     }
+
+//    @Override
+//    public void onBackPressed() {
+//        finish();
+//        System.exit(0);
+//        return;
+//    }
+//    @Override
+//    public boolean onKeyDown(int keyCode, KeyEvent event)
+//    {
+//        if(keyCode==KeyEvent.KEYCODE_BACK)
+//        {
+//            finish();
+//            System.exit(0);
+//        }
+//        return true;
+//    }
 
     @Override
     public void onClick(View v) {
@@ -175,6 +202,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             Intent intent = new Intent(this, HomeSettings.class);
             startActivity(intent);
+            finish();
 
         } else if (v.getId() == assistanceMode.getId()) {
             getCameraPermission();

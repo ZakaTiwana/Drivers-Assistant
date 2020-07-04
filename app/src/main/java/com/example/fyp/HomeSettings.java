@@ -9,6 +9,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -17,6 +18,7 @@ import android.content.pm.PackageManager;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.widget.CompoundButton;
 import android.widget.ImageView;
@@ -77,7 +79,7 @@ public class HomeSettings extends AppCompatActivity implements View.OnClickListe
             tv1 = (TextView) findViewById(R.id.tv1);
             tv2 = (TextView) findViewById(R.id.tv2);
             tv3 = (TextView) findViewById(R.id.tv3);
-            tv4= (TextView) findViewById(R.id.tv4);
+            tv4 = (TextView) findViewById(R.id.tv4);
             accidentDetector.setTextColor(getResources().getColor(R.color.light_grey));
             voiceCommands.setTextColor(getResources().getColor(R.color.light_grey));
             darkui.setTextColor(getResources().getColor(R.color.light_grey));
@@ -104,7 +106,7 @@ public class HomeSettings extends AppCompatActivity implements View.OnClickListe
         boolean voice_commands_value = settings.getBoolean("voice_commands_settings", false);
         voiceCommands.setChecked(voice_commands_value);
 
-        boolean darkModeUi_value2 = settings.getBoolean("ui_settings", true);
+        boolean darkModeUi_value2 = settings.getBoolean("ui_settings", false);
         darkui.setChecked(darkModeUi_value2);
 
         accidentDetector.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -175,16 +177,25 @@ public class HomeSettings extends AppCompatActivity implements View.OnClickListe
                     Toast.makeText(getApplicationContext(), "Dark Mode Enabled", Toast.LENGTH_SHORT).show();
                     editor.putBoolean("ui_settings", true);
                     editor.commit();
-                    Intent intent = new Intent(HomeSettings.this, MainActivity.class);
-                    startActivity(intent);
-                    finish();
+//                    Intent intent = new Intent(HomeSettings.this, MainActivity.class);
+//                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+//                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+//                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+//                    startActivity(intent);
+//                   finish();
+                    HomeSettings.this.recreate();
+
                 } else {
                     Toast.makeText(getApplicationContext(), "Dark Mode Disabled", Toast.LENGTH_SHORT).show();
                     editor.putBoolean("ui_settings", false);
                     editor.commit();
-                    Intent intent = new Intent(HomeSettings.this, MainActivity.class);
-                    startActivity(intent);
-                    finish();
+//                    Intent intent = new Intent(HomeSettings.this, MainActivity.class);
+//                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+//                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+//                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+//                    startActivity(intent);
+//                    finish();
+                    HomeSettings.this.recreate();
                 }
 
 
@@ -213,6 +224,8 @@ public class HomeSettings extends AppCompatActivity implements View.OnClickListe
     @Override
     public void onClick(View v) {
         if (v.getId() == backbutton.getId()) {
+            Intent intent = new Intent(HomeSettings.this, MainActivity.class);
+            startActivity(intent);
             finish();
         } else if (v.getId() == featureSettings.getId()) {
             Intent intent = new Intent(this, FeatureSettings.class);
@@ -227,6 +240,24 @@ public class HomeSettings extends AppCompatActivity implements View.OnClickListe
             Intent intent = new Intent(this, AssistanceMode.class);
             startActivity(intent);
         }
+    }
+
+    @Override
+    public void onBackPressed() {
+        Intent intent = new Intent(HomeSettings.this, MainActivity.class);
+        startActivity(intent);
+        finish();
+        return;
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            Intent intent = new Intent(HomeSettings.this, MainActivity.class);
+            startActivity(intent);
+            finish();
+        }
+        return true;
     }
 
     private void buildAlertMessageNoGps() {
