@@ -1,6 +1,7 @@
 package com.example.fyp;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
@@ -48,6 +49,17 @@ public class MicTest extends AppCompatActivity {
         }
 
         ImageView fab = (ImageView) findViewById(R.id.imageView);
+
+        SharedPreferences settings = getSharedPreferences("home_settings", 0);
+        boolean darkModeUi_value = settings.getBoolean("ui_settings", false);
+        if (!darkModeUi_value) {
+            ConstraintLayout constLayout;
+            constLayout = findViewById(R.id.mictest);
+            constLayout.setBackgroundResource(R.drawable.backgroundimage8);
+            fab.setImageResource(R.drawable.ic_mic_black);
+        }
+
+
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {

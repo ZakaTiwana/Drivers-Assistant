@@ -1,6 +1,7 @@
 package com.example.fyp;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -11,6 +12,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.location.Address;
@@ -63,6 +65,17 @@ public class Sms extends AppCompatActivity {
         cancel = (Button) findViewById(R.id.cancel);
         timer = (TextView) findViewById(R.id.textView5);
 
+        SharedPreferences settings = getSharedPreferences("home_settings", 0);
+        boolean darkModeUi_value = settings.getBoolean("ui_settings", false);
+        if (!darkModeUi_value) {
+            ConstraintLayout constLayout;
+            constLayout = findViewById(R.id.sms);
+            constLayout.setBackgroundResource(R.drawable.backgroundimage8);
+            text1.setTextColor(getResources().getColor(R.color.dark_grey));
+            timer.setTextColor(getResources().getColor(R.color.dark_grey));
+            cancel.setTextColor(getResources().getColor(R.color.light_grey));
+        }
+
         cancel.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -84,9 +97,9 @@ public class Sms extends AppCompatActivity {
                 public void onTick(long millisUntilFinished) {
                     seconds = (millisUntilFinished / 1000);
                     //     Toast.makeText(getApplicationContext(), "seconds remaining: " + millisUntilFinished / 1000, Toast.LENGTH_SHORT).show();
-                    if(sendMsgFlag) {
+                    if (sendMsgFlag) {
                         timer.setText("Seconds left: " + seconds + "");
-                    }else {
+                    } else {
                         timer.setText("");
                     }
                 }
@@ -97,7 +110,7 @@ public class Sms extends AppCompatActivity {
                         text1.setText("Sms Sent to Emergency Contacts Successfully!");
                         cancel.setVisibility(View.GONE);
                         Toast.makeText(getApplicationContext(), "Message Sent", Toast.LENGTH_SHORT).show();
-                    //    SendSms(fromPosition);
+                        //    SendSms(fromPosition);
                     }
                 }
             }.start();
@@ -199,14 +212,14 @@ public class Sms extends AppCompatActivity {
             } while (cursor.moveToNext());
         }
 
- //       String message= "Alert! It appears that your friend have been in an accident! The person's current location is " +address;
+        //       String message= "Alert! It appears that your friend have been in an accident! The person's current location is " +address;
 
         SmsManager smsManager = SmsManager.getDefault();
         for (int i = 0; i < items.size(); i++) {
             String[] itemsInfo = items.get(i).split(":");
             Log.d("Check", "TrustedContactValue " + i + " " + itemsInfo[1]);
             smsManager.sendTextMessage(itemsInfo[1] + "", null, "Alert! It appears that your friend have been in an accident! ", null, null);
-            smsManager.sendTextMessage(itemsInfo[1] + "", null, "The person's current location is " +address, null, null);
+            smsManager.sendTextMessage(itemsInfo[1] + "", null, "The person's current location is " + address, null, null);
             Toast.makeText(this, "Message Sent Successfully", Toast.LENGTH_SHORT).show();
 
         }

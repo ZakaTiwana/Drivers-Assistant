@@ -9,6 +9,7 @@ import androidx.core.content.ContextCompat;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
@@ -119,6 +120,13 @@ public class DestinationActivity extends AppCompatActivity implements OnMapReady
         //  direction = (ImageView) findViewById(R.id.ic_direction2);
         btn1 = (Button) findViewById(R.id.btn);
         btn2 = (Button) findViewById(R.id.btn2);
+
+        SharedPreferences settings = getSharedPreferences("home_settings", 0);
+        boolean darkModeUi_value = settings.getBoolean("ui_settings", false);
+        if (!darkModeUi_value) {
+            btn1.setTextColor(getResources().getColor(R.color.light_grey));
+            btn2.setTextColor(getResources().getColor(R.color.light_grey));
+        }
 
         Bundle bundle = getIntent().getParcelableExtra("bundle");
         fromPosition = bundle.getParcelable("from_position");

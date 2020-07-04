@@ -1,6 +1,7 @@
 package com.example.fyp;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
@@ -13,6 +14,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -234,6 +236,23 @@ public class Bluetooth extends AppCompatActivity implements AdapterView.OnItemCl
         backbutton = (ImageView) findViewById(R.id.backbtn1);
         backbutton.setOnClickListener(this);
 
+        SharedPreferences settings = getSharedPreferences("home_settings", 0);
+        boolean darkModeUi_value = settings.getBoolean("ui_settings", false);
+        if (!darkModeUi_value) {
+            ConstraintLayout constLayout;
+            constLayout = findViewById(R.id.bluetooth);
+            constLayout.setBackgroundResource(R.drawable.backgroundimage8);
+            backbutton.setImageResource(R.drawable.ic_back_button_black);
+
+            TextView tv1 = (TextView) findViewById(R.id.textView2);
+            tv1.setTextColor(getResources().getColor(R.color.dark_grey));
+            TextView tv2 = (TextView) findViewById(R.id.textView3);
+            tv2.setTextColor(getResources().getColor(R.color.dark_grey));
+            TextView tv3 = (TextView) findViewById(R.id.textView4);
+            tv3.setTextColor(getResources().getColor(R.color.dark_grey));
+
+        }
+
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
 
@@ -418,6 +437,14 @@ public class Bluetooth extends AppCompatActivity implements AdapterView.OnItemCl
                     if (deviceAdress != null) {
                         deviceAdress.setText(device.getAddress());
                     }
+                    SharedPreferences settings = getSharedPreferences("home_settings", 0);
+                    boolean darkModeUi_value = settings.getBoolean("ui_settings", false);
+                    if (!darkModeUi_value) {
+                        deviceName.setTextColor(getResources().getColor(R.color.dark_grey));
+                        deviceAdress.setTextColor(getResources().getColor(R.color.dark_grey));
+                        ImageView img1 = (ImageView) v.findViewById(R.id.imageView2);
+                        img1.setImageResource(R.drawable.ic_bluetooth_blue);
+                    }
                 }
             }
 
@@ -451,6 +478,14 @@ public class Bluetooth extends AppCompatActivity implements AdapterView.OnItemCl
                 }
                 if (deviceAdress != null) {
                     deviceAdress.setText(device.getAddress());
+                }
+                SharedPreferences settings = getSharedPreferences("home_settings", 0);
+                boolean darkModeUi_value = settings.getBoolean("ui_settings", false);
+                if (!darkModeUi_value) {
+                    deviceName.setTextColor(getResources().getColor(R.color.dark_grey));
+                    deviceAdress.setTextColor(getResources().getColor(R.color.dark_grey));
+                    ImageView img1 = (ImageView) v.findViewById(R.id.imageView2);
+                    img1.setImageResource(R.drawable.ic_bluetooth_blue);
                 }
 
             }

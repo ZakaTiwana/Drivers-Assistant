@@ -2,6 +2,7 @@ package com.example.fyp;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
@@ -15,12 +16,14 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
@@ -37,6 +40,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 6;
     private Boolean mLocationPermissionsGranted = false;
     private Boolean CameraPermissionsGranted = false;
+
 
     private final BroadcastReceiver mBroadcastReceiver1 = new BroadcastReceiver() {
         public void onReceive(Context context, Intent intent) {
@@ -72,7 +76,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         btn1 = (Button) findViewById(R.id.btn);
         assistanceMode = findViewById(R.id.btn1);
-
+        btn1.setOnClickListener(this);
         assistanceMode.setOnClickListener(this);
 
 //        assistanceMode.setOnClickListener(new View.OnClickListener() {
@@ -85,10 +89,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 ////                startActivity(intent);
 //
 //        });
-
-        btn1.setOnClickListener(this);
-
+        TextView tv1 = (TextView) findViewById(R.id.textView2);
         imgv1 = (ImageView) findViewById(R.id.backbtn1);
+        SharedPreferences settings = getSharedPreferences("home_settings", 0);
+        boolean darkModeUi_value = settings.getBoolean("ui_settings", false);
+        if (!darkModeUi_value) {
+            ConstraintLayout constLayout;
+            constLayout = findViewById(R.id.mainview);
+            constLayout.setBackgroundResource(R.drawable.backgroundimage8);
+            tv1.setTextColor(getResources().getColor(R.color.dark_grey));
+            imgv1.setImageResource(R.drawable.ic_settings_black);
+            btn1.setTextColor(getResources().getColor(R.color.light_grey));
+            assistanceMode.setTextColor(getResources().getColor(R.color.light_grey));
+        }
+
 
         imgv1.setOnClickListener(this);
         LocationManager manager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
@@ -99,7 +113,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
 
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        SharedPreferences settings = getSharedPreferences("home_settings", 0);
+//        SharedPreferences settings = getSharedPreferences("home_settings", 0);
         if (settings.getBoolean("accident_detector_settings", false)) {
             //  Toast.makeText(getApplicationContext(), "Accident Detector Settings Enabled", Toast.LENGTH_SHORT).show();
             enableDisableBT();
@@ -176,7 +190,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (ActivityCompat.checkSelfPermission(getApplicationContext(),
                 Manifest.permission.CAMERA) ==
                 PackageManager.PERMISSION_GRANTED) {
-            CameraPermissionsGranted=true;
+            CameraPermissionsGranted = true;
 
         } else {
             ActivityCompat.requestPermissions(this,

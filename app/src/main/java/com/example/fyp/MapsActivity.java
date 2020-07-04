@@ -12,6 +12,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
@@ -121,6 +122,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
  //       direction = (ImageView) findViewById(R.id.ic_direction);
         getLocationPermission();
         btn1 = (Button) findViewById(R.id.btn);
+
+        SharedPreferences settings = getSharedPreferences("home_settings", 0);
+        boolean darkModeUi_value = settings.getBoolean("ui_settings", false);
+        if (!darkModeUi_value) {
+            btn1.setTextColor(getResources().getColor(R.color.light_grey));
+        }
 
 
     }

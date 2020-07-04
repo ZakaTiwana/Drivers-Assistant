@@ -4,6 +4,7 @@ package com.example.fyp;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.app.ActivityCompat;
 
 import android.Manifest;
@@ -48,6 +49,7 @@ public class ContactsSettings extends AppCompatActivity implements View.OnClickL
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_contacts_settings);
 
+
         backbutton = (ImageView) findViewById(R.id.backbtn1);
 
         backbutton.setOnClickListener(this);
@@ -64,8 +66,24 @@ public class ContactsSettings extends AppCompatActivity implements View.OnClickL
         test = (Button) findViewById(R.id.btn2);
         test.setOnClickListener(this);
 
-        test.setVisibility(View.GONE);
 
+
+        SharedPreferences Home_settings = getSharedPreferences("home_settings", 0);
+        boolean darkModeUi_value = Home_settings.getBoolean("ui_settings", false);
+        if (!darkModeUi_value) {
+            ConstraintLayout constLayout;
+            constLayout = findViewById(R.id.contactsettings);
+            constLayout.setBackgroundResource(R.drawable.backgroundimage8);
+            backbutton.setImageResource(R.drawable.ic_back_button_black);
+            tv1.setTextColor(getResources().getColor(R.color.dark_grey));
+            addContacts.setTextColor(getResources().getColor(R.color.light_grey));
+            viewContacts.setTextColor(getResources().getColor(R.color.light_grey));
+            test.setTextColor(getResources().getColor(R.color.light_grey));
+            ImageView img1=(ImageView)findViewById(R.id.imageView);
+            img1.setImageResource(R.drawable.ic_contact_diary_black);
+        }
+
+        test.setVisibility(View.GONE);
 
     }
 

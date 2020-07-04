@@ -4,6 +4,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
@@ -28,6 +29,8 @@ public class HomeSettings extends AppCompatActivity implements View.OnClickListe
     Switch accidentDetector;
 
     Switch voiceCommands;
+
+    Switch darkui;
 
     ImageView backbutton;
 
@@ -55,15 +58,54 @@ public class HomeSettings extends AppCompatActivity implements View.OnClickListe
 
         voiceCommands = findViewById(R.id.switch2);
 
+        darkui = findViewById(R.id.switch3);
+
         homeSettingText = findViewById(R.id.textView2);
 
+        backbutton = (ImageView) findViewById(R.id.backbtn1);
+
+
         SharedPreferences settings = getSharedPreferences("home_settings", 0);
+        boolean darkModeUi_value = settings.getBoolean("ui_settings", false);
+        if (!darkModeUi_value) {
+            ConstraintLayout constLayout;
+            constLayout = findViewById(R.id.homesettings);
+            constLayout.setBackgroundResource(R.drawable.backgroundimage8);
+
+            TextView tv, tv1, tv2, tv3, tv4;
+            tv = (TextView) findViewById(R.id.tv);
+            tv1 = (TextView) findViewById(R.id.tv1);
+            tv2 = (TextView) findViewById(R.id.tv2);
+            tv3 = (TextView) findViewById(R.id.tv3);
+            tv4= (TextView) findViewById(R.id.tv4);
+            accidentDetector.setTextColor(getResources().getColor(R.color.light_grey));
+            voiceCommands.setTextColor(getResources().getColor(R.color.light_grey));
+            darkui.setTextColor(getResources().getColor(R.color.light_grey));
+            homeSettingText.setTextColor(getResources().getColor(R.color.dark_grey));
+            backbutton.setImageResource(R.drawable.ic_back_button_black);
+            tv.setTextColor(getResources().getColor(R.color.light_grey));
+            tv1.setTextColor(getResources().getColor(R.color.dark_grey));
+            tv2.setTextColor(getResources().getColor(R.color.dark_grey));
+            tv3.setTextColor(getResources().getColor(R.color.dark_grey));
+            tv4.setTextColor(getResources().getColor(R.color.dark_grey));
+        }
+
+//        TextView tv1=(TextView)findViewById(R.id.textView2);
+//        tv1.setTextColor(getResources().getColor(R.color.dark_grey));
+//        imgv1 = (ImageView) findViewById(R.id.backbtn1);
+//        imgv1.setImageResource(R.drawable.ic_settings_black);
+//        btn1.setTextColor(getResources().getColor(R.color.light_grey));
+//        assistanceMode.setTextColor(getResources().getColor(R.color.light_grey));
+
 
         boolean accidentDetector_value = settings.getBoolean("accident_detector_settings", false);
         accidentDetector.setChecked(accidentDetector_value);
 
         boolean voice_commands_value = settings.getBoolean("voice_commands_settings", false);
         voiceCommands.setChecked(voice_commands_value);
+
+        boolean darkModeUi_value2 = settings.getBoolean("ui_settings", true);
+        darkui.setChecked(darkModeUi_value2);
 
         accidentDetector.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
@@ -123,7 +165,32 @@ public class HomeSettings extends AppCompatActivity implements View.OnClickListe
             }
         });
 
-        backbutton = (ImageView) findViewById(R.id.backbtn1);
+        darkui.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView,
+                                         boolean isChecked) {
+                SharedPreferences settings = getSharedPreferences("home_settings", 0);
+                SharedPreferences.Editor editor = settings.edit();
+                if (isChecked) {
+                    Toast.makeText(getApplicationContext(), "Dark Mode Enabled", Toast.LENGTH_SHORT).show();
+                    editor.putBoolean("ui_settings", true);
+                    editor.commit();
+                    Intent intent = new Intent(HomeSettings.this, MainActivity.class);
+                    startActivity(intent);
+                    finish();
+                } else {
+                    Toast.makeText(getApplicationContext(), "Dark Mode Disabled", Toast.LENGTH_SHORT).show();
+                    editor.putBoolean("ui_settings", false);
+                    editor.commit();
+                    Intent intent = new Intent(HomeSettings.this, MainActivity.class);
+                    startActivity(intent);
+                    finish();
+                }
+
+
+            }
+        });
+
 
         backbutton.setOnClickListener(this);
 
