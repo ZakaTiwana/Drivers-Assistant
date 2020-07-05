@@ -105,7 +105,6 @@ public class AddContacts extends AppCompatActivity implements AdapterView.OnItem
             backbutton.setImageResource(R.drawable.ic_back_button_black);
             addContacts.setTextColor(getResources().getColor(R.color.light_grey));
             editText.setBackgroundResource(R.drawable.white_border);
-            editText.setTextColor(getResources().getColor(R.color.light_grey));
         }
 
 

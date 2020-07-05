@@ -18,6 +18,7 @@ import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
@@ -213,8 +214,10 @@ public class Bluetooth extends AppCompatActivity implements AdapterView.OnItemCl
                 //case1: bonded already
                 if (mDevice.getBondState() == BluetoothDevice.BOND_BONDED) {
                     Log.d(TAG, "BroadcastReceiver: BOND_BONDED.");
-                    Toast.makeText(getApplicationContext(), "Paired Sucessfully", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "Paired Successfully", Toast.LENGTH_SHORT).show();
+
                     mBTDevice = mDevice;
+                    Bluetooth.this.recreate();
                 }
                 //case2: creating a bone
                 if (mDevice.getBondState() == BluetoothDevice.BOND_BONDING) {
@@ -287,7 +290,11 @@ public class Bluetooth extends AppCompatActivity implements AdapterView.OnItemCl
 //                    gtct = new GetTroubleCodesTask();
 //                    gtct.execute(mBTDevice.getAddress());
 //                    gtct = new GetTroubleCodesTask();
-                    gtct.execute(mBTDevice.getAddress());
+                    if(mBTDevice.getAddress().equals("00:00:00:33:33:33")||mBTDevice.getName().equalsIgnoreCase("OBDII")) {
+                        gtct.execute(mBTDevice.getAddress());
+                    }else {
+                        Toast.makeText(getApplicationContext(), "Please select the OBDII device from the list.", Toast.LENGTH_SHORT).show();
+                    }
                     //          startConnection();
 
                     //           connectToDevice();
@@ -373,6 +380,8 @@ public class Bluetooth extends AppCompatActivity implements AdapterView.OnItemCl
             mBTDevices2.get(i).createBond();
             // Toast.makeText(this,"Paired Successfully!",Toast.LENGTH_SHORT).show();
             mBTDevice = mBTDevices2.get(i);
+
+
             //        mBluetoothConnection = new BluetoothConnectionService(Bluetooth.this);
 //            gtct = new GetTroubleCodesTask();
 //            gtct.execute("remoteDevice");
@@ -1110,6 +1119,7 @@ public class Bluetooth extends AppCompatActivity implements AdapterView.OnItemCl
     private class GetTroubleCodesTask extends AsyncTask<String, Integer, String> {
         @Override
         protected void onPreExecute() {
+            Toast.makeText(getApplicationContext(), "OBD II connecting.", Toast.LENGTH_SHORT).show();
             //   progressBar = requestActivity.getProgressBar();
 //            progressBar.setMax(8);
         }
@@ -1135,7 +1145,14 @@ public class Bluetooth extends AppCompatActivity implements AdapterView.OnItemCl
                 // Instantiate a BluetoothSocket for the remote device and connect it.
                 try {
                     Log.d("Checkaddress", "device address:" + dev);
-                    sock = connect(dev);
+//                    if (isWorkAroundSamsungS9()) {
+//                        sock=initLocalConnectionS9(dev);
+//              //          sock = connectS9(dev);
+//                    } else {
+//                        sock = connect(dev);
+//                    }
+                   sock = connect(dev);
+                //    Toast.makeText(getApplicationContext(), "OBD II connected successfully.", Toast.LENGTH_SHORT).show();
                 } catch (Exception e) {
                     Log.e(TAG, "There was an error while establishing connection. -> " + e.getMessage());
                     Log.d(TAG, "Message received on handler here");
@@ -1171,7 +1188,7 @@ public class Bluetooth extends AppCompatActivity implements AdapterView.OnItemCl
 //                    tcoc.run(sock.getInputStream(), sock.getOutputStream());
 //                    onProgressUpdate(8);
 //                    result = tcoc.getFormattedResult();
-
+   //                 Toast.makeText(getApplicationContext(), "OBD II connecting.", Toast.LENGTH_SHORT).show();
                     while (true) {
                         //       Read from the InputStream
                         try {
@@ -1317,9 +1334,157 @@ public class Bluetooth extends AppCompatActivity implements AdapterView.OnItemCl
                 }
             }
         }
+
         return sock;
 
     }
+
+    private boolean isWorkAroundSamsungS9() {
+        return Build.MANUFACTURER.toLowerCase().contains("samsung") && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P;
+    }
+
+    Thread localConnect;
+    BluetoothSocket sockett;
+
+    private synchronized BluetoothSocket initLocalConnectionS9(final BluetoothDevice dev) {
+        localConnect = new Thread() {
+            public void run() {
+                final BluetoothDevice btDevice = dev;
+                BluetoothAdapter.getDefaultAdapter().cancelDiscovery();
+                int connectionRetries = 0;
+//                bluetoothState != BT_CONNECTED &&
+                while (connectionRetries < 3) {
+                    try {
+                        //  bluetoothState = BT_CONNECTING;
+                        sockett = null;
+ //                       final BluetoothAdapter BT = BluetoothAdapter.getDefaultAdapter();
+//                        btDevice = BT.getRemoteDevice(btMac);
+                        final UUID MY_UUID = UUID
+                                .fromString("00001101-0000-1000-8000-00805F9B34FB");
+                        sockett = btDevice
+                                .createInsecureRfcommSocketToServiceRecord(MY_UUID);
+//                        in = sock.getInputStream();
+//                        out = sock.getOutputStream();
+                        Log.d(TAG, "localConnect() INI: sock.connect()");
+                        sockett.connect();
+                        Log.d(TAG, "localConnect() END: sock.connect()");
+//                        setBluetoothState(BT_CONNECTED, true);
+//                        startReadThread();
+//                        refreshMainActivity();
+                    } catch (final Exception e) {
+                        connectionRetries++;
+//                        closeSocket();
+                        if (sockett != null)
+                            try {
+                                sockett.close();
+                            } catch (IOException ex) {
+                                Log.e(TAG, ex.getMessage());
+                            }
+//                        bluetoothState = BT_DISCONNECTED;
+                        Log.e(TAG, "localConnect() EXCEPTION: sock.connect()" + e);
+                        if (connectionRetries >= 3) {
+                            // setBluetoothState(BT_DISCONNECTED, false);
+                            Log.e(TAG, "Unable to connect");
+                        } else {
+                            Log.d(TAG, "Bluetooth connection retries: " + connectionRetries);
+                         //   delay(500);
+                            new CountDownTimer(500, 1) {
+
+                                @Override
+                                public void onTick(long millisUntilFinished) {
+//                            seconds = (millisUntilFinished / 1000);
+//                            //     Toast.makeText(getApplicationContext(), "seconds remaining: " + millisUntilFinished / 1000, Toast.LENGTH_SHORT).show();
+//                            if (sendMsgFlag) {
+//                                timer.setText("Seconds left: " + seconds + "");
+//                            } else {
+//                                timer.setText("");
+//                            }
+                                }
+
+                                @Override
+                                public void onFinish() {
+//                            if (sendMsgFlag) {
+//                                text1.setText("Sms Sent to Emergency Contacts Successfully!");
+//                                cancel.setVisibility(View.GONE);
+//                                Toast.makeText(getApplicationContext(), "Message Sent", Toast.LENGTH_SHORT).show();
+//                                //    SendSms(fromPosition);
+//                            }
+                                }
+                            }.start();
+                        }
+                    }
+                }
+            }
+        };
+        return sockett;
+        //threadPoolDevelopers.submit(localConnect);
+    }
+
+    private synchronized BluetoothSocket connectS9(BluetoothDevice dev) throws IOException {
+        BluetoothSocket sock = null;
+        BluetoothSocket sockFallback;
+
+        Log.d(TAG, "Starting Bluetooth connection..");
+        int connectionRetries = 0;
+        while (connectionRetries < 3) {
+            try {
+                sock = dev.createInsecureRfcommSocketToServiceRecord(MY_UUID_INSECURE);
+                sock.connect();
+            } catch (Exception e1) {
+                connectionRetries++;
+                Log.e(TAG, "There was an error while establishing Bluetooth connection. Falling back..", e1);
+                if (sock != null) {
+                    Class<?> clazz = sock.getRemoteDevice().getClass();
+                    Class<?>[] paramTypes = new Class<?>[]{Integer.TYPE};
+                    try {
+                        Method m = clazz.getMethod("createRfcommSocket", paramTypes);
+                        Object[] params = new Object[]{Integer.valueOf(1)};
+                        sockFallback = (BluetoothSocket) m.invoke(sock.getRemoteDevice(), params);
+                        sockFallback.connect();
+                        sock = sockFallback;
+                    } catch (Exception e2) {
+                        Log.e(TAG, "Couldn't fallback while establishing Bluetooth connection.", e2);
+                        throw new IOException(e2.getMessage());
+                    }
+                }
+                if (connectionRetries >= 3) {
+                    // setBluetoothState(BT_DISCONNECTED, false);
+                    Log.e(TAG, "Unable to connect");
+                } else {
+                    Log.d(TAG, "Bluetooth connection retries: " + connectionRetries);
+                    //   delay(500);
+                    new CountDownTimer(500, 1000) {
+
+                        @Override
+                        public void onTick(long millisUntilFinished) {
+//                            seconds = (millisUntilFinished / 1000);
+//                            //     Toast.makeText(getApplicationContext(), "seconds remaining: " + millisUntilFinished / 1000, Toast.LENGTH_SHORT).show();
+//                            if (sendMsgFlag) {
+//                                timer.setText("Seconds left: " + seconds + "");
+//                            } else {
+//                                timer.setText("");
+//                            }
+                        }
+
+                        @Override
+                        public void onFinish() {
+//                            if (sendMsgFlag) {
+//                                text1.setText("Sms Sent to Emergency Contacts Successfully!");
+//                                cancel.setVisibility(View.GONE);
+//                                Toast.makeText(getApplicationContext(), "Message Sent", Toast.LENGTH_SHORT).show();
+//                                //    SendSms(fromPosition);
+//                            }
+                        }
+                    }.start();
+                }
+            }
+        }
+
+        return sock;
+
+    }
+
+
 //
 //    public void resultDtcs(String dtcs) {
 //
