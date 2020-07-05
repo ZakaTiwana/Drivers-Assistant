@@ -226,11 +226,13 @@ public class TestVideoActivity extends AppCompatActivity {
                             }
                             this.cancel();
                         }
-                        if(bmp != null && bmp.isRecycled()) bmp.recycle();
+                        if(bmp != null) bmp.recycle();
+                        bmp = null;
 //                        bmp = retriever.getFrameAtIndex(i);
                         bmp = retriever.getScaledFrameAtTime(factor*i,
                                 retriever.OPTION_CLOSEST,
                                 desiredSize.getWidth(),desiredSize.getHeight());
+//                        overlayView.invalidate();
                         overlayView.postInvalidate();
                         i++;
 
