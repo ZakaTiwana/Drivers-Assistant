@@ -79,6 +79,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 buildAlertMessageNoGps();
 
             } else {
+                btn1.setVisibility(View.VISIBLE);
                 getDeviceLocation();
             }
 

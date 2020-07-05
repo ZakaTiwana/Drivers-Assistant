@@ -195,8 +195,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (v.getId() == btn1.getId()) {
             getLocationPermission();
             if (mLocationPermissionsGranted) {
-                Intent intent = new Intent(this, MapsActivity.class);
-                startActivity(intent);
+                LocationManager manager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+                if(!manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                    buildAlertMessageNoGps();
+                }else{
+                    Intent intent = new Intent(this, MapsActivity.class);
+                    startActivity(intent);
+                }
             }
         } else if (v.getId() == imgv1.getId()) {
 
