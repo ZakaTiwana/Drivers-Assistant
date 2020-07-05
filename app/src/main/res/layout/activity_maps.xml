@@ -26,6 +26,7 @@
         android:layout_height="49dp"
         android:layout_marginTop="12dp"
         android:background="@drawable/white_border"
+        android:textColor="@color/dark_grey"
         android:elevation="10dp"
         map:layout_constraintEnd_toEndOf="parent"
         map:layout_constraintHorizontal_bias="0.516"
