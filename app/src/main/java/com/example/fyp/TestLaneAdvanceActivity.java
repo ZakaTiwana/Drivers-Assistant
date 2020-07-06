@@ -45,26 +45,12 @@ public class TestLaneAdvanceActivity extends AppCompatActivity {
     private List<Bitmap> bmps;
 
 
-    @Override
-    public void onWindowFocusChanged(boolean hasFocas) {
-        super.onWindowFocusChanged(hasFocas);
-        View decorView = getWindow().getDecorView();
-        if(hasFocas) {
-            decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                    | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                    | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                    | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                    | View.SYSTEM_UI_FLAG_FULLSCREEN
-                    | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
-        }
-    }
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_test_lane_advance);
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         imageView = findViewById(R.id.lane_adv_imgview);
         ladv = new LaneDetectorAdvance();
         LaneDetectorAdvance.setSharedPreference(
@@ -95,7 +81,12 @@ public class TestLaneAdvanceActivity extends AppCompatActivity {
     }
     private void detectLane(){
         if (!bmps.isEmpty()){
-            ladv.calibration(6,4,bmps);
+            ladv.calibration(6,4,bmps,false);
+            show("calibration done");
+            ladv.unDistortImage(bmps.get(0).copy(Bitmap.Config.ARGB_8888,true));
+            imageView.setImageBitmap(
+                    ladv.getUnDistImg()
+            );
         }
     }
     @Override
@@ -105,19 +96,12 @@ public class TestLaneAdvanceActivity extends AppCompatActivity {
             keyCounter = 0;
             return true;
         }
-        if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN){
-            switch (keyCounter){
-                case 0:
-                    detectLane();
-                    break;
-                case 1:
-                    if (!bmps.isEmpty())imageView.setImageBitmap(ladv.getChessBoardPattern());
-                    break;
-            }
-            keyCounter++;
-            keyCounter %= 2;
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
+            detectLane();
+            show("Lane detection Done");
+            return true;
         }
-        return super.onKeyDown(keyCode, event);
+        return super.onKeyDown(keyCode,event);
     }
 
     @Override
@@ -181,7 +165,7 @@ public class TestLaneAdvanceActivity extends AppCompatActivity {
                                 "onActivityResult: got multiple images in total = %d",
                                 bmps.size()));
                     } else {
-                        Toast.makeText(this,"you did not select any image(s)",Toast.LENGTH_LONG).show();
+                        show("you did not select any image(s)");
                     }
                     if (!bmps.isEmpty()){
                         Bitmap copy = bmps.get(0).copy(Bitmap.Config.ARGB_8888,false);
@@ -192,8 +176,11 @@ public class TestLaneAdvanceActivity extends AppCompatActivity {
                     break;
             }
         }else{
-            Toast.makeText(this,"Unsuccessful Intent",Toast.LENGTH_LONG).show();
+            show("Unsuccessful Intent");
         }
         super.onActivityResult(requestCode, resultCode, data);
+    }
+    public void show(String msg){
+        Toast.makeText(this,msg,Toast.LENGTH_LONG).show();
     }
 }
