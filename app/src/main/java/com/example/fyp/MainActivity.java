@@ -59,6 +59,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         break;
                     case BluetoothAdapter.STATE_ON:
                         Log.d(TAG, "mBroadcastReceiver1: STATE ON");
+                        Toast.makeText(getApplicationContext(), "You need to connect to your corresponding obd II device to enjoy accident detection feature.", Toast.LENGTH_LONG).show();
                         intent = new Intent(MainActivity.this, Bluetooth.class);
                         startActivity(intent);
                         break;
@@ -118,10 +119,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 //        SharedPreferences settings = getSharedPreferences("home_settings", 0);
         if (settings.getBoolean("accident_detector_settings", false)) {
-            //  Toast.makeText(getApplicationContext(), "Accident Detector Settings Enabled", Toast.LENGTH_SHORT).show();
             enableDisableBT();
         }
-//        Toast.makeText(getApplicationContext(), "Accident Detector Settings Disabled", Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -164,6 +163,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
         if (!mBluetoothAdapter.isEnabled()) {
             Log.d(TAG, "enableDisableBT: enabling BT.");
+
+            Toast.makeText(getApplicationContext(), "You need to turn on your device's Bluetooth to enjoy accident detection feature.", Toast.LENGTH_LONG).show();
             Intent enableBTIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivity(enableBTIntent);
 
