@@ -66,7 +66,9 @@ public class TestLaneAdvanceActivity extends AppCompatActivity {
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         imageView = findViewById(R.id.lane_adv_imgview);
-        ladv = new LaneDetectorAdvance(getSharedPreferences("LaneDetection",0));
+        ladv = new LaneDetectorAdvance();
+        LaneDetectorAdvance.setSharedPreference(
+                getSharedPreferences("LaneDetection",0));
 //        fds = new ArrayList<>();
         bmps = new ArrayList<>();
         if(OpenCVLoader.initDebug()){

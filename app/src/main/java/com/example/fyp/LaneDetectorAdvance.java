@@ -31,12 +31,13 @@ public class LaneDetectorAdvance {
     private Mat dist;
     private boolean gotChessBoardImg = false;
     private Bitmap chessBoardPattern;
+    private Bitmap unDistImg;
 
     private static SharedPreferences config;
     private static final String mtx_in_sp = "mtx";
     private static final String dist_in_sp = "dist";
 
-    public LaneDetectorAdvance(SharedPreferences s) { config = s; }
+    public LaneDetectorAdvance( ) {  }
 
     public void calibration(int nx, int ny, List<Bitmap> bmps) {
         if(bmps == null) return;
@@ -103,10 +104,23 @@ public class LaneDetectorAdvance {
         dist = new Mat();
         Calib3d.calibrateCamera(obj_ps,img_ps,imgSize,mtx,dist,
                 new ArrayList<Mat>(),new ArrayList<Mat>());
-        saveConfig();
+        saveConfig(mtx, dist);
     }
 
-    private static void saveConfig(){
+    public void unDistortImage(Bitmap bmp){
+        if (!hasConfigValues()) return;
+        loadConfig(mtx,dist);
+        Mat img = new Mat();
+        Mat un_img = new Mat();
+        Utils.bitmapToMat(bmp,img);
+        bmp.recycle();
+        Imgproc.undistort(img,un_img,mtx,dist);
+        Utils.matToBitmap(un_img,unDistImg);
+        img.release();
+    }
+
+
+    private static void saveConfig(Mat mtx,Mat dist){
         SharedPreferences.Editor prefsEditor = config.edit();
         Gson gson = new Gson();
 
@@ -120,7 +134,7 @@ public class LaneDetectorAdvance {
         Log.d(TAG, "saveConfig: config saved in shared preference");
     }
 
-    private static void loadConfig(){
+    private static void loadConfig(Mat mtx, Mat dist){
         Gson gson = new Gson();
         String json = config.getString(mtx_in_sp, "");
         if (json != null && !json.isEmpty()){
@@ -130,11 +144,30 @@ public class LaneDetectorAdvance {
         if (json != null && !json.isEmpty()){
             dist = gson.fromJson(json, Mat.class);
         }
+        Log.d(TAG, "loadConfig: loaded from share preference");
     }
 
-    private static void
+    public static void setSharedPreference(SharedPreferences s){
+        config = s;
+    };
+
+    private static boolean hasConfigValues(){
+        boolean check = true;
+        String mtx = config.getString(mtx_in_sp, "");
+        String dist = config.getString(mtx_in_sp, "");
+        assert mtx != null;
+        assert dist != null;
+        if (mtx.isEmpty() || dist.isEmpty()){
+            check = false;
+        }
+        return check;
+    }
 
     public Bitmap getChessBoardPattern() {
         return chessBoardPattern;
+    }
+
+    public Bitmap getUnDistImg() {
+        return unDistImg;
     }
 }
