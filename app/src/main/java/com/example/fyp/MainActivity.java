@@ -54,8 +54,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         //--remove aster testing video activity
-        Intent i = new Intent(getApplicationContext(),TestVideoActivity.class);
-        startActivity(i);
+//        Intent i = new Intent(getApplicationContext(),TestVideoActivity.class);
+//        startActivity(i);
         //---
         setContentView(R.layout.activity_main);
 

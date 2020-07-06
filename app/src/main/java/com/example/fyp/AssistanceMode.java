@@ -19,6 +19,15 @@ public class AssistanceMode extends AppCompatActivity {
         Button btn_to_sign = findViewById(R.id.btn_to_sign);
         Button btn_distance = findViewById(R.id.btn_to_distance);
         Button btn_to_video = findViewById(R.id.btn_to_video);
+        Button btn_to_lane_adv = findViewById(R.id.btn_to_lane_adv);
+
+        btn_to_lane_adv.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent i = new Intent(getApplicationContext(),TestLaneAdvanceActivity.class);
+                startActivity(i);
+            }
+        });
 
         btn_to_video.setOnClickListener(new View.OnClickListener() {
             @Override
