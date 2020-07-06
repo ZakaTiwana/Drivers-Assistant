@@ -103,7 +103,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             btn1.setTextColor(getResources().getColor(R.color.light_grey));
             assistanceMode.setTextColor(getResources().getColor(R.color.light_grey));
             ImageView img2=(ImageView)findViewById(R.id.imageView3);
-            img2.setImageResource(R.drawable.app_icon_grey);
+            img2.setImageResource(R.drawable.app_ic_grey);
         }
 
 
