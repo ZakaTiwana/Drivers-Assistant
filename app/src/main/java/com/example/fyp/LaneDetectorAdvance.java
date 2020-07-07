@@ -31,8 +31,8 @@ public class LaneDetectorAdvance {
     private Bitmap unDistImg;
 
     private static SharedPreferences config;
-    private static final String mtx_in_sp = "mtx";
-    private static final String dist_in_sp = "dist";
+    public static final String mtx_in_sp = "mtx";
+    public static final String dist_in_sp = "dist";
 
     public LaneDetectorAdvance( ) {  }
 
@@ -74,12 +74,10 @@ public class LaneDetectorAdvance {
                 Imgproc.cornerSubPix(gray, corners, new Size(11,11), new Size(-1,-1), aCriteria);
                 if (!gotChessBoardImg){
                     Calib3d.drawChessboardCorners(img,boardSize,corners, true);
-                    gotChessBoardImg = true;
-                    if (gotChessBoardImg) {
-                        chessBoardPattern = Bitmap.createBitmap(
-                                img.width(),img.height(), Bitmap.Config.ARGB_8888);
-                        Utils.matToBitmap(img,chessBoardPattern);
-                    }
+                    chessBoardPattern = Bitmap.createBitmap(
+                            img.width(),img.height(), Bitmap.Config.ARGB_8888);
+                    Utils.matToBitmap(img,chessBoardPattern);
+
                 }
                 obj_ps.add(objp);
                 img_ps.add(corners);
@@ -103,7 +101,8 @@ public class LaneDetectorAdvance {
         Log.d(TAG, "calibration: mtx content  => " + matContentInString(mtx));
         Log.d(TAG, "calibration: dist content  => " + matContentInString(dist));
         try {
-            saveConfig(mtx, dist);
+            saveConfig(mtx, mtx_in_sp);
+            saveConfig(dist,dist_in_sp);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -127,20 +126,21 @@ public class LaneDetectorAdvance {
         img.release();
     }
 
-
-    private static void saveConfig(Mat mtx,Mat dist) throws Exception {
+    private static void saveConfig(Mat mat,String key) throws IllegalArgumentException {
         SharedPreferences.Editor prefsEditor = config.edit();
 
-        String json = matToJson(mtx);
-        if (json.contentEquals("{}")) throw new IllegalArgumentException("could not convert mtx to json");
-        prefsEditor.putString(mtx_in_sp, json);
+        String json = matToJson(mat);
+        if (json.contentEquals("{}")) throw new IllegalArgumentException("could not "+key+" convert to json");
+        prefsEditor.putString(key, json);
         prefsEditor.apply();
+        Log.d(TAG, "saveConfig: config ("+key+") saved in shared preference");
+    }
 
-        json = matToJson(dist);
-        if (json.contentEquals("{}")) throw new IllegalArgumentException("could not convert dist to json");
-        prefsEditor.putString(dist_in_sp, json);
+    public static void saveConfigByString(String key, String json){
+        SharedPreferences.Editor prefsEditor = config.edit();
+        prefsEditor.putString(key, json);
         prefsEditor.apply();
-        Log.d(TAG, "saveConfig: config saved in shared preference");
+        Log.d(TAG, "saveConfig: config ("+key+") saved in shared preference");
     }
 
     private static Mat loadConfig(String key){

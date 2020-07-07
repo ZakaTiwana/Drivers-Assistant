@@ -59,6 +59,22 @@ public class TestLaneAdvanceActivity extends AppCompatActivity {
         LaneDetectorAdvance.setSharedPreference(
                 getSharedPreferences("LaneDetection",0));
 //        fds = new ArrayList<>();
+        LaneDetectorAdvance.saveConfigByString(LaneDetectorAdvance.mtx_in_sp,
+                "{\n" +
+                        "\t\"rows\":3,\n" +
+                        "\t\"cols\":3,\n" +
+                        "\t\"type\":6,\n" +
+                        "\t\"data\":[266.15243064503545,0.0,172.84313475007178,0.0,476.19021076104707,128.90191635744605,0.0,0.0,1.0]\n" +
+                        "}");
+
+        LaneDetectorAdvance.saveConfigByString(LaneDetectorAdvance.dist_in_sp,
+                "{\n" +
+                        "\t\"rows\":1,\n" +
+                        "\t\"cols\":5,\n" +
+                        "\t\"type\":6,\n" +
+                        "\t\"data\":[0.6037710188104127]\n" +
+                        "}");
+
         bmps = new ArrayList<>();
         initSnackbar = Snackbar.make(findViewById(R.id.container_test_lane_adv),
                 "loading pictures....", Snackbar.LENGTH_INDEFINITE);
@@ -86,7 +102,7 @@ public class TestLaneAdvanceActivity extends AppCompatActivity {
     }
     private void detectLane(){
         if (!bmps.isEmpty()){
-            ladv.calibration(6,4,bmps,true);
+            ladv.calibration(6,4,bmps,false);
             show("calibration done");
             ladv.unDistortImage(bmps.get(0).copy(Bitmap.Config.ARGB_8888,true));
             imageView.setImageBitmap(
