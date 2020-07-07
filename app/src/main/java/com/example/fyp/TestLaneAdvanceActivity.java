@@ -13,6 +13,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.ParcelFileDescriptor;
@@ -25,6 +26,7 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.example.fyp.customutilities.ImageUtilities;
+import com.google.android.material.snackbar.Snackbar;
 
 import org.opencv.android.OpenCVLoader;
 
@@ -37,6 +39,7 @@ public class TestLaneAdvanceActivity extends AppCompatActivity {
 
     private static final String TAG = "TestLaneAdvanceActivity";
     private ImageView imageView;
+    private Snackbar initSnackbar = null;
 //    private List<ParcelFileDescriptor> fds;
     private final int GALLERY_REQUEST_CODE = 100;
     private LaneDetectorAdvance ladv;
@@ -57,6 +60,8 @@ public class TestLaneAdvanceActivity extends AppCompatActivity {
                 getSharedPreferences("LaneDetection",0));
 //        fds = new ArrayList<>();
         bmps = new ArrayList<>();
+        initSnackbar = Snackbar.make(findViewById(R.id.container_test_lane_adv),
+                "loading pictures....", Snackbar.LENGTH_INDEFINITE);
         if(OpenCVLoader.initDebug()){
             Log.d(TAG, "onCreate: Opencv Loaded Successfully");
         }else{
@@ -81,7 +86,7 @@ public class TestLaneAdvanceActivity extends AppCompatActivity {
     }
     private void detectLane(){
         if (!bmps.isEmpty()){
-            ladv.calibration(6,4,bmps,false);
+            ladv.calibration(6,4,bmps,true);
             show("calibration done");
             ladv.unDistortImage(bmps.get(0).copy(Bitmap.Config.ARGB_8888,true));
             imageView.setImageBitmap(
@@ -110,67 +115,8 @@ public class TestLaneAdvanceActivity extends AppCompatActivity {
         if (resultCode == Activity.RESULT_OK) {
             switch (requestCode) {
                 case GALLERY_REQUEST_CODE:
-                    //data.getData returns the content URI for the selected Image
-                    String[] filePathColumn = {MediaStore.Images.Media.DATA};
-                    if(data.getData()!=null){
-                        Log.d(TAG, "onActivityResult: got single image");
-                        Uri selectedImage = data.getData();
-                        // Get the cursor
-                        Cursor cursor = getContentResolver().query(selectedImage, filePathColumn, null, null, null);
-                        // Move to first row
-                        if(cursor.moveToFirst()){
-                            // now that you have the media URI, you can decode it to a bitmap
-                            try (ParcelFileDescriptor pfd = this.getContentResolver().openFileDescriptor(selectedImage, "r")) {
-                                if (pfd != null) {
-//                                    fds.add(pfd);
-                                    Bitmap bmp = BitmapFactory.decodeFileDescriptor(pfd.getFileDescriptor());
-                                    Bitmap resizedBmp = ImageUtilities.getResizedBitmap(bmp,
-                                            300,300,true);
-                                    bmps.add(resizedBmp);
-                                }
-                            } catch (IOException ex) {
-                                ex.printStackTrace();
-                            }
-                        }
-                        cursor.close();
-                    } else if (data.getClipData() != null) {
-                        ClipData mClipData = data.getClipData();
-                        for (int i = 0; i < mClipData.getItemCount(); i++) {
-                            ClipData.Item item = mClipData.getItemAt(i);
-                            Uri selectedImage = item.getUri();
-                            // Get the cursor
-                            Cursor cursor = getContentResolver().query(
-                                    selectedImage, filePathColumn,
-                                    null, null, null);
-                            // Move to first row
-                            if(cursor.moveToFirst()){
-                                // now that you have the media URI, you can decode it to a bitmap
-                                try (ParcelFileDescriptor pfd = this.getContentResolver().openFileDescriptor(selectedImage, "r")) {
-                                    if (pfd != null) {
-//                                        fds.add(pfd);
-                                        Log.d(TAG, "onActivityResult: in ParcelFileDecriptor");
-                                        Bitmap bmp = BitmapFactory.decodeFileDescriptor(pfd.getFileDescriptor());
-                                        Bitmap resizedBmp = ImageUtilities.getResizedBitmap(bmp,
-                                                300,300,false);
-                                        bmps.add(resizedBmp);
-                                    }
-                                } catch (IOException ex) {
-                                    ex.printStackTrace();
-                                }
-                            }
-                            cursor.close();
-                        }
+                    new LoadImagesTask().execute(data);
 
-                        Log.d(TAG, String.format(
-                                "onActivityResult: got multiple images in total = %d",
-                                bmps.size()));
-                    } else {
-                        show("you did not select any image(s)");
-                    }
-                    if (!bmps.isEmpty()){
-                        Bitmap copy = bmps.get(0).copy(Bitmap.Config.ARGB_8888,false);
-                        imageView.setImageBitmap(copy);
-                    }
                     break;
                 default:
                     break;
@@ -182,5 +128,88 @@ public class TestLaneAdvanceActivity extends AppCompatActivity {
     }
     public void show(String msg){
         Toast.makeText(this,msg,Toast.LENGTH_LONG).show();
+    }
+
+    private class LoadImagesTask extends AsyncTask<Object,Object,Object> {
+
+        @Override
+        protected Object doInBackground(Object... intents) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    initSnackbar.show();
+                }
+            });
+            Intent data = (Intent) intents[0];
+            //data.getData returns the content URI for the selected Image
+            String[] filePathColumn = {MediaStore.Images.Media.DATA};
+            if(data.getData()!=null){
+                Log.d(TAG, "onActivityResult: got single image");
+                Uri selectedImage = data.getData();
+                // Get the cursor
+                Cursor cursor = getContentResolver().query(selectedImage, filePathColumn, null, null, null);
+                // Move to first row
+                if(cursor.moveToFirst()){
+                    // now that you have the media URI, you can decode it to a bitmap
+                    try (ParcelFileDescriptor pfd = getContentResolver().openFileDescriptor(selectedImage, "r")) {
+                        if (pfd != null) {
+//                                    fds.add(pfd);
+                            Bitmap bmp = BitmapFactory.decodeFileDescriptor(pfd.getFileDescriptor());
+                            Bitmap resizedBmp = ImageUtilities.getResizedBitmap(bmp,
+                                    300,300,true);
+                            bmps.add(resizedBmp);
+                        }
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                    }
+                }
+                cursor.close();
+            } else if (data.getClipData() != null) {
+                ClipData mClipData = data.getClipData();
+                for (int i = 0; i < mClipData.getItemCount(); i++) {
+                    ClipData.Item item = mClipData.getItemAt(i);
+                    Uri selectedImage = item.getUri();
+                    // Get the cursor
+                    Cursor cursor = getContentResolver().query(
+                            selectedImage, filePathColumn,
+                            null, null, null);
+                    // Move to first row
+                    if(cursor.moveToFirst()){
+                        // now that you have the media URI, you can decode it to a bitmap
+                        try (ParcelFileDescriptor pfd = getContentResolver().openFileDescriptor(selectedImage, "r")) {
+                            if (pfd != null) {
+//                                        fds.add(pfd);
+                                Log.d(TAG, "onActivityResult: in ParcelFileDecriptor");
+                                Bitmap bmp = BitmapFactory.decodeFileDescriptor(pfd.getFileDescriptor());
+                                Bitmap resizedBmp = ImageUtilities.getResizedBitmap(bmp,
+                                        300,300,false);
+                                bmps.add(resizedBmp);
+                            }
+                        } catch (IOException ex) {
+                            ex.printStackTrace();
+                        }
+                    }
+                    cursor.close();
+                }
+
+                Log.d(TAG, String.format(
+                        "onActivityResult: got multiple images in total = %d",
+                        bmps.size()));
+            } else {
+                show("you did not select any image(s)");
+            }
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    initSnackbar.dismiss();
+                    if (!bmps.isEmpty()){
+                        Bitmap copy = bmps.get(0).copy(Bitmap.Config.ARGB_8888,false);
+                        imageView.setImageBitmap(copy);
+                    }
+                }
+            });
+
+            return null;
+        }
     }
 }

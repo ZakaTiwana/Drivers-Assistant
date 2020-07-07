@@ -2,29 +2,24 @@ package com.example.fyp;
 
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.os.ParcelFileDescriptor;
 import android.util.Log;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import org.opencv.core.Mat;
 import org.opencv.android.Utils;
-import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.MatOfPoint3f;
-import org.opencv.core.Point;
 import org.opencv.core.Point3;
 import org.opencv.core.Size;
 import org.opencv.core.TermCriteria;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.calib3d.Calib3d;
-import org.opencv.core.CvType;
 
-import java.io.FileDescriptor;
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class LaneDetectorAdvance {
@@ -44,34 +39,18 @@ public class LaneDetectorAdvance {
     public void calibration(int nx, int ny, List<Bitmap> bmps,boolean forceCalibrate) {
         if(bmps == null) return;
         if(hasConfigValues() && !forceCalibrate) return;
-
-//        Mat objp = new Mat(nx*ny,3,CvType.CV_32F);
         List<Mat> obj_ps = new ArrayList<>();
         List<Mat> img_ps = new ArrayList<>();
         Size imgSize = new Size();
-//        int index= 0;
-//        for (int i = 0; i < ny; i++) {
-//            for (int j = 0; j < nx; j++) {
-//                objp.put(index,0,new float[]{(float) j,(float) i,0f});
-//                index++;
-//            }
-//        }
 
         MatOfPoint3f objp = new MatOfPoint3f();
-        int n_total = nx*ny;
         Size boardSize = new Size (nx,ny);
 
         for (int i = 0; i < ny; i++) {
             for (int j = 0; j < nx; j++) {
-//                objp.put(index,0,new float[]{(float) j,(float) i,0f});
                 objp.push_back(new MatOfPoint3f(new Point3(j, i,0.0d)));
             }
         }
-
-//        for (int j=0; j<n_total; j++)
-//        {
-//            objp.push_back(new MatOfPoint3f(new Point3((double)j/(double)nx, (double)j%(double)ny, 0.0d)));
-//        }
 
         for (Bitmap bitmap :
                 bmps) {
@@ -119,39 +98,23 @@ public class LaneDetectorAdvance {
         Log.d(TAG, String.format("calibration: mtx : width= %d , height= %d", mtx.width(),mtx.height()));
         Log.d(TAG, String.format("calibration: dist : width= %d , height= %d", dist.width(),dist.height()));
 
-        double[][] mtx_db = new double[mtx.width()][mtx.height()];
-        double[][] dist_db = new double[dist.width()][dist.height()];
 
-        for (int i = 0; i < mtx.width(); i++) {
-            for (int j = 0; j < mtx.height(); j++) {
-                mtx_db[i][j] = mtx.get(i, j)[0];
-            }
+
+        Log.d(TAG, "calibration: mtx content  => " + matContentInString(mtx));
+        Log.d(TAG, "calibration: dist content  => " + matContentInString(dist));
+        try {
+            saveConfig(mtx, dist);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        Log.d(TAG, "calibration: mtx content  => " + matContent(mtx));
-
-
-        for (int i = 0; i < dist.width(); i++) {
-            for (int j = 0; j < dist.height(); j++) {
-                double[] db = dist.get(i, j);
-                if (db != null){
-                    dist_db[i][j] = db[0];
-                }
-            }
-        }
-        Log.d(TAG, "calibration: dist content  => " + matContent(dist));
-
-
-        saveConfig(mtx_db, dist_db);
     }
 
     public void unDistortImage(Bitmap bmp){
         if (!hasConfigValues()) return;
-//        mtx = loadMtx();
-//        dist = loadDist();
-        mtx  = loadMtx();
-        dist = loadDist();
-        Log.d(TAG, "unDistortImage: mtx => "+matContent(mtx));
-        Log.d(TAG, "unDistortImage: dist => "+matContent(dist));
+        mtx = loadConfig(mtx_in_sp);
+        dist = loadConfig(dist_in_sp);
+        Log.d(TAG, "unDistortImage: mtx => "+ matContentInString(mtx));
+        Log.d(TAG, "unDistortImage: dist => "+ matContentInString(dist));
 
         Mat img = new Mat();
         Mat un_img = new Mat();
@@ -165,53 +128,31 @@ public class LaneDetectorAdvance {
     }
 
 
-    private static void saveConfig(double[][] mtx,double[][] dist){
+    private static void saveConfig(Mat mtx,Mat dist) throws Exception {
         SharedPreferences.Editor prefsEditor = config.edit();
-        Gson gson = new Gson();
 
-        String json = gson.toJson(mtx);
+        String json = matToJson(mtx);
+        if (json.contentEquals("{}")) throw new IllegalArgumentException("could not convert mtx to json");
         prefsEditor.putString(mtx_in_sp, json);
         prefsEditor.apply();
 
-        json = gson.toJson(dist);
+        json = matToJson(dist);
+        if (json.contentEquals("{}")) throw new IllegalArgumentException("could not convert dist to json");
         prefsEditor.putString(dist_in_sp, json);
         prefsEditor.apply();
         Log.d(TAG, "saveConfig: config saved in shared preference");
     }
 
-    private static Mat loadMtx(){
-        Gson gson = new Gson();
-        Double[][] mtx = new Double[3][];
-        String json = config.getString(mtx_in_sp, "");
+    private static Mat loadConfig(String key){
+        String json = config.getString(key, "");
+        Mat mat;
         if (json != null && !json.isEmpty()){
-            mtx = gson.fromJson(json,Double[][].class);
-        }
-        Mat mtx_mat = new Mat(mtx[0].length,mtx.length,CvType.CV_32F);
-        for (int i = 0; i < mtx_mat.width(); i++) {
-            for (int j = 0; j < mtx_mat.height(); j++) {
-                mtx_mat.put(i,j,mtx[i][j]);
-            }
-        }
-        Log.d(TAG, "loadMtx: loaded mtx from share preference");
-        Log.d(TAG, "loadMtx: mtx = "+json);
-        return mtx_mat;
-    }
-    private static Mat loadDist(){
-        Gson gson = new Gson();
-        Double[][] dist = new Double[5][];
-        String json = config.getString(dist_in_sp, "");
-        if (json != null && !json.isEmpty()){
-            dist = gson.fromJson(json,Double[][].class);
-        }
-        Mat dist_mat = new Mat(dist[0].length,dist.length,CvType.CV_32F);
-        for (int i = 0; i < dist_mat.width(); i++) {
-            for (int j = 0; j < dist_mat.height(); j++) {
-                dist_mat.put(i,j,dist[i][j]);
-            }
-        }
-        Log.d(TAG, "loadMtx: loaded dist from share preference");
-        Log.d(TAG, "loadMtx: dist = "+json);
-        return dist_mat;
+            Log.d(TAG, "loadMtx: "+key+" => "+json);
+             mat = matFromJson(json);
+        }else return null;
+        Log.d(TAG, "loadMtx: loaded "+key+" from share preference");
+
+        return mat;
     }
 
     public static void setSharedPreference(SharedPreferences s){
@@ -236,7 +177,7 @@ public class LaneDetectorAdvance {
         return unDistImg;
     }
 
-    private String matContent(Mat dist){
+    private String matContentInString(Mat dist){
         StringBuilder dist_s = new StringBuilder("[");
         for (int i = 0; i < dist.width(); i++) {
             dist_s.append("[");
@@ -251,4 +192,49 @@ public class LaneDetectorAdvance {
         dist_s.append("]");
         return dist_s.toString();
     }
+
+    private static String matToJson(Mat mat){
+        JsonObject obj = new JsonObject();
+
+        if(mat.isContinuous()){
+            int cols = mat.cols();
+            int rows = mat.rows();
+
+            JsonArray data = new JsonArray();
+            for (int i = 0; i < rows*cols; i++) {
+                if (mat.get(i/rows,i%cols) !=null) data.add(mat.get(i/rows,i%cols)[0]);
+            }
+            obj.addProperty("rows", mat.rows());
+            obj.addProperty("cols", mat.cols());
+            obj.addProperty("type", mat.type());
+
+            obj.add("data",data);
+
+            Gson gson = new Gson();
+            return gson.toJson(obj);
+        } else {
+            Log.e(TAG, "Mat not continuous.");
+        }
+        return "{}";
+    }
+
+    private static Mat matFromJson(String json){
+        JsonParser parser = new JsonParser();
+        JsonObject JsonObject = parser.parse(json).getAsJsonObject();
+
+        int rows = JsonObject.get("rows").getAsInt();
+        int cols = JsonObject.get("cols").getAsInt();
+        int type = JsonObject.get("type").getAsInt();
+
+        JsonArray data = JsonObject.get("data").getAsJsonArray();
+        Mat mat = new Mat(rows, cols, type);
+
+        for (int i = 0; i < rows*cols; i++) {
+            try{
+                mat.put(i/rows, i%cols, data.get(i).getAsDouble());
+            }catch (Exception ignored){}
+        }
+        return mat;
+    }
+
 }
