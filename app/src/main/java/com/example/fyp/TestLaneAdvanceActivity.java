@@ -44,38 +44,50 @@ public class TestLaneAdvanceActivity extends AppCompatActivity {
     private final int GALLERY_REQUEST_CODE = 100;
     private LaneDetectorAdvance ladv;
     private int keyCounter=0;
+    private boolean hasProcessed = false;
 
     private List<Bitmap> bmps;
 
 
 
-
+    @Override
+    public void onWindowFocusChanged(boolean hasFocas) {
+        super.onWindowFocusChanged(hasFocas);
+        View decorView = getWindow().getDecorView();
+        if(hasFocas) {
+            decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                    | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                    | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                    | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                    | View.SYSTEM_UI_FLAG_FULLSCREEN
+                    | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
+        }
+    }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_test_lane_advance);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+//        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+
         imageView = findViewById(R.id.lane_adv_imgview);
-        ladv = new LaneDetectorAdvance();
+        Bitmap bmp = BitmapFactory.decodeResource(getResources(),R.drawable.test_img_lane);
+
+        int srcWidth = bmp.getWidth();
+        int srcHeight = bmp.getHeight();
+        Bitmap resizedBmp = ImageUtilities.getResizedBitmap(
+                bmp,300,300,true);
+
+        ladv = new LaneDetectorAdvance(srcWidth,srcHeight,
+                300,300);
+
+        imageView.setImageBitmap(resizedBmp);
+        bmps = new ArrayList<>();
+        bmps.add(resizedBmp);
         LaneDetectorAdvance.setSharedPreference(
                 getSharedPreferences("LaneDetection",0));
 //        fds = new ArrayList<>();
-        LaneDetectorAdvance.saveConfigByString(LaneDetectorAdvance.mtx_in_sp,
-                "{\n" +
-                        "\t\"rows\":3,\n" +
-                        "\t\"cols\":3,\n" +
-                        "\t\"type\":6,\n" +
-                        "\t\"data\":[266.15243064503545,0.0,172.84313475007178,0.0,476.19021076104707,128.90191635744605,0.0,0.0,1.0]\n" +
-                        "}");
 
-        LaneDetectorAdvance.saveConfigByString(LaneDetectorAdvance.dist_in_sp,
-                "{\n" +
-                        "\t\"rows\":1,\n" +
-                        "\t\"cols\":5,\n" +
-                        "\t\"type\":6,\n" +
-                        "\t\"data\":[0.6037710188104127]\n" +
-                        "}");
-
-        bmps = new ArrayList<>();
         initSnackbar = Snackbar.make(findViewById(R.id.container_test_lane_adv),
                 "loading pictures....", Snackbar.LENGTH_INDEFINITE);
         if(OpenCVLoader.initDebug()){
@@ -87,6 +99,7 @@ public class TestLaneAdvanceActivity extends AppCompatActivity {
 
 
     private void pickFromGallery(){
+        bmps.clear();
         //Create an Intent with action as ACTION_PICK
 
         Intent intent=new Intent(Intent.ACTION_PICK);
@@ -102,12 +115,9 @@ public class TestLaneAdvanceActivity extends AppCompatActivity {
     }
     private void detectLane(){
         if (!bmps.isEmpty()){
-            ladv.calibration(6,4,bmps,false);
-            show("calibration done");
-            ladv.unDistortImage(bmps.get(0).copy(Bitmap.Config.ARGB_8888,true));
-            imageView.setImageBitmap(
-                    ladv.getUnDistImg()
-            );
+//            ladv.calibration(6,4,bmps,false);
+//            show("calibration done");
+//            ladv.unDistortImage(bmps.get(0).copy(Bitmap.Config.ARGB_8888,true));
         }
     }
     @Override
@@ -118,8 +128,31 @@ public class TestLaneAdvanceActivity extends AppCompatActivity {
             return true;
         }
         if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
-            detectLane();
-            show("Lane detection Done");
+
+            switch (keyCounter){
+                case 0:
+//                    detectLane();
+//                    show("Lane detection Done");
+                    if (!bmps.isEmpty()) {
+                        ladv.processFrame(bmps.get(0));
+                        show("processFrame Done");
+                        hasProcessed = true;
+                    }
+                    break;
+                case 1:
+                    imageView.setImageBitmap(ladv.getEdgesBmp());
+                    break;
+                case 2:
+                    imageView.setImageBitmap(ladv.getMarkedBmp());
+                    break;
+                case 3:
+                    imageView.setImageBitmap(ladv.getWarperBmp());
+                    break;
+            }
+            if (hasProcessed){
+                keyCounter++;
+                keyCounter %= 4;
+            }
             return true;
         }
         return super.onKeyDown(keyCode,event);
@@ -171,9 +204,10 @@ public class TestLaneAdvanceActivity extends AppCompatActivity {
                         if (pfd != null) {
 //                                    fds.add(pfd);
                             Bitmap bmp = BitmapFactory.decodeFileDescriptor(pfd.getFileDescriptor());
-                            Bitmap resizedBmp = ImageUtilities.getResizedBitmap(bmp,
-                                    300,300,true);
-                            bmps.add(resizedBmp);
+                            bmps.add(bmp);
+//                            Bitmap resizedBmp = ImageUtilities.getResizedBitmapMaintainAspectRatio(bmp,
+//                                    300,300,true);
+//                            bmps.add(resizedBmp);
                         }
                     } catch (IOException ex) {
                         ex.printStackTrace();
@@ -197,8 +231,9 @@ public class TestLaneAdvanceActivity extends AppCompatActivity {
 //                                        fds.add(pfd);
                                 Log.d(TAG, "onActivityResult: in ParcelFileDecriptor");
                                 Bitmap bmp = BitmapFactory.decodeFileDescriptor(pfd.getFileDescriptor());
-                                Bitmap resizedBmp = ImageUtilities.getResizedBitmap(bmp,
-                                        300,300,false);
+//                                bmps.add(bmp);
+                                Bitmap resizedBmp = ImageUtilities.getResizedBitmapMaintainAspectRatio(bmp,
+                                        600,600,true);
                                 bmps.add(resizedBmp);
                             }
                         } catch (IOException ex) {

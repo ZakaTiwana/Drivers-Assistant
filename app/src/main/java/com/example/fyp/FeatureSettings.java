@@ -13,13 +13,15 @@ import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.fyp.customview.LanePointsView;
+
 public class FeatureSettings extends AppCompatActivity implements View.OnClickListener {
 
     ImageView backButton;
 
     Switch laneGuide, distanceCalculator, objectDetection, signDetection, muteWarnings;
 
-    TextView testbtn;
+    TextView testbtn,laneTextButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,6 +30,8 @@ public class FeatureSettings extends AppCompatActivity implements View.OnClickLi
 
         testbtn=(TextView)findViewById(R.id.textView2);
         testbtn.setOnClickListener(this);
+        laneTextButton = findViewById(R.id.lane_text_view);
+        laneTextButton.setOnClickListener(this);
 
         laneGuide = findViewById(R.id.switch1);
         distanceCalculator = findViewById(R.id.switch2);
@@ -152,6 +156,10 @@ public class FeatureSettings extends AppCompatActivity implements View.OnClickLi
         }
         else if(v.getId()==testbtn.getId()){
             Intent intent = new Intent(this, MicTest.class);
+            startActivity(intent);
+        }
+        else if(v.getId() == laneTextButton.getId()){
+            Intent intent = new Intent(this, LanePointsActivity.class);
             startActivity(intent);
         }
     }

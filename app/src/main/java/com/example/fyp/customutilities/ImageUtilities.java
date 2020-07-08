@@ -344,6 +344,20 @@ public class ImageUtilities {
         return resized;
     }
 
+    public static Bitmap getResizedBitmapMaintainAspectRatio(@NotNull Bitmap bmp,int newWidth,int newHeight,boolean allowToRecycleBitmap){
+        Matrix frameToCropTransform ;
+//        Matrix cropToFrameTransform = new Matrix();
+        Bitmap resized = Bitmap.createBitmap(newWidth,newHeight,Bitmap.Config.ARGB_8888);
+        frameToCropTransform = ImageUtilities.getTransformationMatrix(bmp.getWidth(),bmp.getHeight(),
+                newWidth,newHeight,0,true);
+//        frameToCropTransform.invert(cropToFrameTransform);
+        Canvas canvas = new Canvas(resized);
+        canvas.drawBitmap(bmp,frameToCropTransform,null);
+//        Log.d(TAG, "getResizedBitmap: bitmap width and heihg");
+        if(!bmp.isRecycled() && allowToRecycleBitmap) bmp.recycle();
+        return resized;
+    }
+
     public static void createCustomFile(@NotNull Context context, Bitmap bmp, String fileName){
         try {
             File path= new File(context.getExternalFilesDir(null),  "Images");

@@ -42,7 +42,7 @@
         app:layout_constraintTop_toBottomOf="@+id/switch3" />
 
     <TextView
-        android:id="@+id/textView6"
+        android:id="@+id/lane_text_view"
         android:layout_width="292dp"
         android:layout_height="50dp"
         android:text="Lane guide will help you to stay in the middle of a lane by augmenting guiding line on your lane."
@@ -87,7 +87,7 @@
         android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView6" />
+        app:layout_constraintTop_toBottomOf="@+id/lane_text_view" />
 
 
     <Switch
