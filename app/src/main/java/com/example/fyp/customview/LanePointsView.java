@@ -28,9 +28,12 @@ public class LanePointsView extends View {
     private Paint maskFillPaint = null;
     private Paint maskBorderPaint = null;
     private Paint pointPaint = null;
-
     private Paint onClickPaint = null;
+
     private boolean hasClicked = false;
+    private float cx ;
+    private float cy ;
+    private final float onClicked_radius = 50;
 
     private PointF[] pts = null;
 
@@ -60,6 +63,11 @@ public class LanePointsView extends View {
 
     public void init(Context context) {
         this.context = context;
+
+        onClickPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        onClickPaint.setColor(Color.WHITE);
+        onClickPaint.setStyle(Paint.Style.FILL_AND_STROKE);
+        onClickPaint.setAlpha(100);
 
         maskBorderPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         maskBorderPaint.setColor(Color.DKGRAY);
@@ -130,10 +138,13 @@ public class LanePointsView extends View {
         int action = event.getAction() & MotionEvent.ACTION_MASK;
         switch(action) {
             case MotionEvent.ACTION_DOWN : {
+                hasClicked = true;
                 // check if with in reach for
                 // circle
-                int center_x = (int) event.getX();
-                int center_y = (int) event.getY();
+                cx = event.getX();
+                cy = event.getY();
+                int center_x = (int) cx;
+                int center_y = (int) cy;
                 int radius_pow_2 = (int) Math.pow(30,2);
                 for (int i=0; i< pts.length; i++) {
                    if (  Math.pow(pts[i].x - center_x,2) + Math.pow(pts[i].y - center_y,2) < radius_pow_2){
@@ -149,6 +160,8 @@ public class LanePointsView extends View {
                 // change the selected point
                 float x = event.getX();
                 float y = event.getY();
+                cx = event.getX();
+                cy = event.getY();
                 if(gotPointToMov){
                     pts[point_to_mov].set(x,y);
                     setMaskPath();
@@ -156,9 +169,12 @@ public class LanePointsView extends View {
                 }
                 break;
             }
+            case MotionEvent.ACTION_UP:{
+                hasClicked = false;
+            }
         }
 
-        if (gotPointToMov)invalidate();
+        if (gotPointToMov | hasClicked)invalidate();
         return true;
     }
 
@@ -230,5 +246,6 @@ public class LanePointsView extends View {
         canvas.drawPath(maskPath,maskFillPaint);
         canvas.drawPath(maskPath,maskBorderPaint);
         canvas.drawPath(pointCirclesPath,pointPaint);
+        if (hasClicked) canvas.drawCircle(cx,cy,onClicked_radius,onClickPaint);
     }
 }
