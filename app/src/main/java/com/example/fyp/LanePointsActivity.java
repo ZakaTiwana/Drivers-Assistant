@@ -11,6 +11,7 @@ import android.content.pm.PackageManager;
 import android.graphics.Canvas;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
+import android.graphics.PointF;
 import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
@@ -42,6 +43,7 @@ import android.widget.FrameLayout;
 import android.widget.Toast;
 
 import com.example.fyp.customutilities.ImageUtilities;
+import com.example.fyp.customutilities.SharedPreferencesUtils;
 import com.example.fyp.customview.LanePointsView;
 import com.example.fyp.customview.OverlayView;
 
@@ -172,6 +174,17 @@ public class LanePointsActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 lanePointsView.savePoints("LaneDetector","original_pts","transformed_pts");
+            }
+        });
+
+        Button btn_get_lane_p = findViewById(R.id.btn_get_lane_points);
+        btn_get_lane_p.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                PointF[] transformedPoints = (PointF[]) SharedPreferencesUtils.loadObject(
+                        getSharedPreferences("LaneDetector",0),"transformed_pts",PointF[].class);
+                Log.d(TAG, String.format("onClick: transformedPoints = %s",
+                        Arrays.asList(transformedPoints)));
             }
         });
     }
