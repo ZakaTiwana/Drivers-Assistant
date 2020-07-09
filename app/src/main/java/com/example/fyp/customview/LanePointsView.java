@@ -20,6 +20,7 @@ import androidx.annotation.Nullable;
 
 import com.example.fyp.LaneDetectorAdvance;
 import com.example.fyp.customutilities.ImageUtilities;
+import com.example.fyp.customutilities.SharedPreferencesUtils;
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
 
@@ -192,19 +193,12 @@ public class LanePointsView extends View {
     public void savePoints(String SharedRes, String original_point_key,String transformed_point_key){
         PointF[] t_pts = getTransformPoints(300,300);
         if (t_pts == null) return;
-
-        Gson gson = new Gson();
-        String pts_original_json = gson.toJson(pts);
-        Log.d(TAG, "savePoints: pts_original_json = "+pts_original_json);
-
-        String pts_transformed_json = gson.toJson(t_pts);
-        Log.d(TAG, "savePoints: pts_transformed_json = "+pts_transformed_json);
-
         SharedPreferences sp = context.getSharedPreferences(SharedRes,0);
-        SharedPreferences.Editor editor = sp.edit();
-        editor.putString(original_point_key,pts_original_json);
-        editor.putString(transformed_point_key,pts_transformed_json);
-        editor.apply();
+        SharedPreferencesUtils.saveObject(
+                sp,original_point_key,pts);
+        SharedPreferencesUtils.saveObject(
+                sp,transformed_point_key,t_pts);
+
     }
     public PointF[] loadPoints(String SharedRes, String key ) throws IllegalArgumentException , JsonParseException {
         Gson gson = new Gson();
