@@ -1,3 +1,12 @@
 <resources>
     <string name="app_name">Driver\'s Assistant</string>
+
+    <!--
+    sp = Shared Preferences
+    ld = lane Detection
+    pts = points
+    -->
+    <string name="sp_laneDetection">lane_detection</string>
+    <string name="sp_ld_key_original_mask_pts">o_mask_pts</string>
+    <string name="sp_ld_key_transformed_mask_pts">t_mask_pts</string>
 </resources>
