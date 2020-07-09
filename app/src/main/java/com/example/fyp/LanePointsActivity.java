@@ -6,6 +6,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Canvas;
@@ -57,11 +58,8 @@ import java.util.List;
 public class LanePointsActivity extends AppCompatActivity {
 
     private static final String TAG = "LanePointsActivity";
-
     private static final int REQUEST_CAMERA_PERMISSION_RESULT = 0;
 
-    private int mWidth  = 0;
-    private int mHeight = 0;
     private static final Size[] DESIRED_PREVIEW_SIZES =
             {
                     new Size(640,480),
@@ -170,10 +168,19 @@ public class LanePointsActivity extends AppCompatActivity {
         mTextureView = (TextureView) findViewById(R.id.textureView_lane_points);
         lanePointsView = findViewById(R.id.lanePointsView);
         Button btn_set_lane_p = findViewById(R.id.btn_set_lane_points);
+
+        final String sp_ld = getString(R.string.sp_laneDetection);
+        final String sp_ld_key_op = getString(R.string.sp_ld_key_original_mask_pts);
+        final String sp_ld_key_tp = getString(R.string.sp_ld_key_transformed_mask_pts);
+        final SharedPreferences sp = getSharedPreferences(sp_ld,0);
         btn_set_lane_p.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                lanePointsView.savePoints("LaneDetector","original_pts","transformed_pts");
+                PointF[] op = lanePointsView.getPoints();
+                PointF[] tp = lanePointsView.getTransformPoints(300,300);
+
+                SharedPreferencesUtils.saveObject(sp,sp_ld_key_op,op);
+                SharedPreferencesUtils.saveObject(sp,sp_ld_key_tp,tp);
             }
         });
 
@@ -182,7 +189,7 @@ public class LanePointsActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 PointF[] transformedPoints = (PointF[]) SharedPreferencesUtils.loadObject(
-                        getSharedPreferences("LaneDetector",0),"transformed_pts",PointF[].class);
+                        sp,sp_ld_key_tp,PointF[].class);
                 Log.d(TAG, String.format("onClick: transformedPoints = %s",
                         Arrays.asList(transformedPoints)));
             }
@@ -251,14 +258,14 @@ public class LanePointsActivity extends AppCompatActivity {
                 }
                 StreamConfigurationMap map = cameraCharacteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
 
-                mWidth = desiredInput.getWidth();
-                mHeight = desiredInput.getHeight();
+                int mWidth = desiredInput.getWidth();
+                int mHeight = desiredInput.getHeight();
 
-                Log.d(TAG, String.format("setupCamera: (device resolution) mWidth = %d and mHeight = %d", mWidth,mHeight));
+                Log.d(TAG, String.format("setupCamera: (device resolution) mWidth = %d and mHeight = %d", mWidth, mHeight));
                 assert map != null;
                 mPreviewSize = chooseOptimalSize(map.getOutputSizes(SurfaceTexture.class), mWidth, mHeight);
 
-                onPreviewSizeSelected(mWidth,mHeight);
+                onPreviewSizeSelected(mWidth, mHeight);
                 // set overlay and texture view width and height
                 FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
                         mPreviewSize.getWidth(),mPreviewSize.getHeight());

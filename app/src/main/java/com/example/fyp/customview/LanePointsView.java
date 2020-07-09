@@ -190,25 +190,13 @@ public class LanePointsView extends View {
     }
 
 
-    public void savePoints(String SharedRes, String original_point_key,String transformed_point_key){
-        PointF[] t_pts = getTransformPoints(300,300);
-        if (t_pts == null) return;
-        SharedPreferences sp = context.getSharedPreferences(SharedRes,0);
-        SharedPreferencesUtils.saveObject(
-                sp,original_point_key,pts);
-        SharedPreferencesUtils.saveObject(
-                sp,transformed_point_key,t_pts);
 
+    public Path getMaskPaths(){
+        return maskPath;
     }
-    public PointF[] loadPoints(String SharedRes, String key ) throws IllegalArgumentException , JsonParseException {
-        Gson gson = new Gson();
-        SharedPreferences sp = context.getSharedPreferences(SharedRes,0);
-        String json = sp.getString(key,null);
-        if(json == null) throw new IllegalArgumentException(key+" is not a valid key in SharedPreference "+SharedRes);
-        Log.d(TAG, String.format("loadPoints: %s => %s", key,json));
-        return gson.fromJson(json, PointF[].class);
+    public PointF[] getPoints(){
+        return pts;
     }
-
     private Path getTransformPath(int newWidth, int newHeight){
         Matrix frameToCrop = getTransformMatrix(newWidth,newHeight);
         if (frameToCrop == null) return null;
@@ -226,7 +214,7 @@ public class LanePointsView extends View {
                 0,false);
     }
 
-    private PointF[] getTransformPoints(int newWidth, int newHeight){
+    public PointF[] getTransformPoints(int newWidth, int newHeight){
         PointF[] transformedPoints = new PointF[4];
         Matrix frameToCrop = getTransformMatrix(newWidth,newHeight);
 
