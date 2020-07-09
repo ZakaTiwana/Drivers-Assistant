@@ -45,6 +45,7 @@ import android.widget.Toast;
 
 import com.example.fyp.customutilities.ImageUtilities;
 import com.example.fyp.customutilities.SharedPreferencesUtils;
+import com.example.fyp.customutilities.SharedValues;
 import com.example.fyp.customview.LanePointsView;
 import com.example.fyp.customview.OverlayView;
 
@@ -60,18 +61,8 @@ public class LanePointsActivity extends AppCompatActivity {
     private static final String TAG = "LanePointsActivity";
     private static final int REQUEST_CAMERA_PERMISSION_RESULT = 0;
 
-    private static final Size[] DESIRED_PREVIEW_SIZES =
-            {
-                    new Size(640,480),
-                    new Size(720,480),
-                    new Size(960,720),
-                    new Size(1280,720),
-                    new Size(1440,1080),
-                    new Size(1920,1080),
-                    new Size(2048,1152),
-                    new Size(3264,1836),
-                    new Size(4128,2322)
-            };
+    private static final Size[] DESIRED_PREVIEW_SIZES = SharedValues.DESIRED_PREVIEW_SIZES;
+    private static final Size CROP_SIZE = SharedValues.CROP_SIZE;
 
     private TextureView mTextureView;
     private LanePointsView lanePointsView;
@@ -177,7 +168,8 @@ public class LanePointsActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 PointF[] op = lanePointsView.getPoints();
-                PointF[] tp = lanePointsView.getTransformPoints(300,300);
+                PointF[] tp = lanePointsView.getTransformPoints(
+                        CROP_SIZE.getWidth(),CROP_SIZE.getHeight());
 
                 SharedPreferencesUtils.saveObject(sp,sp_ld_key_op,op);
                 SharedPreferencesUtils.saveObject(sp,sp_ld_key_tp,tp);

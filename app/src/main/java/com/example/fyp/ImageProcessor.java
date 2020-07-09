@@ -24,6 +24,7 @@ import android.widget.FrameLayout;
 import androidx.annotation.RequiresApi;
 
 import com.example.fyp.customutilities.ImageUtilities;
+import com.example.fyp.customutilities.SharedValues;
 import com.google.android.material.snackbar.Snackbar;
 import com.example.fyp.customview.OverlayView;
 import org.opencv.android.OpenCVLoader;
@@ -33,18 +34,8 @@ import java.util.List;
 public class ImageProcessor extends CameraCaptureActivity {
 
     private static final String TAG = "ImageProcessor";
-    private static final Size[] DESIRED_PREVIEW_SIZES =
-            {
-                    new Size(640,480),
-                    new Size(720,480),
-                    new Size(960,720),
-                    new Size(1280,720),
-                    new Size(1440,1080),
-                    new Size(1920,1080),
-                    new Size(2048,1152),
-                    new Size(3264,1836),
-                    new Size(4128,2322)
-            };
+    private static final Size[] DESIRED_PREVIEW_SIZES = SharedValues.DESIRED_PREVIEW_SIZES;
+    private static final Size CROP_SIZE = SharedValues.CROP_SIZE;
     private static final int[] pts = {650,360, 750,360, 1280,600, 100,600}; // for lane
 
     private int mWidth = 0;
@@ -52,8 +43,6 @@ public class ImageProcessor extends CameraCaptureActivity {
 
     private Bitmap rgbFrameBitmap = null;
     private Boolean isrgbFrameCreated = false;
-//    private Matrix frameToCrop;
-    private Bitmap resizedBitmap;
 
     private static Detector detector = null;
     private static float timeTakeByObjDetector = 0;
@@ -262,8 +251,9 @@ public class ImageProcessor extends CameraCaptureActivity {
         rgbFrameBitmap.setPixels(getRgbBytes(),
                 0, aqWidth, 0, 0, aqWidth, aqHeight);
 //        ImageUtilities.createCustomFile(this,rgbFrameBitmap,"test");
-        resizedBitmap = ImageUtilities.getResizedBitmap(rgbFrameBitmap,
-                Detector.OBJ_DETECTOR_INPUT_SIZE,Detector.OBJ_DETECTOR_INPUT_SIZE,
+        //    private Matrix frameToCrop;
+        Bitmap resizedBitmap = ImageUtilities.getResizedBitmap(rgbFrameBitmap,
+                Detector.OBJ_DETECTOR_INPUT_SIZE, Detector.OBJ_DETECTOR_INPUT_SIZE,
                 false);
 
 //        if (!rgbFrameBitmap.isRecycled()) rgbFrameBitmap.recycle();
@@ -332,7 +322,7 @@ public class ImageProcessor extends CameraCaptureActivity {
     @Override
     public Size getDesiredImageReaderSize() {
         return new Size(
-                Detector.OBJ_DETECTOR_INPUT_SIZE,Detector.OBJ_DETECTOR_INPUT_SIZE);
+                CROP_SIZE.getWidth(),CROP_SIZE.getWidth());
     }
 
     private class Init extends AsyncTask<Object,Object,Object>{

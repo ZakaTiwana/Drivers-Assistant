@@ -10,13 +10,17 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.location.LocationManager;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
+import android.util.Size;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+
+
 
     private static final String TAG = "MainActivity";
     BluetoothAdapter mBluetoothAdapter;
@@ -53,10 +57,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        //--remove aster testing video activity
-//        Intent i = new Intent(getApplicationContext(),TestVideoActivity.class);
-//        startActivity(i);
-        //---
         setContentView(R.layout.activity_main);
 
 
@@ -77,8 +77,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 //        }
 
 //        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-//        enableDisableBT();
-
+//        enableDisableBT()
     }
 
     @Override
@@ -132,6 +131,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         } else if (v.getId() == imgv1.getId()) {
             Intent intent = new Intent(this, HomeSettings.class);
             startActivity(intent);
+        }
+    }
+
+    private static class LoadValuesInPreferencesTask extends AsyncTask<Object,Object,Object> {
+
+        @Override
+        protected Object doInBackground(Object... objects) {
+
+            return null;
         }
     }
 

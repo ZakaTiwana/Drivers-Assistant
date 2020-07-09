@@ -55,18 +55,7 @@ public abstract class CameraCaptureActivity extends AppCompatActivity implements
 
     private int mWidth  = 0;
     private int mHeight = 0;
-    private static final Size[] DESIRED_PREVIEW_SIZES =
-            {
-                    new Size(640,480),
-                    new Size(720,480),
-                    new Size(960,720),
-                    new Size(1280,720),
-                    new Size(1440,1080),
-                    new Size(1920,1080),
-                    new Size(2048,1152),
-                    new Size(3264,1836),
-                    new Size(4128,2322)
-            };
+
     private boolean isProcessingFrame = false;
     private byte[][] yuvBytes = new byte[3][];
     private int[] rgbBytes = null;
