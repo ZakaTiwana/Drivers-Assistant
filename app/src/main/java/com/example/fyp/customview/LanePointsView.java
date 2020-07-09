@@ -33,13 +33,15 @@ public class LanePointsView extends View {
     private boolean hasClicked = false;
     private float cx ;
     private float cy ;
-    private final float onClicked_radius = 50;
+    private static final float onClicked_radius = 50;
+    private static final float nearPoint_radius= 40;
 
     private PointF[] pts = null;
 
     private Path pointCirclesPath = null;
     private Path maskPath = null;
 
+    private Size viewSize = null;
     private int point_to_mov = 0;
     private boolean gotPointToMov = false;
 
@@ -85,6 +87,7 @@ public class LanePointsView extends View {
 
         float centerX = getWidth()/2f;  // landscape mode.
         float centerY = getHeight()/2f; //
+        viewSize = new Size(getWidth() , getHeight());
 
         pts = new PointF[4];
         pts[0] = new PointF( centerX - 100, centerY - 100 );
@@ -98,6 +101,7 @@ public class LanePointsView extends View {
         setCirclePointPath();
     }
     public void setSize(Size size){
+        viewSize = size;
         float centerX = size.getWidth()/2f;  // landscape mode.
         float centerY = size.getHeight()/2f; //
         Log.d(TAG, String.format("setSize: centerY = %f, CenterX = %f", centerY,centerX));
@@ -129,7 +133,10 @@ public class LanePointsView extends View {
         }
     }
 
-
+    @Override
+    public boolean performClick() {
+        return super.performClick();
+    }
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
@@ -145,7 +152,7 @@ public class LanePointsView extends View {
                 cy = event.getY();
                 int center_x = (int) cx;
                 int center_y = (int) cy;
-                int radius_pow_2 = (int) Math.pow(30,2);
+                int radius_pow_2 = (int) Math.pow(nearPoint_radius,2);
                 for (int i=0; i< pts.length; i++) {
                    if (  Math.pow(pts[i].x - center_x,2) + Math.pow(pts[i].y - center_y,2) < radius_pow_2){
                        point_to_mov = i;
@@ -162,6 +169,8 @@ public class LanePointsView extends View {
                 float y = event.getY();
                 cx = event.getX();
                 cy = event.getY();
+                if(cx > viewSize.getWidth() ||
+                        cy > viewSize.getHeight()) break;
                 if(gotPointToMov){
                     pts[point_to_mov].set(x,y);
                     setMaskPath();
@@ -178,6 +187,7 @@ public class LanePointsView extends View {
         return true;
     }
 
+
     public void savePoints(String SharedRes, String original_point_key,String transformed_point_key){
         PointF[] t_pts = getTransformPoints(300,300);
         if (t_pts == null) return;
@@ -190,13 +200,18 @@ public class LanePointsView extends View {
         Log.d(TAG, "savePoints: pts_transformed_json = "+pts_transformed_json);
 
         SharedPreferences sp = context.getSharedPreferences(SharedRes,0);
-
         SharedPreferences.Editor editor = sp.edit();
         editor.putString(original_point_key,pts_original_json);
         editor.putString(transformed_point_key,pts_transformed_json);
         editor.apply();
-
-
+    }
+    public PointF[] loadPoints(String SharedRes, String key ) throws IllegalArgumentException{
+        Gson gson = new Gson();
+        SharedPreferences sp = context.getSharedPreferences(SharedRes,0);
+        String json = sp.getString(key,null);
+        if(json == null) throw new IllegalArgumentException(key+" is not a valid key in SharedPreference "+SharedRes);
+        Log.d(TAG, String.format("loadPoints: %s => %s", key,json));
+        return gson.fromJson(json, PointF[].class);
     }
 
     private Path getTransformPath(int newWidth, int newHeight){
@@ -210,12 +225,8 @@ public class LanePointsView extends View {
 
     private Matrix getTransformMatrix(int newWidth, int newHeight){
         if(maskPath == null) return null;
-        RectF rectF = new RectF();
-        Log.d(TAG, "transformPath: recf = "+rectF);
-        maskPath.computeBounds(rectF,true);
-
         return ImageUtilities.getTransformationMatrix(
-                (int)rectF.width(),(int)rectF.height(),
+                viewSize.getWidth(),viewSize.getHeight(),
                 newWidth,newHeight,
                 0,false);
     }
