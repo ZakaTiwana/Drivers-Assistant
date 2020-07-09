@@ -21,6 +21,7 @@ import androidx.annotation.Nullable;
 import com.example.fyp.LaneDetectorAdvance;
 import com.example.fyp.customutilities.ImageUtilities;
 import com.google.gson.Gson;
+import com.google.gson.JsonParseException;
 
 
 public class LanePointsView extends View {
@@ -205,7 +206,7 @@ public class LanePointsView extends View {
         editor.putString(transformed_point_key,pts_transformed_json);
         editor.apply();
     }
-    public PointF[] loadPoints(String SharedRes, String key ) throws IllegalArgumentException{
+    public PointF[] loadPoints(String SharedRes, String key ) throws IllegalArgumentException , JsonParseException {
         Gson gson = new Gson();
         SharedPreferences sp = context.getSharedPreferences(SharedRes,0);
         String json = sp.getString(key,null);
