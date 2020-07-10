@@ -163,6 +163,7 @@ public class LanePointsActivity extends AppCompatActivity {
         final String sp_ld = getString(R.string.sp_laneDetection);
         final String sp_ld_key_op = getString(R.string.sp_ld_key_original_mask_pts);
         final String sp_ld_key_tp = getString(R.string.sp_ld_key_transformed_mask_pts);
+        final String sp_ld_key_up = getString(R.string.sp_ld_key_user_pts);
         final SharedPreferences sp = getSharedPreferences(sp_ld,0);
         btn_set_lane_p.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -173,6 +174,8 @@ public class LanePointsActivity extends AppCompatActivity {
 
                 SharedPreferencesUtils.saveObject(sp,sp_ld_key_op,op);
                 SharedPreferencesUtils.saveObject(sp,sp_ld_key_tp,tp);
+                //
+                SharedPreferencesUtils.saveBool(sp,sp_ld_key_up,true); // user defined points
             }
         });
 
@@ -436,7 +439,18 @@ public class LanePointsActivity extends AppCompatActivity {
     public void onPreviewSizeSelected(int width, int height){
         Log.d(TAG, String.format("onPreviewSizeSelected: width = %d, height= %d", width,height));
         lanePointsView.setSize(new Size(width,height));
-        lanePointsView.draw(new Canvas());
-        lanePointsView.postInvalidate();
+
+        final String sp_ld = getString(R.string.sp_laneDetection);
+        final String sp_ld_key_op = getString(R.string.sp_ld_key_original_mask_pts);
+        final String sp_ld_key_up = getString(R.string.sp_ld_key_user_pts);
+        final SharedPreferences sp = getSharedPreferences(sp_ld,0);
+        if (SharedPreferencesUtils.loadBool(sp,sp_ld_key_up)){
+            PointF[] original_pts = (PointF[]) SharedPreferencesUtils.loadObject(
+                    sp,sp_ld_key_op,PointF[].class);
+            lanePointsView.setPts(original_pts);
+        }
+
+//        lanePointsView.draw(new Canvas());
+//        lanePointsView.postInvalidate();
     }
 }

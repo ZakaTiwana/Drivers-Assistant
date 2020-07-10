@@ -68,11 +68,25 @@ public class SharedPreferencesUtils {
         Log.d(TAG, String.format("saveString: (key:value) saved => %s : %s", key,json));
     }
 
+    public static void saveBool(SharedPreferences sp, String key,boolean flag){
+        SharedPreferences.Editor editor = sp.edit();
+        editor.putBoolean(key,flag);
+        editor.apply();
+        Log.d(TAG, String.format("saveBool: (key:value) saved => %s : %b", key,flag));
+    }
+
+    public static boolean loadBool(SharedPreferences sp, String key){
+        // default will be false
+        boolean flag = sp.getBoolean(key,false);
+        Log.d(TAG, String.format("loadBool: %s => %s", key,flag));
+        return flag;
+    }
+
     public static Mat loadMat(SharedPreferences sp, String key)
             throws IllegalArgumentException{
         String json = sp.getString(key,null);
         if(json == null) throw new IllegalArgumentException(key+" (key) is not a present in provided SharedPreference");
-        Log.d(TAG, String.format("loadObject: %s => %s", key,json));
+        Log.d(TAG, String.format("loadMat: %s => %s", key,json));
         return matFromJson(json);
     }
 
@@ -119,4 +133,5 @@ public class SharedPreferencesUtils {
         }
         return mat;
     }
+
 }

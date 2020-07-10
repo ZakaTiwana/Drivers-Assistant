@@ -81,7 +81,8 @@ public class TestLaneAdvanceActivity extends AppCompatActivity {
         int srcHeight = bmp.getHeight();
 
         Bitmap resizedBmp = ImageUtilities.getResizedBitmap(
-                bmp,300,300,true);
+                bmp, SharedValues.CROP_SIZE.getWidth(),SharedValues.CROP_SIZE.getHeight(),
+                true);
         SharedPreferences sp_ld = getSharedPreferences(
                 getString(R.string.sp_laneDetection),0);
         LaneDetectorAdvance.setSharedPreference(sp_ld);
@@ -173,13 +174,8 @@ public class TestLaneAdvanceActivity extends AppCompatActivity {
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         // Result code is RESULT_OK only if the user selects an Image
         if (resultCode == Activity.RESULT_OK) {
-            switch (requestCode) {
-                case GALLERY_REQUEST_CODE:
-                    new LoadImagesTask().execute(data);
-
-                    break;
-                default:
-                    break;
+            if (requestCode == GALLERY_REQUEST_CODE) {
+                new LoadImagesTask().execute(data);
             }
         }else{
             show("Unsuccessful Intent");

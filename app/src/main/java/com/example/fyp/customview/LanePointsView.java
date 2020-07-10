@@ -36,7 +36,7 @@ public class LanePointsView extends View {
     private float cx ;
     private float cy ;
     private static final float onClicked_radius = 50;
-    private static final float nearPoint_radius= 40;
+    private static final float nearPoint_radius= 50;
 
     private PointF[] pts = null;
 
@@ -120,8 +120,8 @@ public class LanePointsView extends View {
     private void setCirclePointPath(){
         if (pointCirclesPath == null) return;
         pointCirclesPath.reset();
-        for (int i = 0; i < pts.length; i++) {
-            pointCirclesPath.addCircle(pts[i].x,pts[i].y,20f, Path.Direction.CCW);
+        for (PointF pt : pts) {
+            pointCirclesPath.addCircle(pt.x, pt.y, 20f, Path.Direction.CCW);
         }
     }
 
@@ -171,8 +171,12 @@ public class LanePointsView extends View {
                 float y = event.getY();
                 cx = event.getX();
                 cy = event.getY();
-                if(cx > viewSize.getWidth() ||
-                        cy > viewSize.getHeight()) break;
+
+                if( cx > viewSize.getWidth()  ||
+                    cy > viewSize.getHeight() ||
+                    cx < 0  ||
+                    cy < 0) break;
+
                 if(gotPointToMov){
                     pts[point_to_mov].set(x,y);
                     setMaskPath();
@@ -190,6 +194,11 @@ public class LanePointsView extends View {
     }
 
 
+    public void setPts(PointF[] pts) {
+        this.pts = pts;
+        setMaskPath();
+        setCirclePointPath();
+    }
 
     public Path getMaskPaths(){
         return maskPath;

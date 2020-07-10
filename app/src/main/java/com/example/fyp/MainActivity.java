@@ -143,18 +143,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         protected Object doInBackground(Object... objects) {
             SharedPreferences sp_ld = getSharedPreferences(
                     getString(R.string.sp_laneDetection),0);
-            String sp_ld_key_tp = getString(R.string.sp_ld_key_transformed_mask_pts);
-            SharedPreferencesUtils.saveJsonString(sp_ld,sp_ld_key_tp,
-                    "[{\"x\":142.03125,\"y\":179.16666}," +
-                            "{\"x\":52.96875,\"y\":285.8333}," +
-                            "{\"x\":240.23438,\"y\":288.3333}," +
-                            "{\"x\":181.875,\"y\":177.08333}]");
-            String sp_ld_key_op = getString(R.string.sp_ld_key_original_mask_pts);
-            SharedPreferencesUtils.saveJsonString(sp_ld,sp_ld_key_op,
-                    "[{\"x\":606.0,\"y\":430.0}," +
-                            "{\"x\":226.0,\"y\":686.0}," +
-                            "{\"x\":1025.0,\"y\":692.0}," +
-                            "{\"x\":776.0,\"y\":425.0}]");
+            String sp_ld_key_up = getString(R.string.sp_ld_key_user_pts);
+            if (!SharedPreferencesUtils.loadBool(sp_ld,sp_ld_key_up)) {
+                String sp_ld_key_tp = getString(R.string.sp_ld_key_transformed_mask_pts);
+                SharedPreferencesUtils.saveJsonString(sp_ld,sp_ld_key_tp,
+                        "[{\"x\":132.1875,\"y\":159.16666}," +
+                                "{\"x\":65.15625,\"y\":242.08333}," +
+                                "{\"x\":299.97595,\"y\":245.83333}," +
+                                "{\"x\":224.76562,\"y\":157.5}]");
+                String sp_ld_key_op = getString(R.string.sp_ld_key_original_mask_pts);
+                SharedPreferencesUtils.saveJsonString(sp_ld,sp_ld_key_op,
+                        "[{\"x\":564.0,\"y\":382.0}," +
+                                "{\"x\":278.0,\"y\":581.0}," +
+                                "{\"x\":1279.8973,\"y\":590.0}," +
+                                "{\"x\":959.0,\"y\":378.0}]");
+            }
             return null;
         }
     }
