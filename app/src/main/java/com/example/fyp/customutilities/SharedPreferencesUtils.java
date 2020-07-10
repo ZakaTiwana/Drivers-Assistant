@@ -35,7 +35,8 @@ public class SharedPreferencesUtils {
         return true;
     }
 
-    public static Object loadObject(SharedPreferences sp, String key, Type objClass){
+    public static Object loadObject(SharedPreferences sp, String key, Type objClass)
+            throws IllegalArgumentException{
         Gson gson = new Gson();
         String json = sp.getString(key,null);
         if(json == null) throw new IllegalArgumentException(key+" (key) is not a present in provided SharedPreference");
@@ -60,7 +61,15 @@ public class SharedPreferencesUtils {
         return true;
     }
 
-    public static Mat loadMat(SharedPreferences sp, String key){
+    public static void saveJsonString(SharedPreferences sp, String key, String json){
+        SharedPreferences.Editor editor = sp.edit();
+        editor.putString(key,json);
+        editor.apply();
+        Log.d(TAG, String.format("saveString: (key:value) saved => %s : %s", key,json));
+    }
+
+    public static Mat loadMat(SharedPreferences sp, String key)
+            throws IllegalArgumentException{
         String json = sp.getString(key,null);
         if(json == null) throw new IllegalArgumentException(key+" (key) is not a present in provided SharedPreference");
         Log.d(TAG, String.format("loadObject: %s => %s", key,json));

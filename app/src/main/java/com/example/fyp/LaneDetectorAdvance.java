@@ -3,9 +3,11 @@ package com.example.fyp;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
+import android.graphics.PointF;
 import android.util.Log;
 
 import com.example.fyp.customutilities.ImageUtilities;
+import com.example.fyp.customutilities.SharedPreferencesUtils;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -36,9 +38,9 @@ import static org.opencv.core.Core.max;
 public class LaneDetectorAdvance {
     private static final String TAG = "LaneDetectorAdvance";
     // shape for roi
-    private static final float[] pts = {650,360, 750,360, 1280,600, 100,600}; // {x1,y1, x2,y2, x3,y3 ,x4,y4}
-    private static final float[] pts2 = {490,332, 736,322, 1110,466, 263,500};
-    private static float [] pts_resized ;
+    private float[] pts = {650,360, 750,360, 1280,600, 100,600}; // {x1,y1, x2,y2, x3,y3 ,x4,y4}
+    private float[] pts2 = {490,332, 736,322, 1110,466, 263,500};
+    private PointF[] pts_resized ;
     private Matrix cropToFrame;
 
     private Mat mtx;
@@ -63,8 +65,10 @@ public class LaneDetectorAdvance {
 
         cropToFrame = new Matrix();
         frameToCrop.invert(cropToFrame);
-        pts_resized = new float[8];
-        frameToCrop.mapPoints(pts_resized,pts);
+    }
+
+    public void setPtsResized (PointF[] pts){
+        pts_resized = pts;
     }
 
     public void setNewSize(int srcWidth, int srcHeight, int cropWidth, int cropHeight){
@@ -76,13 +80,11 @@ public class LaneDetectorAdvance {
 
         cropToFrame = new Matrix();
         frameToCrop.invert(cropToFrame);
-        pts_resized = new float[8];
-        frameToCrop.mapPoints(pts,pts_resized);
     }
 
     public void calibration(int nx, int ny, List<Bitmap> bmps,boolean forceCalibrate) {
-        if(bmps == null) return;
-        if(hasConfigValues() && !forceCalibrate) return;
+        if(bmps == null || config == null) return;
+        if(hasCalibConfigValues() && !forceCalibrate) return;
         List<Mat> obj_ps = new ArrayList<>();
         List<Mat> img_ps = new ArrayList<>();
         Size imgSize = new Size();
@@ -96,6 +98,7 @@ public class LaneDetectorAdvance {
             }
         }
 
+        boolean gotChessBoardImg = false;
         for (Bitmap bitmap :
                 bmps) {
             if (bitmap == null) continue;
@@ -116,13 +119,12 @@ public class LaneDetectorAdvance {
                 TermCriteria aCriteria = new TermCriteria(TermCriteria.EPS |
                         TermCriteria.MAX_ITER, 30,0.1);
                 Imgproc.cornerSubPix(gray, corners, new Size(11,11), new Size(-1,-1), aCriteria);
-                boolean gotChessBoardImg = false;
                 if (!gotChessBoardImg){
                     Calib3d.drawChessboardCorners(img,boardSize,corners, true);
                     chessBoardPattern = Bitmap.createBitmap(
                             img.width(),img.height(), Bitmap.Config.ARGB_8888);
                     Utils.matToBitmap(img,chessBoardPattern);
-
+                    gotChessBoardImg = true;
                 }
                 obj_ps.add(objp);
                 img_ps.add(corners);
@@ -145,11 +147,17 @@ public class LaneDetectorAdvance {
 
         Log.d(TAG, "calibration: mtx content  => " + matContentInString(mtx));
         Log.d(TAG, "calibration: dist content  => " + matContentInString(dist));
+        String key="";
         try {
-            saveConfig(mtx, mtx_in_sp);
-            saveConfig(dist,dist_in_sp);
+            key = mtx_in_sp;
+            if(SharedPreferencesUtils.saveMat(config,mtx_in_sp,mtx))
+                Log.d(TAG, "calibration: could not save "+mtx_in_sp);
+            key = dist_in_sp;
+            if(SharedPreferencesUtils.saveMat(config,dist_in_sp,dist))
+                Log.d(TAG, "calibration: could not save "+dist_in_sp);
         } catch (Exception e) {
             e.printStackTrace();
+            Log.d(TAG, "calibration: could not save "+key);
         }
     }
 
@@ -157,17 +165,13 @@ public class LaneDetectorAdvance {
         Mat img = new Mat();
         Utils.bitmapToMat(bmp,img);
         // un-distort skipped
-        Point p1 = new Point(pts_resized[0],pts_resized[1]);
-        Point p2 = new Point(pts_resized[2],pts_resized[3]);
+        Point[] p = orderedPoints();
 
-        Point p3 = new Point(pts_resized[4],pts_resized[5]);
-        Point p4 = new Point(pts_resized[6],pts_resized[7]);
+        Imgproc.drawMarker(img,p[0],new Scalar(255,255,255));
+        Imgproc.drawMarker(img,p[1],new Scalar(255,255,255));
 
-        Imgproc.drawMarker(img,p1,new Scalar(255,255,255));
-        Imgproc.drawMarker(img,p2,new Scalar(255,255,255));
-
-        Imgproc.drawMarker(img,p3,new Scalar(255,255,255));
-        Imgproc.drawMarker(img,p4,new Scalar(255,255,255));
+        Imgproc.drawMarker(img,p[2],new Scalar(255,255,255));
+        Imgproc.drawMarker(img,p[3],new Scalar(255,255,255));
 
         markedBmp = Bitmap.createBitmap(img.width(),img.height(), Bitmap.Config.ARGB_8888);
         Utils.matToBitmap(img,markedBmp);
@@ -193,10 +197,10 @@ public class LaneDetectorAdvance {
 
         Log.d(TAG, "orderedPoints: pts_resized = "+Arrays.toString(pts_resized));
         int index = 0;
-        for (int i = 0; i < pts_resized.length; i+=2) {
-            temp[index] = new Point(pts_resized[i],pts_resized[i+1]);
-            sums[index] = pts_resized[i]+pts_resized[i+1];
-            diff[index] = pts_resized[i]-pts_resized[i+1];
+        for (int i = 0; i < pts_resized.length; i++) {
+            temp[index] = new Point(pts_resized[i].x,pts_resized[i].y);
+            sums[index] = pts_resized[i].x + pts_resized[i].y;
+            diff[index] = pts_resized[i].x - pts_resized[i].y;
             index++;
         }
         Log.d(TAG, "orderedPoints: sums = "+Arrays.toString(sums));
@@ -207,8 +211,8 @@ public class LaneDetectorAdvance {
         for (int i = 1; i <sums.length; i++) {
             if(sums[i] > sums[max_sum]) max_sum=i;
             if(sums[i] < sums[min_sum]) min_sum=i;
-            if(Math.abs(diff[i]) > Math.abs(diff[max_diff])) max_diff=i;
-            if(Math.abs(diff[i]) < Math.abs(diff[max_diff])) min_diff=i;
+            if(diff[i] > diff[max_diff]) max_diff=i;
+            if(diff[i] < diff[min_diff]) min_diff=i;
         }
         Log.d(TAG, String.format(
                 "orderedPoints: min_sum = %d , min_diff = %d, max_sum = %d, max_diff = %d",
@@ -233,15 +237,7 @@ public class LaneDetectorAdvance {
     private Mat warper(Mat edge){
         Mat warped = new Mat();
 
-        Point[] p = new Point[4];
-        int index = 0;
-        for (int i = 0; i < pts_resized.length; i+=2) {
-            p[index] = new Point(pts_resized[i],pts_resized[i+1]);
-            index ++;
-        }
-        //----
-
-        //--
+        Point[] p = orderedPoints();
 
         Log.d(TAG, "warper: order points = "+ pointArrayToString(p));
         MatOfPoint2f inshape = new MatOfPoint2f();
@@ -290,9 +286,13 @@ public class LaneDetectorAdvance {
     }
 
     public void unDistortImage(Bitmap bmp){
-        if (!hasConfigValues()) return;
-        mtx = loadConfig(mtx_in_sp);
-        dist = loadConfig(dist_in_sp);
+        if (!hasCalibConfigValues()) return;
+        try{
+            mtx  = SharedPreferencesUtils.loadMat(config,mtx_in_sp);
+            dist = SharedPreferencesUtils.loadMat(config,mtx_in_sp);
+        } catch (IllegalArgumentException  ex){
+            return;
+        }
         Log.d(TAG, "unDistortImage: mtx => "+ matContentInString(mtx));
         Log.d(TAG, "unDistortImage: dist => "+ matContentInString(dist));
 
@@ -307,47 +307,23 @@ public class LaneDetectorAdvance {
         img.release();
     }
 
-    private static void saveConfig(Mat mat,String key) throws IllegalArgumentException {
-        SharedPreferences.Editor prefsEditor = config.edit();
 
-        String json = matToJson(mat);
-        if (json.contentEquals("{}")) throw new IllegalArgumentException("could not "+key+" convert to json");
-        prefsEditor.putString(key, json);
-        prefsEditor.apply();
-        Log.d(TAG, "saveConfig: config ("+key+") saved in shared preference");
-    }
 
-    public static void saveConfigByString(String key, String json){
-        SharedPreferences.Editor prefsEditor = config.edit();
-        prefsEditor.putString(key, json);
-        prefsEditor.apply();
-        Log.d(TAG, "saveConfig: config ("+key+") saved in shared preference");
-    }
 
-    private static Mat loadConfig(String key){
-        String json = config.getString(key, "");
-        Mat mat;
-        if (json != null && !json.isEmpty()){
-            Log.d(TAG, "loadMtx: "+key+" => "+json);
-             mat = matFromJson(json);
-        }else return null;
-        Log.d(TAG, "loadMtx: loaded "+key+" from share preference");
 
-        return mat;
-    }
 
     public static void setSharedPreference(SharedPreferences s){
         config = s;
-    };
+    }
 
-    private static boolean hasConfigValues(){
-        boolean check = false;
-        String mtx = config.getString(mtx_in_sp, "");
-        String dist = config.getString(mtx_in_sp, "");
-        if ((mtx != null && dist != null)
-                && !mtx.isEmpty() && !dist.isEmpty())
-            check = true;
-        return check;
+    private static boolean hasCalibConfigValues(){
+        try{
+            SharedPreferencesUtils.loadMat(config,mtx_in_sp);
+            SharedPreferencesUtils.loadMat(config,dist_in_sp);
+        }catch (IllegalArgumentException ex){
+            return false;
+        }
+        return true;
     }
 
     public Bitmap getChessBoardPattern() {

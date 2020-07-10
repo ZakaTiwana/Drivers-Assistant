@@ -9,14 +9,15 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.location.LocationManager;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
-import android.util.Size;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+
+import com.example.fyp.customutilities.SharedPreferencesUtils;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
@@ -78,6 +79,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 //        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 //        enableDisableBT()
+
+        new SaveDefaultValuesInPreferencesTask().execute();
     }
 
     @Override
@@ -134,11 +137,24 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
-    private static class LoadValuesInPreferencesTask extends AsyncTask<Object,Object,Object> {
+    private  class SaveDefaultValuesInPreferencesTask extends AsyncTask<Object,Object,Object> {
 
         @Override
         protected Object doInBackground(Object... objects) {
-
+            SharedPreferences sp_ld = getSharedPreferences(
+                    getString(R.string.sp_laneDetection),0);
+            String sp_ld_key_tp = getString(R.string.sp_ld_key_transformed_mask_pts);
+            SharedPreferencesUtils.saveJsonString(sp_ld,sp_ld_key_tp,
+                    "[{\"x\":142.03125,\"y\":179.16666}," +
+                            "{\"x\":52.96875,\"y\":285.8333}," +
+                            "{\"x\":240.23438,\"y\":288.3333}," +
+                            "{\"x\":181.875,\"y\":177.08333}]");
+            String sp_ld_key_op = getString(R.string.sp_ld_key_original_mask_pts);
+            SharedPreferencesUtils.saveJsonString(sp_ld,sp_ld_key_op,
+                    "[{\"x\":606.0,\"y\":430.0}," +
+                            "{\"x\":226.0,\"y\":686.0}," +
+                            "{\"x\":1025.0,\"y\":692.0}," +
+                            "{\"x\":776.0,\"y\":425.0}]");
             return null;
         }
     }

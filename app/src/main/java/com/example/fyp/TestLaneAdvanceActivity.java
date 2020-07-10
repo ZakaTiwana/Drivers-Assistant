@@ -5,12 +5,14 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.app.Activity;
 import android.content.ClipData;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.PointF;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -26,6 +28,8 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.example.fyp.customutilities.ImageUtilities;
+import com.example.fyp.customutilities.SharedPreferencesUtils;
+import com.example.fyp.customutilities.SharedValues;
 import com.google.android.material.snackbar.Snackbar;
 
 import org.opencv.android.OpenCVLoader;
@@ -75,17 +79,24 @@ public class TestLaneAdvanceActivity extends AppCompatActivity {
 
         int srcWidth = bmp.getWidth();
         int srcHeight = bmp.getHeight();
+
         Bitmap resizedBmp = ImageUtilities.getResizedBitmap(
                 bmp,300,300,true);
-
+        SharedPreferences sp_ld = getSharedPreferences(
+                getString(R.string.sp_laneDetection),0);
+        LaneDetectorAdvance.setSharedPreference(sp_ld);
         ladv = new LaneDetectorAdvance(srcWidth,srcHeight,
-                300,300);
+                SharedValues.CROP_SIZE.getWidth(),
+                SharedValues.CROP_SIZE.getHeight());
 
+        String sp_ld_key_tp = getString(R.string.sp_ld_key_transformed_mask_pts);
+        PointF[] pts = (PointF[]) SharedPreferencesUtils.loadObject(
+                sp_ld,sp_ld_key_tp,PointF[].class);
+
+        ladv.setPtsResized(pts);
         imageView.setImageBitmap(resizedBmp);
         bmps = new ArrayList<>();
         bmps.add(resizedBmp);
-        LaneDetectorAdvance.setSharedPreference(
-                getSharedPreferences("LaneDetection",0));
 //        fds = new ArrayList<>();
 
         initSnackbar = Snackbar.make(findViewById(R.id.container_test_lane_adv),
