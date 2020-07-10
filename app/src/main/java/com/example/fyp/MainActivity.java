@@ -87,7 +87,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onDestroy() {
         Log.d(TAG, "onDestroy: called.");
         super.onDestroy();
-        unregisterReceiver(mBroadcastReceiver1);
+//        unregisterReceiver(mBroadcastReceiver1);
 
     }
 
@@ -157,6 +157,26 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                 "{\"x\":278.0,\"y\":581.0}," +
                                 "{\"x\":1279.8973,\"y\":590.0}," +
                                 "{\"x\":959.0,\"y\":378.0}]");
+            }
+
+            String sp_ld_key_has_cal_md = getString(R.string.sp_ld_key_cal_mtx_dist);
+            if(!SharedPreferencesUtils.loadBool(sp_ld,sp_ld_key_has_cal_md)){
+                String sp_ld_key_m = getString(R.string.sp_ld_key_mtx);
+                SharedPreferencesUtils.saveJsonString(sp_ld,sp_ld_key_m,
+                        "{\n" +
+                                "\t\"rows\":3,\n" +
+                                "\t\"cols\":3,\n" +
+                                "\t\"type\":6,\n" +
+                                "\t\"data\":[1811.415378183913,0.0,119.25792229510265,0.0,7753.806031248129,148.15999705403362,0.0,0.0,1.0]\n" +
+                                "}");
+                String sp_ld_key_d = getString(R.string.sp_ld_key_dist);
+                SharedPreferencesUtils.saveJsonString(sp_ld,sp_ld_key_d,
+                        "{\n" +
+                                "\t\"rows\":1,\n" +
+                                "\t\"cols\":5,\n" +
+                                "\t\"type\":6,\n" +
+                                "\t\"data\":[1.6142722900467241]\n" +
+                                "}");
             }
             return null;
         }

@@ -9,5 +9,8 @@
     <string name="sp_laneDetection">lane_detection</string>
     <string name="sp_ld_key_original_mask_pts">o_mask_pts</string>
     <string name="sp_ld_key_transformed_mask_pts">t_mask_pts</string>
-    <string name="sp_ld_key_user_pts">user_has_def_pts</string>
+    <string name="sp_ld_key_user_pts">has_user_def_pts</string>
+    <string name="sp_ld_key_mtx">sp_ld_mtx</string>
+    <string name="sp_ld_key_dist">sp_ld_dist</string>
+    <string name="sp_ld_key_cal_mtx_dist">has_user_cal_mtx_and_dist</string>
 </resources>

@@ -42,6 +42,8 @@ import java.util.List;
 public class TestLaneAdvanceActivity extends AppCompatActivity {
 
     private static final String TAG = "TestLaneAdvanceActivity";
+    private static final int nx = 6;
+    private static final int ny = 4;
     private ImageView imageView;
     private Snackbar initSnackbar = null;
 //    private List<ParcelFileDescriptor> fds;
@@ -51,7 +53,7 @@ public class TestLaneAdvanceActivity extends AppCompatActivity {
     private boolean hasProcessed = false;
 
     private List<Bitmap> bmps;
-
+    private Bitmap resizedFirstBmp=null;
 
 
     @Override
@@ -80,12 +82,17 @@ public class TestLaneAdvanceActivity extends AppCompatActivity {
         int srcWidth = bmp.getWidth();
         int srcHeight = bmp.getHeight();
 
-        Bitmap resizedBmp = ImageUtilities.getResizedBitmap(
+        resizedFirstBmp = ImageUtilities.getResizedBitmap(
                 bmp, SharedValues.CROP_SIZE.getWidth(),SharedValues.CROP_SIZE.getHeight(),
                 true);
+
         SharedPreferences sp_ld = getSharedPreferences(
                 getString(R.string.sp_laneDetection),0);
-        LaneDetectorAdvance.setSharedPreference(sp_ld);
+        String sp_ld_mtx = getString(R.string.sp_ld_key_mtx);
+        String sp_ld_dist = getString(R.string.sp_ld_key_dist);
+        String sp_ld_cal_md = getString(R.string.sp_ld_key_cal_mtx_dist);
+
+        LaneDetectorAdvance.setSharedPreference(sp_ld,sp_ld_mtx,sp_ld_dist,sp_ld_cal_md);
         ladv = new LaneDetectorAdvance(srcWidth,srcHeight,
                 SharedValues.CROP_SIZE.getWidth(),
                 SharedValues.CROP_SIZE.getHeight());
@@ -95,9 +102,9 @@ public class TestLaneAdvanceActivity extends AppCompatActivity {
                 sp_ld,sp_ld_key_tp,PointF[].class);
 
         ladv.setPtsResized(pts);
-        imageView.setImageBitmap(resizedBmp);
+        imageView.setImageBitmap(resizedFirstBmp);
         bmps = new ArrayList<>();
-        bmps.add(resizedBmp);
+        bmps.add(resizedFirstBmp);
 //        fds = new ArrayList<>();
 
         initSnackbar = Snackbar.make(findViewById(R.id.container_test_lane_adv),
@@ -112,6 +119,7 @@ public class TestLaneAdvanceActivity extends AppCompatActivity {
 
     private void pickFromGallery(){
         bmps.clear();
+        bmps.add(resizedFirstBmp);
         //Create an Intent with action as ACTION_PICK
 
         Intent intent=new Intent(Intent.ACTION_PICK);
@@ -143,27 +151,57 @@ public class TestLaneAdvanceActivity extends AppCompatActivity {
 
             switch (keyCounter){
                 case 0:
-//                    detectLane();
-//                    show("Lane detection Done");
+                    if(bmps.isEmpty()) {
+                        hasProcessed=false;
+                        break;
+                    }
+                    ladv.calibration(nx,ny,bmps,true);
+                    show("calibration done");
+                    hasProcessed = true;
+                    break;
+                case 1:
+                    hasProcessed = false;
                     if (!bmps.isEmpty()) {
                         ladv.processFrame(bmps.get(0));
                         show("processFrame Done");
                         hasProcessed = true;
                     }
                     break;
-                case 1:
-                    imageView.setImageBitmap(ladv.getEdgesBmp());
-                    break;
                 case 2:
-                    imageView.setImageBitmap(ladv.getMarkedBmp());
+                    if (ladv.getChessBoardPattern() == null) {
+                        show("No Chess Board-Image");
+                        break;
+                    }
+                    imageView.setImageBitmap(ladv.getChessBoardPattern());
                     break;
                 case 3:
+                    if(ladv.getUnDistImg() == null){
+                        show("No un distortion applied");
+                        break;
+                    }
+                    imageView.setImageBitmap(ladv.getUnDistImg());
+                    show("un-distorted image");
+                    break;
+                case 4:
+//                    imageView.setImageBitmap(ladv.getMarkedBmp());
+//                    break;
+                    keyCounter++; // skipping
+                case 5:
+                    imageView.setImageBitmap(ladv.getEdgesBmp());
+                    break;
+                case 6:
                     imageView.setImageBitmap(ladv.getWarperBmp());
+                    break;
+                case 7:
+                    bmps.clear();
+                    bmps.add(resizedFirstBmp);
+                    imageView.setImageBitmap(resizedFirstBmp);
+                    show("reset done");
                     break;
             }
             if (hasProcessed){
                 keyCounter++;
-                keyCounter %= 4;
+                keyCounter %= 8;
             }
             return true;
         }
@@ -183,7 +221,7 @@ public class TestLaneAdvanceActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
     }
     public void show(String msg){
-        Toast.makeText(this,msg,Toast.LENGTH_LONG).show();
+        Toast.makeText(this,msg,Toast.LENGTH_SHORT).show();
     }
 
     private class LoadImagesTask extends AsyncTask<Object,Object,Object> {
@@ -240,7 +278,7 @@ public class TestLaneAdvanceActivity extends AppCompatActivity {
                                 Bitmap bmp = BitmapFactory.decodeFileDescriptor(pfd.getFileDescriptor());
 //                                bmps.add(bmp);
                                 Bitmap resizedBmp = ImageUtilities.getResizedBitmapMaintainAspectRatio(bmp,
-                                        600,600,true);
+                                        SharedValues.CROP_SIZE.getWidth(),SharedValues.CROP_SIZE.getHeight(),true);
                                 bmps.add(resizedBmp);
                             }
                         } catch (IOException ex) {
