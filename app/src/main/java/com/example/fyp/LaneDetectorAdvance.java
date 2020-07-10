@@ -37,10 +37,9 @@ import static org.opencv.core.Core.max;
 
 public class LaneDetectorAdvance {
     private static final String TAG = "LaneDetectorAdvance";
-    // shape for roi
-    private float[] pts = {650,360, 750,360, 1280,600, 100,600}; // {x1,y1, x2,y2, x3,y3 ,x4,y4}
-    private float[] pts2 = {490,332, 736,322, 1110,466, 263,500};
-    private PointF[] pts_resized ;
+    private final Scalar lower_yellow = new Scalar(20,100,100);
+    private final Scalar upper_yellow = new Scalar(30,255,255);
+    private PointF[] pts_resized ; //roi
     private Matrix cropToFrame;
 
     private Mat mtx;
@@ -51,6 +50,7 @@ public class LaneDetectorAdvance {
     private Bitmap warperBmp;
     private Bitmap markedBmp;
     private Mat M_inv;
+    private Mat image;
 
     private static SharedPreferences config;
     public static final String mtx_in_sp = "mtx";
@@ -162,21 +162,21 @@ public class LaneDetectorAdvance {
     }
 
     public void processFrame(Bitmap bmp){
-        Mat img = new Mat();
-        Utils.bitmapToMat(bmp,img);
+        this.image = new Mat();
+        Utils.bitmapToMat(bmp,this.image);
         // un-distort skipped
         Point[] p = orderedPoints();
 
-        Imgproc.drawMarker(img,p[0],new Scalar(255,255,255));
-        Imgproc.drawMarker(img,p[1],new Scalar(255,255,255));
+        Imgproc.drawMarker(this.image,p[0],new Scalar(255,255,255));
+        Imgproc.drawMarker(this.image,p[1],new Scalar(255,255,255));
 
-        Imgproc.drawMarker(img,p[2],new Scalar(255,255,255));
-        Imgproc.drawMarker(img,p[3],new Scalar(255,255,255));
+        Imgproc.drawMarker(this.image,p[2],new Scalar(255,255,255));
+        Imgproc.drawMarker(this.image,p[3],new Scalar(255,255,255));
 
-        markedBmp = Bitmap.createBitmap(img.width(),img.height(), Bitmap.Config.ARGB_8888);
-        Utils.matToBitmap(img,markedBmp);
+        markedBmp = Bitmap.createBitmap(this.image.width(),this.image.height(), Bitmap.Config.ARGB_8888);
+        Utils.matToBitmap(this.image,markedBmp);
 
-        Mat img_binray  = findEdges(img);
+        Mat img_binray  = findEdges();
         edgesBmp = Bitmap.createBitmap(
                 img_binray.width(),img_binray.height(),
                 Bitmap.Config.ARGB_8888);
@@ -275,14 +275,40 @@ public class LaneDetectorAdvance {
                 edge.size());
         return warped;
     }
-    private Mat findEdges(Mat img){
-        Mat gray = new Mat();
-        Imgproc.cvtColor(img,gray,Imgproc.COLOR_RGB2BGRA);
-        Mat temp = new Mat();
+    private Mat findEdges(){
+        Mat edge = isolateColor(convertToGrayScale());
+        cannay(edge);
+        return edge;
+    }
 
-        Imgproc.Canny(gray,temp,50,150);
-        Imgproc.GaussianBlur(temp,temp,new Size(5,5),0);
-        return temp;
+    private Mat convertToGrayScale(){
+        Mat gray = new Mat();
+        Imgproc.cvtColor(image,gray,Imgproc.COLOR_RGBA2GRAY);
+        return gray;
+    }
+
+
+    private Mat isolateColor(Mat gray){
+        Mat hsv = new Mat();
+        Imgproc.cvtColor(this.image,hsv,Imgproc.COLOR_BGR2HSV);
+
+        Mat mask_w = new Mat();
+        Mat mask_y = new Mat();
+        Mat mask_yw = new Mat();
+        Mat temp = new Mat();
+        Mat edge = new Mat();
+
+        inRange(gray,new Scalar(190),new Scalar(255),mask_w);
+        inRange(hsv,lower_yellow,upper_yellow,mask_y);
+        Core.bitwise_or(mask_w,mask_y,mask_yw);
+
+        Core.bitwise_and(gray,mask_yw,temp);
+        Imgproc.GaussianBlur(temp,edge,new Size(5,5),0);
+        return edge;
+    }
+
+    private void cannay(Mat edge){
+        Imgproc.Canny(edge,edge,50,150);
     }
 
     public void unDistortImage(Bitmap bmp){
