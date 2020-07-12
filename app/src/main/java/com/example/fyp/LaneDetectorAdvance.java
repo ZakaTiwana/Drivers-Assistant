@@ -4,17 +4,14 @@ import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
 import android.graphics.PointF;
-import android.graphics.RectF;
 import android.util.Log;
 
 import com.example.fyp.customutilities.ImageUtilities;
 import com.example.fyp.customutilities.SharedPreferencesUtils;
 
 import org.opencv.core.Core;
-import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.android.Utils;
-import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.MatOfPoint3f;
 import org.opencv.core.Point;
@@ -28,7 +25,6 @@ import org.opencv.calib3d.Calib3d;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 import static org.opencv.core.Core.inRange;
 import static org.opencv.core.Core.max;
@@ -188,7 +184,22 @@ public class LaneDetectorAdvance {
                 img_bird_view.width(),img_bird_view.height(),
                 Bitmap.Config.ARGB_8888);
         Utils.matToBitmap(img_bird_view,warperBmp);
+        ArrayList<PointF>[] lanes_points = windowSearch(img_bird_view);
+//        ArrayList<PointF> lft_lane_pts = lanes_points[0];
+//        ArrayList<PointF> rht_lane_pts = lanes_points[1];
+//        for (PointF p_lft :
+//                lft_lane_pts) {
+//            Imgproc.drawMarker(img_bird_view,new Point(p_lft.x,p_lft.y),new Scalar(255,255,255));
+//        }
+//
+//        for (PointF p_lft :
+//                rht_lane_pts) {
+//            Imgproc.drawMarker(img_bird_view,new Point(p_lft.x,p_lft.y),new Scalar(255,255,255));
+//        }
 
+        markedBmp = Bitmap.createBitmap(
+                img_bird_view.width(),img_bird_view.height(), Bitmap.Config.ARGB_8888);
+        Utils.matToBitmap(img_bird_view,markedBmp);
     }
 
     private Point[] orderedPoints(){
@@ -236,36 +247,140 @@ public class LaneDetectorAdvance {
         s.append("]");
         return s.toString();
     }
+
+    private ArrayList<PointF>[] windowSearch(Mat wrapped){
+        int midpoint = wrapped.cols()/2;
+        Mat roi = wrapped.submat(wrapped.rows() - wrapped.rows()/8,wrapped.rows(),0,wrapped.cols());
+        Log.d(TAG, "windowSearch: roi = "+roi.size());
+        float[] hist_lane = histogram(roi);
+        int left_lane_index = getMaxIndex(hist_lane,0,midpoint-30);
+        int right_lane_index = getMaxIndex(hist_lane,midpoint+30,wrapped.cols());
+//        Imgproc.drawMarker(wrapped,new Point(left_lane_index,wrapped.cols()-10),new Scalar(255,255,255));
+//        Imgproc.drawMarker(wrapped,new Point(right_lane_index,wrapped.cols()-10),new Scalar(255,255,255));
+        Log.d(TAG, String.format("windowSearch: hist point lft=%d, rht=%d", left_lane_index,right_lane_index));
+
+        ArrayList<PointF> left_lane_indexes= new ArrayList<>();
+        ArrayList<PointF> right_lane_indexes = new ArrayList<>();
+
+        int min_px = 80;
+        int windows_n_rows = 30;
+        int windows_n_cols = 60;
+        // Step of each window
+        int StepSlide = 30;
+        for (int row = wrapped.rows() ; row > windows_n_rows - StepSlide ; row -= StepSlide) {
+
+            int topX_lft = left_lane_index - windows_n_cols/2;
+            int topX_rht = right_lane_index - windows_n_cols/2;
+            if(topX_lft < 0) topX_lft = 0;
+            if(topX_rht < 0) topX_rht = 0;
+
+            int y_axis = row-windows_n_rows;
+            if (y_axis < 0) y_axis = 0;
+
+
+
+            Log.d(TAG, String.format("windowSearch: y_axis = %d , topX_lft = %d, topX_rht=%d", y_axis,topX_lft,topX_rht));
+
+            Mat mat_lft = wrapped.submat(y_axis,
+                    y_axis+windows_n_rows ,
+                    topX_lft, Math.min(topX_lft + windows_n_cols, wrapped.cols()));
+
+            Mat mat_rht = wrapped.submat(y_axis,
+                    y_axis+windows_n_rows,
+                    topX_rht, Math.min(topX_rht + windows_n_cols, wrapped.cols()));
+//            Log.d(TAG, "windowSearch: mat content ="+matContentInString(mat_lft));
+//            break;
+//
+            ArrayList<PointF> nz_pts_lft_lane = nonZerosIndex(mat_lft,topX_lft,y_axis);
+            Log.d(TAG, "windowSearch: nz_lft = "+nz_pts_lft_lane.size());
+            ArrayList<PointF> nz_pts_rht_lane = nonZerosIndex(mat_rht,topX_rht,y_axis);
+            Log.d(TAG, "windowSearch: nz_rht = "+nz_pts_rht_lane.size());
+
+            Imgproc.rectangle(wrapped,new Point(topX_lft,y_axis),
+                    new Point(topX_lft + windows_n_cols,y_axis + windows_n_rows),
+                    new Scalar(255,255,255),
+                    2);
+            Imgproc.rectangle(wrapped,new Point(topX_rht,y_axis),
+                    new Point(topX_rht + windows_n_cols,y_axis + windows_n_rows),
+                    new Scalar(255,255,255),
+                    2);
+
+            Imgproc.drawMarker(wrapped,new Point(left_lane_index,row - windows_n_rows/2f),new Scalar(255,255,255));
+            Imgproc.drawMarker(wrapped,new Point(right_lane_index,row - windows_n_rows/2f),new Scalar(255,255,255));
+
+            left_lane_indexes.addAll(
+                    nz_pts_lft_lane
+            );
+            right_lane_indexes.addAll(
+                    nz_pts_rht_lane
+            );
+            if(nz_pts_lft_lane.size() >= min_px){
+                left_lane_index = meanXIndex(nz_pts_lft_lane);
+                Log.d(TAG, "windowSearch: new mean lft = "+ left_lane_index);
+            }
+            if (nz_pts_rht_lane.size() >= min_px){
+                right_lane_index = meanXIndex(nz_pts_rht_lane);
+                Log.d(TAG, "windowSearch: new mean rht = "+ right_lane_index);
+            }
+        }
+        ArrayList<PointF>[] res = new ArrayList[2];
+        res[0] = left_lane_indexes;
+        res[1] = right_lane_indexes;
+        return res;
+    }
+
+    private int meanXIndex(ArrayList<PointF> pts){
+        int mean = 0;
+        for (PointF p :
+                pts) {
+            mean += p.x;
+        }
+        mean /= pts.size();
+        return mean;
+    }
+
+    private ArrayList<PointF> nonZerosIndex(Mat mat,int offsetX,int offsetY){
+        ArrayList<PointF>  non_zero_points = new ArrayList<>();
+        for(int row =  0; row < mat.rows()/2; row++){
+            for(int col = 0;  col < mat.cols(); col++) {
+                if ((int)mat.get(row,col)[0] > 0d){
+                    non_zero_points.add(new PointF(offsetX+col, offsetY+row));
+                }
+
+            }
+        }
+        return non_zero_points;
+    }
+    private float[] histogram(Mat mat){
+        float[] sum_of_y = new float[mat.cols()];
+        for (int i = 0; i < mat.cols(); i++) {
+            float sum = 0;
+            for (int j = 0; j < mat.rows(); j++) {
+                sum += (float) mat.get(j,i)[0];
+            }
+            sum_of_y[i] = sum;
+        }
+        return sum_of_y;
+    }
+
+    private int getMaxIndex(float[] sum_of_y,int offset, int end){
+        if(end > sum_of_y.length || end < offset )
+            throw new IllegalArgumentException("end should be <= sum_of_y and > offset");
+        if(offset < 0 )
+            throw new IllegalArgumentException("offset should be >= 0");
+
+        int max = offset;
+        for (int i = offset; i < end; i++) {
+            if(sum_of_y[i] > sum_of_y[max]) max = i;
+        }
+        return max;
+    }
     private Mat warper(Mat edge){
         Mat warped = new Mat();
 
         Point[] p = orderedPoints();
         Log.d(TAG, "warper: order points = "+ pointArrayToString(p));
         MatOfPoint2f inshape = new MatOfPoint2f(p);
-//        inshape.fromArray(p);
-
-        // calculate destination mat width and height
-//        int width_a = (int) Math.sqrt(Math.pow((p[2].x - p[3].x),2)
-//                        + Math.pow((p[2].y - p[3].y),2));
-//        int width_b = (int) Math.sqrt(Math.pow((p[0].x - p[1].x),2)
-//                        + Math.pow((p[0].y - p[1].y),2));
-//        int width = Math.max(width_a,width_b);
-//
-//        int height_a = (int) Math.sqrt(Math.pow((p[0].x - p[3].x),2)
-//                + Math.pow((p[0].y - p[3].y),2));
-//        int height_b = (int) Math.sqrt(Math.pow((p[1].x - p[2].x),2)
-//                + Math.pow((p[1].y - p[2].y),2));
-//        int height = Math.max(height_a,height_b);
-
-        RectF rectF = new RectF((float) p[0].x, (float)p[0].y, (float)p[2].x, (float)p[2].y);
-        float width = rectF.width();
-        float height = rectF.height();
-
-//        Matrix matrix = ImageUtilities.getTransformationMatrix(edge.width(),edge.height(),
-//                (int)width,(int)height,0,false);
-//        float[] matrix_vals = new float[9];
-//        matrix.getValues(matrix_vals);
-
         Point[] p_d = new Point[4];
         p_d[0] = new Point(0,0);
         p_d[1] = new Point(0,edge.rows() -1); //new Point(width - 1,0);
@@ -274,12 +389,6 @@ public class LaneDetectorAdvance {
         p_d[3] = new Point(edge.cols() - 1,0); //new Point(0,height -1);
 
         MatOfPoint2f outshape = new MatOfPoint2f(p_d);
-//        Mat M = new Mat();
-//        for (int i = 0; i < matrix_vals.length; i+=3) {
-//            M.put(i,0,matrix_vals[i]);
-//            M.put(i,1,matrix_vals[i+1]);
-//            M.put(i,2,matrix_vals[i+2]);
-//        }
 
         Mat M = Imgproc.getPerspectiveTransform(inshape,outshape);
         M_inv = Imgproc.getPerspectiveTransform(outshape,inshape);
@@ -287,7 +396,7 @@ public class LaneDetectorAdvance {
         Log.d(TAG, "warper: M_inv = "+ matContentInString(M_inv));
 
         Imgproc.warpPerspective(edge,warped,M,
-                new Size(edge.cols(),edge.rows()));
+                edge.size());
         return warped;
     }
     private Mat findEdges(){

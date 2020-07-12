@@ -77,7 +77,7 @@ public class TestLaneAdvanceActivity extends AppCompatActivity {
 //        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
 
         imageView = findViewById(R.id.lane_adv_imgview);
-        Bitmap bmp = BitmapFactory.decodeResource(getResources(),R.drawable.test_img_lane);
+        Bitmap bmp = BitmapFactory.decodeResource(getResources(),R.drawable.test_lane_new);
 
         int srcWidth = bmp.getWidth();
         int srcHeight = bmp.getHeight();
@@ -119,7 +119,7 @@ public class TestLaneAdvanceActivity extends AppCompatActivity {
 
     private void pickFromGallery(){
         bmps.clear();
-        bmps.add(resizedFirstBmp);
+//        bmps.add(resizedFirstBmp);
         //Create an Intent with action as ACTION_PICK
 
         Intent intent=new Intent(Intent.ACTION_PICK);
@@ -183,14 +183,16 @@ public class TestLaneAdvanceActivity extends AppCompatActivity {
                     show("un-distorted image");
                     break;
                 case 4:
-//                    imageView.setImageBitmap(ladv.getMarkedBmp());
-//                    break;
-                    keyCounter++; // skipping
-                case 5:
                     imageView.setImageBitmap(ladv.getEdgesBmp());
+                    show("edge image");
+                    break;
+                case 5:
+                    imageView.setImageBitmap(ladv.getWarperBmp());
+                    show("wrapped image");
                     break;
                 case 6:
-                    imageView.setImageBitmap(ladv.getWarperBmp());
+                    imageView.setImageBitmap(ladv.getMarkedBmp());
+                    show("Marked Image");
                     break;
                 case 7:
                     bmps.clear();
