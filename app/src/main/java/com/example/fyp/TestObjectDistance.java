@@ -240,7 +240,7 @@ public class TestObjectDistance extends AppCompatActivity {
             });
 
             try {
-                 detector= Detector.create(getAssets(), Detector.OBJ_DETECTOR_MODEL);
+//                 detector= Detector.create(getAssets(), Detector.OBJ_DETECTOR_MODEL);
                 Log.d(TAG, "run: detector created");
             } catch (Exception e) {
                 Log.e(TAG,"run: Exception initializing classifier!", e);

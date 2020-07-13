@@ -57,7 +57,11 @@ public class Detector {
 
     private int width;
     private int height;
+    private int srcWidth;
+    private int srcHeight;
     private Boolean isModelQuantized;
+
+    private Matrix cropToFrame;
 
     private int[] intValues;
 
@@ -96,7 +100,7 @@ public class Detector {
     /** Initializes a native TensorFlow session. */
     public static Detector create(
             AssetManager assetManager,
-            String model) throws IOException,IllegalArgumentException {
+            String model,int srcWidth, int srcHeight) throws IOException,IllegalArgumentException {
 
         assert  model.contentEquals(OBJ_DETECTOR_MODEL)  ||
                 model.contentEquals(SIGN_DETECTOR_MODEL);
@@ -142,6 +146,9 @@ public class Detector {
         d.width = inputWidth;
         d.height = inputHeight;
         d.isModelQuantized = isModelQuantized;
+
+        d.cropToFrame = ImageUtilities.getTransformationMatrix(d.width,
+                d.height,srcWidth,srcHeight,0,false);
         InputStream labelsInput = null;
         labelsInput = assetManager.open(labelFilename);
         BufferedReader br = null;
@@ -171,6 +178,7 @@ public class Detector {
         d.outputScores = new float[1][NUM_DETECTIONS];
         d.numDetections = new float[1];
 
+
         return d;
     }
 
@@ -178,14 +186,13 @@ public class Detector {
     private Detector() {}
 
     public List<RecognizedObject> run(@NotNull Bitmap bmp,
-                                      int srcWidth, int srcHeight,
                                       boolean allowToRecycleBitmap){
 //        int srcWidth = bmp.getWidth();
 //        int srcHeight = bmp.getHeight();
 //        bmp = ImageUtilities.getResizedBitmap(bmp.copy(Bitmap.Config.ARGB_8888,true),
 //                width,height,true);
         setImageData(bmp);
-        List<RecognizedObject> recs = detectObjectsInImage(srcWidth,srcHeight);
+        List<RecognizedObject> recs = detectObjectsInImage();
         if (!bmp.isRecycled() && allowToRecycleBitmap) bmp.recycle();
         return recs;
     }
@@ -219,11 +226,10 @@ public class Detector {
         Trace.endSection(); // preprocessBitmap
     }
 
-    public List<RecognizedObject> detectObjectsInImage(int srcWidth, int srcHeight) {
+    public List<RecognizedObject> detectObjectsInImage() {
 
         //
-        Matrix cropToFrame = ImageUtilities.getTransformationMatrix(width,
-                height,srcWidth,srcHeight,0,false);
+
         // Copy the input data into TensorFlow.
         Trace.beginSection("feed");
         outputLocations = new float[1][NUM_DETECTIONS][4];

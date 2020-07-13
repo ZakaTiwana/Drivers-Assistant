@@ -1,13 +1,14 @@
 package com.example.fyp;
 
 import android.annotation.SuppressLint;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.PointF;
 import android.graphics.RectF;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -24,11 +25,13 @@ import android.widget.FrameLayout;
 import androidx.annotation.RequiresApi;
 
 import com.example.fyp.customutilities.ImageUtilities;
+import com.example.fyp.customutilities.SharedPreferencesUtils;
 import com.example.fyp.customutilities.SharedValues;
 import com.google.android.material.snackbar.Snackbar;
 import com.example.fyp.customview.OverlayView;
 import org.opencv.android.OpenCVLoader;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class ImageProcessor extends CameraCaptureActivity {
@@ -36,7 +39,7 @@ public class ImageProcessor extends CameraCaptureActivity {
     private static final String TAG = "ImageProcessor";
     private static final Size[] DESIRED_PREVIEW_SIZES = SharedValues.DESIRED_PREVIEW_SIZES;
     private static final Size CROP_SIZE = SharedValues.CROP_SIZE;
-    private static final int[] pts = {650,360, 750,360, 1280,600, 100,600}; // for lane
+    private static PointF[] pts_resized = null; // for lane
 
     private int mWidth = 0;
     private int mHeight = 0;
@@ -53,10 +56,13 @@ public class ImageProcessor extends CameraCaptureActivity {
     private static volatile boolean isComputingLaneDetection = false;
 
     private static float[][] lanePoints = null;
+    private static ArrayList<PointF> lft_lane_pts = null;
+    private static ArrayList<PointF> rht_lane_pts = null;
     private static float timeTakeByLaneDetector = 0;
     private Paint lanePointsPaint = null;
 
     private LaneDetector laneDetector = null;
+    private  static  LaneDetectorAdvance laneDetectorAdvance = null;
     private static boolean laneGuidLines = false;
     private Path laneGuidPath = null;
     private Paint laneGuidPathPaint = null;
@@ -91,13 +97,18 @@ public class ImageProcessor extends CameraCaptureActivity {
         borderTextPaint.setColor(Color.BLUE);
         borderTextPaint.setTextSize(23);
 
-        laneGuidPath = new Path();
-        laneGuidPath.moveTo(pts[0],pts[1]);
-        laneGuidPath.lineTo(pts[2],pts[3]);
-        laneGuidPath.lineTo(pts[4],pts[5]);
-        laneGuidPath.lineTo(pts[6],pts[7]);
-        laneGuidPath.lineTo(pts[0],pts[1]);
-        laneGuidPath.close();
+        SharedPreferences sp_ld = getSharedPreferences(
+                getString(R.string.sp_laneDetection),0);
+        String sp_ld_key_tp = getString(R.string.sp_ld_key_transformed_mask_pts);
+        String sp_ld_key_op = getString(R.string.sp_ld_key_original_mask_pts);
+        pts_resized = (PointF[]) SharedPreferencesUtils.loadObject(
+                sp_ld,sp_ld_key_tp,PointF[].class);
+
+        PointF[] pts = (PointF[]) SharedPreferencesUtils.loadObject(
+                sp_ld,sp_ld_key_op,PointF[].class
+        );
+
+        laneGuidPath = SharedValues.getPathFromPointF(pts,true);
 
         laneGuidPathPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         laneGuidPathPaint.setColor(Color.BLUE);
@@ -199,6 +210,19 @@ public class ImageProcessor extends CameraCaptureActivity {
             }
         });
 
+        // lane detection advance
+        draw.addCallback(new OverlayView.DrawCallback() {
+            @Override
+            public void drawCallback(Canvas canvas) {
+                if(lft_lane_pts != null){
+                    canvas.drawPath(SharedValues.getPathFromPointF(lft_lane_pts,false),lanePointsPaint);
+                }
+                if(rht_lane_pts != null){
+                    canvas.drawPath(SharedValues.getPathFromPointF(rht_lane_pts,false),lanePointsPaint);
+                }
+            }
+        });
+
         // lane Mask
         draw.addCallback(new OverlayView.DrawCallback() {
             @Override
@@ -241,36 +265,28 @@ public class ImageProcessor extends CameraCaptureActivity {
             isrgbFrameCreated = true;
         }
 
-        // No mutex needed as this method is not reentrant.
-        if (isComputingDetection || !initialized) {
+        if (!initialized || isComputingDetection) {
             readyForNextImage();
             return;
         }
 
-        isComputingDetection = true;
+        if (isComputingLaneDetection && isComputingSignDetection){
+            readyForNextImage();
+            return;
+        }
+
         rgbFrameBitmap.setPixels(getRgbBytes(),
                 0, aqWidth, 0, 0, aqWidth, aqHeight);
-//        ImageUtilities.createCustomFile(this,rgbFrameBitmap,"test");
-        //    private Matrix frameToCrop;
+
         Bitmap resizedBitmap = ImageUtilities.getResizedBitmap(rgbFrameBitmap,
                 Detector.OBJ_DETECTOR_INPUT_SIZE, Detector.OBJ_DETECTOR_INPUT_SIZE,
                 false);
 
-//        if (!rgbFrameBitmap.isRecycled()) rgbFrameBitmap.recycle();
 
-        new SignTask().execute(resizedBitmap.copy(Bitmap.Config.ARGB_8888,true));
-        new LaneTask().execute(resizedBitmap.copy(Bitmap.Config.ARGB_8888,true));
+        if(!isComputingLaneDetection)new LaneTask().execute(resizedBitmap.copy(Bitmap.Config.ARGB_8888,true));
+//        if(!isComputingSignDetection)new SignTask().execute(resizedBitmap.copy(Bitmap.Config.ARGB_8888,true));
+        if(!isComputingDetection) new detectorTask().execute(resizedBitmap);
         readyForNextImage();
-
-        float start = SystemClock.currentThreadTimeMillis();
-        mappedRecognitions = detector.run(resizedBitmap,mWidth,mHeight,true);
-
-        float end = SystemClock.currentThreadTimeMillis();
-        timeTakeByObjDetector = end - start;
-
-        draw.postInvalidate();
-        isComputingDetection = false;
-
     }
 
     @Override
@@ -343,13 +359,16 @@ public class ImageProcessor extends CameraCaptureActivity {
             }
 
             try {
-                detector = Detector.create(getAssets(), Detector.OBJ_DETECTOR_MODEL);
+                detector = Detector.create(getAssets(), Detector.OBJ_DETECTOR_MODEL,mWidth,mHeight);
                 Log.d(TAG, "run: detector created");
 
-                signDetector = SignDetector.create(getAssets());
+                signDetector = SignDetector.create(getAssets(),mWidth,mHeight);
                 Log.d(TAG, "run: SignDetector created");
 
-                laneDetector = new LaneDetector(mWidth,mHeight,300,300);
+//                laneDetector = new LaneDetector(mWidth,mHeight,300,300);
+                laneDetectorAdvance = new LaneDetectorAdvance(mWidth,mHeight,
+                        SharedValues.CROP_SIZE.getWidth(),SharedValues.CROP_SIZE.getHeight());
+                laneDetectorAdvance.setPtsResized(pts_resized);
             } catch (Exception e) {
                 Log.e(TAG,"run: Exception initializing classifier!", e);
             }
@@ -366,14 +385,32 @@ public class ImageProcessor extends CameraCaptureActivity {
         }
     }
 
-    private class SignTask extends AsyncTask<Bitmap,Object,Object>{
+
+    private static class detectorTask extends AsyncTask<Bitmap,Object,Object>{
+        @Override
+        protected Object doInBackground(Bitmap... params) {
+            if(!isComputingDetection){
+                isComputingDetection = true;
+                float start = SystemClock.currentThreadTimeMillis();
+                mappedRecognitions = detector.run(params[0],true);
+
+                float end = SystemClock.currentThreadTimeMillis();
+                timeTakeByObjDetector = end - start;
+                draw.postInvalidate();
+                isComputingDetection = false;
+            }
+            if(!params[0].isRecycled()) params[0].recycle();
+            return null;
+        }
+    }
+    private static class SignTask extends AsyncTask<Bitmap,Object,Object>{
 
         @Override
         protected Object doInBackground(Bitmap... params) {
             if (!isComputingSignDetection){
                 isComputingSignDetection = true;
                 float start  = SystemClock.currentThreadTimeMillis();
-                mappedSignRecognitions = signDetector.run(params[0],mWidth,mHeight,true);
+                mappedSignRecognitions = signDetector.run(params[0],true);
                 float end = SystemClock.currentThreadTimeMillis();
 //                Log.d(TAG, String.format("doInBackground in SignLaneTask: sign detection time = %f ms", (end-start)));
                 timeTakeBySignDetector = end - start;
@@ -385,14 +422,17 @@ public class ImageProcessor extends CameraCaptureActivity {
         }
     }
 
-    private class LaneTask extends AsyncTask<Bitmap,Object,Object>{
+    private static class LaneTask extends AsyncTask<Bitmap,Object,Object>{
 
         @Override
         protected Object doInBackground(Bitmap... params) {
             if(!isComputingLaneDetection){
                 isComputingLaneDetection = true;
                 float start = SystemClock.currentThreadTimeMillis();
-                lanePoints = laneDetector.getResult2(params[0]);
+
+                ArrayList<PointF>[] ret = laneDetectorAdvance.processFrame(params[0],false);
+                lft_lane_pts = ret[0];
+                rht_lane_pts = ret[1];
                 float end = SystemClock.currentThreadTimeMillis();
                 timeTakeByLaneDetector = end - start;
                 draw.postInvalidate();

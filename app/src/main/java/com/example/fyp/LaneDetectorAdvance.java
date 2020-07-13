@@ -189,7 +189,7 @@ public class LaneDetectorAdvance {
             Utils.matToBitmap(img_bird_view,warperBmp);
         }
 
-        ArrayList<PointF>[] lanes_points = windowSearch(img_bird_view);
+        ArrayList<PointF>[] lanes_points = windowSearch(img_bird_view,visualize);
         ArrayList<PointF> lft_lane_pts = lanes_points[0];
         ArrayList<PointF> rht_lane_pts = lanes_points[1];
 
@@ -226,7 +226,7 @@ public class LaneDetectorAdvance {
         float[] diff = new float[4];
         float[] sums = new float[4];
 
-        Log.d(TAG, "orderedPoints: pts_resized = "+Arrays.toString(pts_resized));
+        Log.d(TAG, "orderedPoints: pts_resized = " + Arrays.toString(pts_resized));
         int index = 0;
         for (int i = 0; i < pts_resized.length; i++) {
             temp[index] = new Point(pts_resized[i].x,pts_resized[i].y);
@@ -266,15 +266,30 @@ public class LaneDetectorAdvance {
         return s.toString();
     }
 
-    private ArrayList<PointF>[] windowSearch(Mat wrapped){
+    private float offCenter(float left, float mid , float right) {
+
+        float a = mid - left;
+        float b = mid - right;
+        float width = right - left;
+        float LANE_WIDTH = 3.7f; // average lane width meter (m)
+        float offset = 0;
+
+        if ( Math.abs(a) >= Math.abs(b) ) {
+            offset = a / width * LANE_WIDTH - LANE_WIDTH /2f;
+        }
+        else {
+            offset = - b / width * LANE_WIDTH  - LANE_WIDTH /2f ;
+        }
+        return offset;
+    }
+
+    private ArrayList<PointF>[] windowSearch(Mat wrapped, boolean visualize){
         int midpoint = wrapped.cols()/2;
         Mat roi = wrapped.submat(wrapped.rows() - wrapped.rows()/8,wrapped.rows(),0,wrapped.cols());
         Log.d(TAG, "windowSearch: roi = "+roi.size());
         float[] hist_lane = histogram(roi);
         int left_lane_index = getMaxIndex(hist_lane,0,midpoint-30);
         int right_lane_index = getMaxIndex(hist_lane,midpoint+30,wrapped.cols());
-//        Imgproc.drawMarker(wrapped,new Point(left_lane_index,wrapped.cols()-10),new Scalar(255,255,255));
-//        Imgproc.drawMarker(wrapped,new Point(right_lane_index,wrapped.cols()-10),new Scalar(255,255,255));
         Log.d(TAG, String.format("windowSearch: hist point lft=%d, rht=%d", left_lane_index,right_lane_index));
 
         ArrayList<PointF> left_lane_indexes= new ArrayList<>();
@@ -314,24 +329,28 @@ public class LaneDetectorAdvance {
             ArrayList<PointF> nz_pts_rht_lane = nonZerosIndex(mat_rht,topX_rht,y_axis);
             Log.d(TAG, "windowSearch: nz_rht = "+nz_pts_rht_lane.size());
 
-            Imgproc.rectangle(wrapped,new Point(topX_lft,y_axis),
-                    new Point(topX_lft + windows_n_cols,y_axis + windows_n_rows),
-                    new Scalar(255,255,255),
-                    2);
-            Imgproc.rectangle(wrapped,new Point(topX_rht,y_axis),
-                    new Point(topX_rht + windows_n_cols,y_axis + windows_n_rows),
-                    new Scalar(255,255,255),
-                    2);
+            if (visualize){
+                Imgproc.rectangle(wrapped,new Point(topX_lft,y_axis),
+                        new Point(topX_lft + windows_n_cols,y_axis + windows_n_rows),
+                        new Scalar(255,255,255),
+                        2);
+                Imgproc.rectangle(wrapped,new Point(topX_rht,y_axis),
+                        new Point(topX_rht + windows_n_cols,y_axis + windows_n_rows),
+                        new Scalar(255,255,255),
+                        2);
 
-            Imgproc.drawMarker(wrapped,new Point(left_lane_index,row - windows_n_rows/2f),new Scalar(255,255,255));
-            Imgproc.drawMarker(wrapped,new Point(right_lane_index,row - windows_n_rows/2f),new Scalar(255,255,255));
+                Imgproc.drawMarker(wrapped,new Point(left_lane_index,row - windows_n_rows/2f),new Scalar(255,255,255));
+                Imgproc.drawMarker(wrapped,new Point(right_lane_index,row - windows_n_rows/2f),new Scalar(255,255,255));
+            }
 
-            left_lane_indexes.addAll(
-                    nz_pts_lft_lane
-            );
-            right_lane_indexes.addAll(
-                    nz_pts_rht_lane
-            );
+//            left_lane_indexes.addAll(
+//                    nz_pts_lft_lane
+//            );
+//            right_lane_indexes.addAll(
+//                    nz_pts_rht_lane
+//            );
+            left_lane_indexes.add(new PointF(left_lane_index,row - windows_n_rows/2f));
+            right_lane_indexes.add(new PointF(right_lane_index,row - windows_n_rows/2f));
             if(nz_pts_lft_lane.size() >= min_px){
                 left_lane_index = meanXIndex(nz_pts_lft_lane);
                 Log.d(TAG, "windowSearch: new mean lft = "+ left_lane_index);
@@ -562,7 +581,7 @@ public class LaneDetectorAdvance {
     private static ArrayList<PointF> arrayToPointF(float[] pts){
         ArrayList<PointF> pts_list = new ArrayList<>();
         for (int i = 0; i < pts.length; i+=2) {
-            pts_list.set(i/2,new PointF(pts[i],pts[i+1]));
+            pts_list.add(new PointF(pts[i],pts[i+1]));
         }
         return pts_list;
     }

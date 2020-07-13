@@ -51,7 +51,12 @@ public class SignDetector{
     private Detector detector;
     private int width;
     private int height;
+    private int srcWidth;
+    private int srcHeight;
     private boolean isModelQuantized;
+
+    private Matrix frameToCrop;
+    private Matrix cropToFrame;
 
     private int[] intValues;
 
@@ -80,9 +85,9 @@ public class SignDetector{
 
 
 
-    public static SignDetector create(AssetManager assetManager) throws IOException{
+    public static SignDetector create(AssetManager assetManager ,int srcWidth,int srcHeight) throws IOException{
         SignDetector s = new SignDetector();
-        s.detector =  Detector.create(assetManager,Detector.SIGN_DETECTOR_MODEL);
+        s.detector =  Detector.create(assetManager,Detector.SIGN_DETECTOR_MODEL,srcWidth,  srcHeight);
 
         try {
 //            GpuDelegate delegate = new GpuDelegate();
@@ -97,9 +102,24 @@ public class SignDetector{
                 throw e;
             }
         }
+        s.srcWidth = srcWidth;
+        s.srcHeight = srcHeight;
         s.width = SIGN_CLASSIFIER_INPUT_SIZE;
         s.height = SIGN_CLASSIFIER_INPUT_SIZE;
         s.isModelQuantized = SIGN_CLASSIFIER_IS_QUANTIZED;
+
+        s.frameToCrop = ImageUtilities.getTransformationMatrix(
+                srcWidth,srcHeight,
+                Detector.SIGN_DETECTOR_INPUT_SIZE,Detector.SIGN_DETECTOR_INPUT_SIZE,
+                0,false
+        );
+        s.cropToFrame = ImageUtilities.getTransformationMatrix(
+                Detector.OBJ_DETECTOR_INPUT_SIZE,Detector.OBJ_DETECTOR_INPUT_SIZE,
+                srcWidth,srcHeight,
+                0,false
+        );
+
+
         InputStream labelsInput = null;
         labelsInput = assetManager.open(SIGN_CLASSIFIER_LABEL);
         BufferedReader br = null;
@@ -157,20 +177,11 @@ public class SignDetector{
     }
 
 
-    public List<RecognizedObject> run(@NotNull Bitmap bmp,int srcWidth,int srcHeight,boolean allowToRecycleBitmap) {
+    public List<RecognizedObject> run(@NotNull Bitmap bmp,boolean allowToRecycleBitmap) {
         List<RecognizedObject> recognizedObjects = new ArrayList<>();
         List<RecognizedObject> recognizedObjects_temp = detector.run(
-                bmp,srcWidth,srcHeight,false);
-        Matrix frameToCrop = ImageUtilities.getTransformationMatrix(
-                srcWidth,srcHeight,
-                Detector.SIGN_DETECTOR_INPUT_SIZE,Detector.SIGN_DETECTOR_INPUT_SIZE,
-                0,false
-        );
-        Matrix cropToFrame = ImageUtilities.getTransformationMatrix(
-                Detector.OBJ_DETECTOR_INPUT_SIZE,Detector.OBJ_DETECTOR_INPUT_SIZE,
-                srcWidth,srcHeight,
-                0,false
-        );
+                bmp,false);
+
         Bitmap resizeBitmap = null;
         Bitmap croppedBmp = null ;
         RectF location;

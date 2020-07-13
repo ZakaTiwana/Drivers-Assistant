@@ -179,16 +179,6 @@ public class LanePointsActivity extends AppCompatActivity {
             }
         });
 
-        Button btn_get_lane_p = findViewById(R.id.btn_get_lane_points);
-        btn_get_lane_p.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                PointF[] transformedPoints = (PointF[]) SharedPreferencesUtils.loadObject(
-                        sp,sp_ld_key_tp,PointF[].class);
-                Log.d(TAG, String.format("onClick: transformedPoints = %s",
-                        Arrays.asList(transformedPoints)));
-            }
-        });
     }
 
     @RequiresApi(api = Build.VERSION_CODES.M)
