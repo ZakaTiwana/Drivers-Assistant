@@ -162,7 +162,7 @@ public class TestLaneAdvanceActivity extends AppCompatActivity {
                 case 1:
                     hasProcessed = false;
                     if (!bmps.isEmpty()) {
-                        ladv.processFrame(bmps.get(0));
+                        ladv.processFrame(bmps.get(0),true);
                         show("processFrame Done");
                         hasProcessed = true;
                     }

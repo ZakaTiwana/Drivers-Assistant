@@ -157,13 +157,13 @@ public class LaneDetectorAdvance {
         }
     }
 
-    public void processFrame(Bitmap bmp){
+    public ArrayList<PointF>[] processFrame(Bitmap bmp, boolean visualize){
 
         // un-distort skipped
 //        this.image = unDistortImage(bmp);
         this.image = new Mat();
         Utils.bitmapToMat(bmp,this.image);
-        Point[] p = orderedPoints();
+//        Point[] p = orderedPoints();
 
 //        Imgproc.drawMarker(this.image,p[0],new Scalar(255,255,255));
 //        Imgproc.drawMarker(this.image,p[1],new Scalar(255,255,255));
@@ -175,31 +175,49 @@ public class LaneDetectorAdvance {
 //        Utils.matToBitmap(this.image,markedBmp);
 
         Mat img_binray  = findEdges();
-        edgesBmp = Bitmap.createBitmap(
-                img_binray.width(),img_binray.height(),
-                Bitmap.Config.ARGB_8888);
-        Utils.matToBitmap(img_binray,edgesBmp);
-        Mat img_bird_view = warper(img_binray);
-        warperBmp = Bitmap.createBitmap(
-                img_bird_view.width(),img_bird_view.height(),
-                Bitmap.Config.ARGB_8888);
-        Utils.matToBitmap(img_bird_view,warperBmp);
-        ArrayList<PointF>[] lanes_points = windowSearch(img_bird_view);
-//        ArrayList<PointF> lft_lane_pts = lanes_points[0];
-//        ArrayList<PointF> rht_lane_pts = lanes_points[1];
-//        for (PointF p_lft :
-//                lft_lane_pts) {
-//            Imgproc.drawMarker(img_bird_view,new Point(p_lft.x,p_lft.y),new Scalar(255,255,255));
-//        }
-//
-//        for (PointF p_lft :
-//                rht_lane_pts) {
-//            Imgproc.drawMarker(img_bird_view,new Point(p_lft.x,p_lft.y),new Scalar(255,255,255));
-//        }
+        if(visualize){
+            edgesBmp = Bitmap.createBitmap(
+                    img_binray.width(),img_binray.height(),
+                    Bitmap.Config.ARGB_8888);
+            Utils.matToBitmap(img_binray,edgesBmp);
+        }
+        Mat img_bird_view = wraper(img_binray);
+        if (visualize){
+            warperBmp = Bitmap.createBitmap(
+                    img_bird_view.width(),img_bird_view.height(),
+                    Bitmap.Config.ARGB_8888);
+            Utils.matToBitmap(img_bird_view,warperBmp);
+        }
 
-        markedBmp = Bitmap.createBitmap(
-                img_bird_view.width(),img_bird_view.height(), Bitmap.Config.ARGB_8888);
-        Utils.matToBitmap(img_bird_view,markedBmp);
+        ArrayList<PointF>[] lanes_points = windowSearch(img_bird_view);
+        ArrayList<PointF> lft_lane_pts = lanes_points[0];
+        ArrayList<PointF> rht_lane_pts = lanes_points[1];
+
+        float[] p_lft_float = pointFArrayToFloat(lft_lane_pts);
+        float[] p_rht_float = pointFArrayToFloat(rht_lane_pts);
+
+
+        if (visualize){
+            markedBmp = Bitmap.createBitmap(
+                    img_bird_view.width(),img_bird_view.height(), Bitmap.Config.ARGB_8888);
+            Utils.matToBitmap(img_bird_view,markedBmp);
+        }
+
+        Matrix android_M_inv = new Matrix();
+        transformMatrix(M_inv,android_M_inv);
+
+        android_M_inv.mapPoints(p_lft_float);
+        cropToFrame.mapPoints(p_lft_float);
+
+        android_M_inv.mapPoints(p_rht_float);
+        cropToFrame.mapPoints(p_rht_float);
+
+        lft_lane_pts = arrayToPointF(p_lft_float);
+        rht_lane_pts = arrayToPointF(p_rht_float);
+        ArrayList<PointF>[] res = new ArrayList[2];
+        res[0] = lft_lane_pts;
+        res[1] = rht_lane_pts;
+        return res;
     }
 
     private Point[] orderedPoints(){
@@ -375,7 +393,8 @@ public class LaneDetectorAdvance {
         }
         return max;
     }
-    private Mat warper(Mat edge){
+
+    private Mat wraper(Mat edge){
         Mat warped = new Mat();
 
         Point[] p = orderedPoints();
@@ -392,8 +411,8 @@ public class LaneDetectorAdvance {
 
         Mat M = Imgproc.getPerspectiveTransform(inshape,outshape);
         M_inv = Imgproc.getPerspectiveTransform(outshape,inshape);
-        Log.d(TAG, "warper: M = "+ matContentInString(M));
-        Log.d(TAG, "warper: M_inv = "+ matContentInString(M_inv));
+//        Log.d(TAG, "warper: M = "+ matContentInString(M));
+//        Log.d(TAG, "warper: M_inv = "+ matContentInString(M_inv));
 
         Imgproc.warpPerspective(edge,warped,M,
                 edge.size());
@@ -521,6 +540,39 @@ public class LaneDetectorAdvance {
         }
         dist_s.append("]");
         return dist_s.toString();
+    }
+
+    static void transformMatrix(Mat src, Matrix dst) {
+
+        int columns = src.cols();
+        int rows = src.rows();
+
+        float[] values = new float[columns * rows];
+        int index = 0;
+        for (int x = 0; x < columns; x++)
+            for (int y = 0; y < rows; y++) {
+                double[] value = src.get(x, y);
+                values[index] = (float) value[0];
+                index++;
+            }
+
+        dst.setValues(values);
+    }
+
+    private static ArrayList<PointF> arrayToPointF(float[] pts){
+        ArrayList<PointF> pts_list = new ArrayList<>();
+        for (int i = 0; i < pts.length; i+=2) {
+            pts_list.set(i/2,new PointF(pts[i],pts[i+1]));
+        }
+        return pts_list;
+    }
+    private static float[] pointFArrayToFloat(ArrayList<PointF> pts){
+        float[] pts_float = new float[pts.size()*2];
+        for (int i = 0; i < pts_float.length; i+=2) {
+            pts_float[i] = pts.get(i/2).x;
+            pts_float[i+1] = pts.get(i/2).y;
+        }
+        return pts_float;
     }
 
 }
