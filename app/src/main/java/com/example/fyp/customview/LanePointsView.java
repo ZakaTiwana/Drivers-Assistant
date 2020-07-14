@@ -21,6 +21,7 @@ import androidx.annotation.Nullable;
 import com.example.fyp.LaneDetectorAdvance;
 import com.example.fyp.customutilities.ImageUtilities;
 import com.example.fyp.customutilities.SharedPreferencesUtils;
+import com.example.fyp.customutilities.SharedValues;
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
 
@@ -110,9 +111,9 @@ public class LanePointsView extends View {
 
         pts = new PointF[4];
         pts[0] = new PointF( centerX - 100, centerY - 100 );
-        pts[1] = new PointF( centerX - 100, centerY + 100 );
+        pts[1] = new PointF( centerX + 100, centerY - 100 );
         pts[2] = new PointF( centerX + 100, centerY + 100 );
-        pts[3] = new PointF( centerX + 100, centerY - 100 );
+        pts[3] = new PointF( centerX - 100, centerY + 100 );
         setMaskPath();
         setCirclePointPath();
     }
@@ -129,10 +130,10 @@ public class LanePointsView extends View {
         if(maskPath == null) return;
         maskPath.reset();
         maskPath.moveTo(pts[0].x,pts[0].y);
-        for (int i = 1; i < pts.length; i = (i + 1) % pts.length) {
+        for (int i = 0; i < pts.length; i ++) {
             maskPath.lineTo(pts[i].x,pts[i].y);
-            if(i == 0) break;
         }
+        maskPath.close();
     }
 
     @Override

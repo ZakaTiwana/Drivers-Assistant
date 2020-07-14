@@ -9,6 +9,9 @@ import android.util.Log;
 import com.example.fyp.customutilities.ImageUtilities;
 import com.example.fyp.customutilities.SharedPreferencesUtils;
 
+import org.apache.commons.math3.analysis.polynomials.PolynomialFunction;
+import org.apache.commons.math3.fitting.PolynomialCurveFitter;
+import org.apache.commons.math3.fitting.WeightedObservedPoints;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.android.Utils;
@@ -36,6 +39,7 @@ public class LaneDetectorAdvance {
     private PointF[] pts_resized ; //roi
     private Matrix cropToFrame;
 
+    private Point[] points;
     private Mat mtx;
     private Mat dist;
     private Bitmap chessBoardPattern = null;
@@ -64,6 +68,7 @@ public class LaneDetectorAdvance {
 
     public void setPtsResized (PointF[] pts){
         pts_resized = pts;
+        orderedPoints();
     }
 
     public void setNewSize(int srcWidth, int srcHeight, int cropWidth, int cropHeight){
@@ -138,8 +143,6 @@ public class LaneDetectorAdvance {
         Log.d(TAG, String.format("calibration: mtx : width= %d , height= %d", mtx.width(),mtx.height()));
         Log.d(TAG, String.format("calibration: dist : width= %d , height= %d", dist.width(),dist.height()));
 
-
-
         Log.d(TAG, "calibration: mtx content  => " + matContentInString(mtx));
         Log.d(TAG, "calibration: dist content  => " + matContentInString(dist));
         String key="";
@@ -202,7 +205,9 @@ public class LaneDetectorAdvance {
                     img_bird_view.width(),img_bird_view.height(), Bitmap.Config.ARGB_8888);
             Utils.matToBitmap(img_bird_view,markedBmp);
         }
+        //
 
+        //
         Matrix android_M_inv = new Matrix();
         transformMatrix(M_inv,android_M_inv);
 
@@ -214,14 +219,29 @@ public class LaneDetectorAdvance {
 
         lft_lane_pts = arrayToPointF(p_lft_float);
         rht_lane_pts = arrayToPointF(p_rht_float);
+        polyFit(lft_lane_pts,2);
+        polyFit(rht_lane_pts,2);
         ArrayList<PointF>[] res = new ArrayList[2];
         res[0] = lft_lane_pts;
         res[1] = rht_lane_pts;
         return res;
     }
+    private void polyFit(ArrayList<PointF> pts, int degree){
+        PolynomialCurveFitter
+                curveFitter = PolynomialCurveFitter.create(degree)
+                .withMaxIterations(500);
 
-    private Point[] orderedPoints(){
-        Point[] rect = new Point[4];
+        WeightedObservedPoints points = new WeightedObservedPoints();
+        for(int i = 0; i < pts.size(); i++) {
+            points.add(pts.get(i).x, pts.get(i).y);
+        }
+        PolynomialFunction func = new PolynomialFunction(curveFitter.fit(points.toList()));
+        for(int i = 0; i < pts.size(); i++) {
+            pts.get(i).y = (float) func.value(pts.get(i).x);
+        }
+    }
+    private void orderedPoints(){
+        points = new Point[4];
         Point[] temp = new Point[4];
         float[] diff = new float[4];
         float[] sums = new float[4];
@@ -248,12 +268,10 @@ public class LaneDetectorAdvance {
         Log.d(TAG, String.format(
                 "orderedPoints: min_sum = %d , min_diff = %d, max_sum = %d, max_diff = %d",
                 min_sum,min_diff,max_sum,max_diff));
-        rect[0] = temp[min_sum];
-        rect[1] = temp[min_diff];
-        rect[2] = temp[max_sum];
-        rect[3] = temp[max_diff];
-
-        return rect;
+        points[0] = temp[min_sum];
+        points[1] = temp[min_diff];
+        points[2] = temp[max_sum];
+        points[3] = temp[max_diff];
     }
 
     private String pointArrayToString(Point[] ps){
@@ -266,10 +284,10 @@ public class LaneDetectorAdvance {
         return s.toString();
     }
 
-    private float offCenter(float left, float mid , float right) {
+    private float offCenter(float left, float car , float right) {
 
-        float a = mid - left;
-        float b = mid - right;
+        float a = car - left;
+        float b = car - right;
         float width = right - left;
         float LANE_WIDTH = 3.7f; // average lane width meter (m)
         float offset = 0;
@@ -278,14 +296,15 @@ public class LaneDetectorAdvance {
             offset = a / width * LANE_WIDTH - LANE_WIDTH /2f;
         }
         else {
-            offset = - b / width * LANE_WIDTH  - LANE_WIDTH /2f ;
+            offset =  b / width * LANE_WIDTH  + LANE_WIDTH /2f;
         }
         return offset;
     }
 
     private ArrayList<PointF>[] windowSearch(Mat wrapped, boolean visualize){
         int midpoint = wrapped.cols()/2;
-        Mat roi = wrapped.submat(wrapped.rows() - wrapped.rows()/8,wrapped.rows(),0,wrapped.cols());
+        Mat roi = wrapped.submat(wrapped.rows() - wrapped.rows()/4,
+                wrapped.rows(),0,wrapped.cols());
         Log.d(TAG, "windowSearch: roi = "+roi.size());
         float[] hist_lane = histogram(roi);
         int left_lane_index = getMaxIndex(hist_lane,0,midpoint-30);
@@ -416,9 +435,8 @@ public class LaneDetectorAdvance {
     private Mat wraper(Mat edge){
         Mat warped = new Mat();
 
-        Point[] p = orderedPoints();
-        Log.d(TAG, "warper: order points = "+ pointArrayToString(p));
-        MatOfPoint2f inshape = new MatOfPoint2f(p);
+//        Log.d(TAG, "warper: order points = "+ pointArrayToString(points));
+        MatOfPoint2f inshape = new MatOfPoint2f(points);
         Point[] p_d = new Point[4];
         p_d[0] = new Point(0,0);
         p_d[1] = new Point(0,edge.rows() -1); //new Point(width - 1,0);

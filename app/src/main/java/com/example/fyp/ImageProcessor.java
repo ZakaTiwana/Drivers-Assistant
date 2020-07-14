@@ -265,12 +265,12 @@ public class ImageProcessor extends CameraCaptureActivity {
             isrgbFrameCreated = true;
         }
 
-        if (!initialized || isComputingDetection) {
+        if (!initialized  ) { //|| isComputingDetection) {
             readyForNextImage();
             return;
         }
 
-        if (isComputingLaneDetection && isComputingSignDetection){
+        if (isComputingLaneDetection  && isComputingDetection){
             readyForNextImage();
             return;
         }
@@ -414,7 +414,7 @@ public class ImageProcessor extends CameraCaptureActivity {
                 float end = SystemClock.currentThreadTimeMillis();
 //                Log.d(TAG, String.format("doInBackground in SignLaneTask: sign detection time = %f ms", (end-start)));
                 timeTakeBySignDetector = end - start;
-                draw.postInvalidate();
+//                draw.postInvalidate();
                 isComputingSignDetection = false;
             }
             if(!params[0].isRecycled()) params[0].recycle();
