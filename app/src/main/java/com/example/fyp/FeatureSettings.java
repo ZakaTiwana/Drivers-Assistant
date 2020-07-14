@@ -1,6 +1,7 @@
 package com.example.fyp;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -28,7 +29,7 @@ public class FeatureSettings extends AppCompatActivity implements View.OnClickLi
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_feature_settings);
 
-        testbtn=(TextView)findViewById(R.id.textView2);
+        testbtn=(TextView)findViewById(R.id.textView);
         testbtn.setOnClickListener(this);
         laneTextButton = findViewById(R.id.lane_text_view);
         laneTextButton.setOnClickListener(this);
@@ -38,6 +39,34 @@ public class FeatureSettings extends AppCompatActivity implements View.OnClickLi
         objectDetection = findViewById(R.id.switch3);
         signDetection = findViewById(R.id.switch4);
         muteWarnings = findViewById(R.id.switch5);
+
+        backButton = (ImageView) findViewById(R.id.backbtn1);
+
+        SharedPreferences Home_settings = getSharedPreferences("home_settings", 0);
+        boolean darkModeUi_value = Home_settings.getBoolean("ui_settings", false);
+        if (!darkModeUi_value) {
+            ConstraintLayout constLayout;
+            TextView tv1,tv2,tv3,tv4,tv5;
+            tv1=(TextView)findViewById(R.id.textView1);
+            tv2=(TextView)findViewById(R.id.textView2);
+            tv3=(TextView)findViewById(R.id.textView3);
+            tv4=(TextView)findViewById(R.id.textView4);
+            tv5=(TextView)findViewById(R.id.textView5);
+            constLayout = findViewById(R.id.featuresettings);
+            constLayout.setBackgroundResource(R.drawable.backgroundimage8);
+            laneGuide.setTextColor(getResources().getColor(R.color.light_grey));
+            distanceCalculator.setTextColor(getResources().getColor(R.color.light_grey));
+            objectDetection.setTextColor(getResources().getColor(R.color.light_grey));
+            signDetection.setTextColor(getResources().getColor(R.color.light_grey));
+            muteWarnings.setTextColor(getResources().getColor(R.color.light_grey));
+            testbtn.setTextColor(getResources().getColor(R.color.dark_grey));
+            backButton.setImageResource(R.drawable.ic_back_button_black);
+            tv1.setTextColor(getResources().getColor(R.color.dark_grey));
+            tv2.setTextColor(getResources().getColor(R.color.dark_grey));
+            tv3.setTextColor(getResources().getColor(R.color.dark_grey));
+            tv4.setTextColor(getResources().getColor(R.color.dark_grey));
+            tv5.setTextColor(getResources().getColor(R.color.dark_grey));
+        }
 
 
         SharedPreferences settings = getSharedPreferences("feature_settings", 0);
@@ -64,9 +93,9 @@ public class FeatureSettings extends AppCompatActivity implements View.OnClickLi
                                          boolean isChecked) {
 
                 if (isChecked) {
-                    Toast.makeText(getApplicationContext(), "true", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "Lane Guide Enabled", Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(getApplicationContext(), "false", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "Lane Guide Disabled", Toast.LENGTH_SHORT).show();
                 }
                 SharedPreferences settings = getSharedPreferences("feature_settings", 0);
                 SharedPreferences.Editor editor = settings.edit();
@@ -81,9 +110,9 @@ public class FeatureSettings extends AppCompatActivity implements View.OnClickLi
                                          boolean isChecked) {
 
                 if (isChecked) {
-                    Toast.makeText(getApplicationContext(), "true", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "Distance Calculator Enabled", Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(getApplicationContext(), "false", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "Distance Calculator Disabled", Toast.LENGTH_SHORT).show();
                 }
                 SharedPreferences settings = getSharedPreferences("feature_settings", 0);
                 SharedPreferences.Editor editor = settings.edit();
@@ -98,9 +127,9 @@ public class FeatureSettings extends AppCompatActivity implements View.OnClickLi
                                          boolean isChecked) {
 
                 if (isChecked) {
-                    Toast.makeText(getApplicationContext(), "true", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "Object Detector Enabled", Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(getApplicationContext(), "false", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "Object Detector Disabled", Toast.LENGTH_SHORT).show();
                 }
                 SharedPreferences settings = getSharedPreferences("feature_settings", 0);
                 SharedPreferences.Editor editor = settings.edit();
@@ -115,9 +144,9 @@ public class FeatureSettings extends AppCompatActivity implements View.OnClickLi
                                          boolean isChecked) {
 
                 if (isChecked) {
-                    Toast.makeText(getApplicationContext(), "true", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "Sign Detector Enabled", Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(getApplicationContext(), "false", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "Sign Detector Disabled", Toast.LENGTH_SHORT).show();
                 }
                 SharedPreferences settings = getSharedPreferences("feature_settings", 0);
                 SharedPreferences.Editor editor = settings.edit();
@@ -132,9 +161,9 @@ public class FeatureSettings extends AppCompatActivity implements View.OnClickLi
                                          boolean isChecked) {
 
                 if (isChecked) {
-                    Toast.makeText(getApplicationContext(), "true", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "Mute Warnings Enabled", Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(getApplicationContext(), "false", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "Mute Warning Disabled", Toast.LENGTH_SHORT).show();
                 }
                 SharedPreferences settings = getSharedPreferences("feature_settings", 0);
                 SharedPreferences.Editor editor = settings.edit();
@@ -144,7 +173,7 @@ public class FeatureSettings extends AppCompatActivity implements View.OnClickLi
         });
 
 
-        backButton = (ImageView) findViewById(R.id.backbtn1);
+
         backButton.setOnClickListener(this);
 
     }

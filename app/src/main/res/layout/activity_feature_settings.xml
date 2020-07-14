@@ -2,76 +2,86 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/featuresettings"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/black"
+    android:background="@drawable/backgroundimage4"
+    android:screenOrientation="portrait"
     tools:context=".FeatureSettings">
 
 
     <TextView
-        android:id="@+id/textView9"
+        android:id="@+id/textView1"
         android:layout_width="294dp"
         android:layout_height="50dp"
-        android:layout_marginBottom="100dp"
+        android:layout_marginTop="598dp"
         android:text="Mute Warnings, when toggled on, will not sound alarms of approaching detected objects. "
         android:textColor="@color/light_grey"
-        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.504"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/switch5" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
-        android:id="@+id/textView8"
+        android:id="@+id/textView2"
         android:layout_width="292dp"
         android:layout_height="50dp"
+        android:layout_marginTop="482dp"
         android:text="Sign Detection Displays detected traffic signs on your screen  in real time."
         android:textColor="@color/light_grey"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.495"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/switch4" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
-        android:id="@+id/textView7"
+        android:id="@+id/textView3"
         android:layout_width="292dp"
         android:layout_height="50dp"
+        android:layout_marginTop="366dp"
         android:text="Object Detection detects objects and highlights them for you."
         android:textColor="@color/light_grey"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/switch3" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
-        android:id="@+id/lane_text_view"
+        android:id="@+id/textView4"
         android:layout_width="292dp"
         android:layout_height="50dp"
+        android:layout_marginTop="124dp"
         android:text="Lane guide will help you to stay in the middle of a lane by augmenting guiding line on your lane."
         android:textColor="@color/light_grey"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/switch1" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
-        android:id="@+id/tv3"
+        android:id="@+id/textView5"
         android:layout_width="292dp"
         android:layout_height="50dp"
+        android:layout_marginTop="250dp"
         android:text="Distant Calculator Displays Distant from detected objects to your car.  "
         android:textColor="@color/light_grey"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.504"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/switch2" />
+        app:layout_constraintTop_toTopOf="parent" />
+
 
     <Switch
         android:id="@+id/switch1"
         android:layout_width="292dp"
         android:layout_height="28dp"
-        android:layout_marginTop="80dp"
+        android:layout_marginTop="94dp"
         android:background="@drawable/custom_border"
         android:text="Turn On Lane Guide"
         android:textAlignment="center"
         android:textColor="@color/dark_teal"
         android:textStyle="bold"
+        android:theme="@style/SwitchTheme"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.504"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -79,59 +89,64 @@
         android:id="@+id/switch2"
         android:layout_width="292dp"
         android:layout_height="28dp"
-        android:layout_marginTop="32dp"
+        android:layout_marginTop="220dp"
         android:background="@drawable/custom_border"
         android:text="Turn on Distant Calculator"
         android:textAlignment="center"
         android:textColor="@color/dark_teal"
         android:textStyle="bold"
+        android:theme="@style/SwitchTheme"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.512"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/lane_text_view" />
-
+        app:layout_constraintTop_toTopOf="parent" />
 
     <Switch
         android:id="@+id/switch3"
         android:layout_width="292dp"
         android:layout_height="28dp"
-        android:layout_marginTop="32dp"
+        android:layout_marginTop="336dp"
         android:background="@drawable/custom_border"
         android:text="Turn on Object Detection"
         android:textAlignment="center"
         android:textColor="@color/dark_teal"
         android:textStyle="bold"
+        android:theme="@style/SwitchTheme"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tv3" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <Switch
         android:id="@+id/switch4"
         android:layout_width="292dp"
         android:layout_height="28dp"
-        android:layout_marginTop="32dp"
+        android:layout_marginTop="452dp"
         android:background="@drawable/custom_border"
         android:text="Turn on Sign Detection"
         android:textAlignment="center"
         android:textColor="@color/dark_teal"
         android:textStyle="bold"
+        android:theme="@style/SwitchTheme"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.495"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView7" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <Switch
         android:id="@+id/switch5"
         android:layout_width="292dp"
         android:layout_height="28dp"
-        android:layout_marginTop="32dp"
+        android:layout_marginTop="568dp"
         android:background="@drawable/custom_border"
         android:text="Turn on Mute Warnings"
         android:textAlignment="center"
         android:textColor="@color/dark_teal"
         android:textStyle="bold"
+        android:theme="@style/SwitchTheme"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.504"
+        app:layout_constraintHorizontal_bias="0.495"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView8" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <ImageView
         android:id="@+id/backbtn1"
@@ -142,20 +157,21 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:srcCompat="@drawable/ic_back_button2" />
+
     <TextView
-        android:id="@+id/textView2"
-        android:layout_width="230dp"
-        android:layout_height="60dp"
+        android:id="@+id/textView"
+        android:layout_width="wrap_content"
+        android:layout_height="61dp"
         android:layout_marginTop="12dp"
+        android:clickable="true"
         android:text="Feature Settings"
         android:textAlignment="center"
-        android:textColor="@color/dark_teal"
+        android:textColor="@color/light_teal"
         android:textSize="28dp"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.6"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        android:clickable="true"/>
-
+        app:layout_constraintTop_toTopOf="parent" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -3,9 +3,13 @@
 package com.example.fyp;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.core.widget.CompoundButtonCompat;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.SharedPreferences;
+import android.content.res.ColorStateList;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
@@ -27,6 +31,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 public class AddContacts extends AppCompatActivity implements AdapterView.OnItemClickListener, View.OnClickListener {
 
@@ -72,7 +79,7 @@ public class AddContacts extends AppCompatActivity implements AdapterView.OnItem
 
         adapter = new CustomList(this, R.layout.row, contacts);
         lv1.setAdapter(adapter);
-      //  lv1.setTextFilterEnabled(true);
+        //  lv1.setTextFilterEnabled(true);
         lv1.setOnItemClickListener(this);
 
         backbutton = (ImageView) findViewById(R.id.backbtn1);
@@ -84,7 +91,23 @@ public class AddContacts extends AppCompatActivity implements AdapterView.OnItem
 
 
         addContacts.setOnClickListener(this);
+
         editText = (EditText) findViewById(R.id.editText2);
+
+        SharedPreferences settings = getSharedPreferences("home_settings", 0);
+        boolean darkModeUi_value = settings.getBoolean("ui_settings", false);
+        if (!darkModeUi_value) {
+            ConstraintLayout constLayout;
+            constLayout = findViewById(R.id.addcontacts);
+            constLayout.setBackgroundResource(R.drawable.backgroundimage8);
+            TextView tv1=(TextView)findViewById(R.id.textView2);
+            tv1.setTextColor(getResources().getColor(R.color.dark_grey));
+            backbutton.setImageResource(R.drawable.ic_back_button_black);
+            addContacts.setTextColor(getResources().getColor(R.color.light_grey));
+            editText.setBackgroundResource(R.drawable.white_border);
+        }
+
+
         editText.addTextChangedListener(new TextWatcher() {
 
             public void onTextChanged(CharSequence arg0, int arg1, int arg2,
@@ -98,7 +121,7 @@ public class AddContacts extends AppCompatActivity implements AdapterView.OnItem
             }
 
             public void afterTextChanged(Editable arg0) {
-               // AddContacts.this.adapter.getFilter().filter(arg0);
+                // AddContacts.this.adapter.getFilter().filter(arg0);
                 if (arg0.toString().equals("")) {
 
                     // reset listview
@@ -116,25 +139,26 @@ public class AddContacts extends AppCompatActivity implements AdapterView.OnItem
 
     }
 
-    public void initList(){
-        contacts=Ocontacts;
+    public void initList() {
+        contacts = Ocontacts;
         adapter = new CustomList(this, R.layout.row, contacts);
         lv1.setAdapter(adapter);
         lv1.setOnItemClickListener(this);
     }
-    public void searchItem(String textToSearch){
+
+    public void searchItem(String textToSearch) {
         ArrayList<String> Newcontacts = new ArrayList<String>();
         String[] ContactsInfo;
-        textToSearch=textToSearch.toLowerCase();
+        textToSearch = textToSearch.toLowerCase();
         String name;
-        for(int i=0;i<contacts.size();i++) {
+        for (int i = 0; i < contacts.size(); i++) {
             ContactsInfo = contacts.get(i).split(":");
-            name=ContactsInfo[0].toLowerCase();
+            name = ContactsInfo[0].toLowerCase();
             if (name.contains(textToSearch)) {
                 Newcontacts.add(contacts.get(i));
             }
         }
-        contacts=Newcontacts;
+        contacts = Newcontacts;
         adapter = new CustomList(this, R.layout.row, contacts);
         lv1.setAdapter(adapter);
         lv1.setOnItemClickListener(this);
@@ -218,14 +242,18 @@ public class AddContacts extends AppCompatActivity implements AdapterView.OnItem
     class CustomList extends ArrayAdapter {
 
         ArrayList<String> Customcontacts = new ArrayList<String>();
+
         public CustomList(Context context, int resource, ArrayList<String> objects) {
             super(context, resource, objects);
-            Customcontacts=objects;
+            Customcontacts = objects;
+            Set<String> set = new HashSet<>(Customcontacts);
+            Customcontacts.clear();
+            Customcontacts.addAll(set);
+            Collections.sort(Customcontacts);
         }
 
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
-
 
 
             View v = ((Activity) getContext()).getLayoutInflater().inflate(R.layout.row, null);
@@ -240,6 +268,18 @@ public class AddContacts extends AppCompatActivity implements AdapterView.OnItem
             contactName.setText(contactsInfo[0]);
             contactPhoneno.setText(contactsInfo[1]);
 
+            SharedPreferences settings = getSharedPreferences("home_settings", 0);
+            boolean darkModeUi_value = settings.getBoolean("ui_settings", false);
+            if (!darkModeUi_value) {
+                contactName.setTextColor(getResources().getColor(R.color.dark_grey));
+                contactPhoneno.setTextColor(getResources().getColor(R.color.dark_grey));
+                ImageView img1=(ImageView)v.findViewById(R.id.imageView2);
+                img1.setImageResource(R.drawable.ic_contact_black);
+                CheckBox ch=(CheckBox)v.findViewById(R.id.checkbox_contact);
+                //ch.setButtonTint(getResources().getColor(R.color.dark_grey));
+                CompoundButtonCompat.setButtonTintList(ch, ColorStateList
+                        .valueOf(getResources().getColor(R.color.dark_grey)));
+            }
             return v;
         }
     }

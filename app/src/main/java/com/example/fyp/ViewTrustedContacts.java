@@ -1,9 +1,13 @@
 package com.example.fyp;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.core.widget.CompoundButtonCompat;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.SharedPreferences;
+import android.content.res.ColorStateList;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
@@ -45,17 +49,19 @@ public class ViewTrustedContacts extends AppCompatActivity implements AdapterVie
 
         String name = "name";
         String number = "number";
-
-        db = openOrCreateDatabase("DriverAssistant", MODE_PRIVATE, null);
-        Cursor cursor = db.rawQuery("select * from TrustedContacts", null);
-        items = new ArrayList<String>();
-        if (cursor.moveToFirst()) {
-            do {
-                items.add(cursor.getString(cursor.getColumnIndex(name)) + ":"
-                        + cursor.getString(cursor.getColumnIndex(number)));
-            } while (cursor.moveToNext());
+        try {
+            db = openOrCreateDatabase("DriverAssistant", MODE_PRIVATE, null);
+            Cursor cursor = db.rawQuery("select * from TrustedContacts", null);
+            items = new ArrayList<String>();
+            if (cursor.moveToFirst()) {
+                do {
+                    items.add(cursor.getString(cursor.getColumnIndex(name)) + ":"
+                            + cursor.getString(cursor.getColumnIndex(number)));
+                } while (cursor.moveToNext());
+            }
+        } catch (Exception e) {
+            Toast.makeText(getApplicationContext(), "No trusted contacts added yet.", Toast.LENGTH_SHORT).show();
         }
-
 
         lv1 = (ListView) findViewById(R.id.lv);
 
@@ -70,6 +76,20 @@ public class ViewTrustedContacts extends AppCompatActivity implements AdapterVie
         backbutton.setOnClickListener(this);
 
         deleteContactsBtn = (Button) findViewById(R.id.btn1);
+
+        SharedPreferences settings = getSharedPreferences("home_settings", 0);
+        boolean darkModeUi_value = settings.getBoolean("ui_settings", false);
+        if (!darkModeUi_value) {
+            ConstraintLayout constLayout;
+            constLayout = findViewById(R.id.trustedcontacts);
+            constLayout.setBackgroundResource(R.drawable.backgroundimage8);
+            TextView tv1 = (TextView) findViewById(R.id.textView2);
+            tv1.setTextColor(getResources().getColor(R.color.dark_grey));
+            backbutton.setImageResource(R.drawable.ic_back_button_black);
+            deleteContactsBtn.setTextColor(getResources().getColor(R.color.light_grey));
+        }
+
+
         deleteContactsBtn.setVisibility(View.GONE);
 
         deleteContactsBtn.setOnClickListener(this);
@@ -88,7 +108,7 @@ public class ViewTrustedContacts extends AppCompatActivity implements AdapterVie
         CheckBox cb = (CheckBox) view.findViewById(R.id.checkbox_contact);
         cb.setChecked(!cb.isChecked());
         deleteContactsBtn.setVisibility(View.VISIBLE);
- //       Toast.makeText(this, "Click item" + items.get(position), Toast.LENGTH_SHORT).show();
+        //       Toast.makeText(this, "Click item" + items.get(position), Toast.LENGTH_SHORT).show();
         if (cb.isChecked() == true) {
             deleteContacts.add(items.get(position));
         } else {
@@ -153,6 +173,19 @@ public class ViewTrustedContacts extends AppCompatActivity implements AdapterVie
 
             contactName.setText(contactsInfo[0]);
             contactPhoneno.setText(contactsInfo[1]);
+
+            SharedPreferences settings = getSharedPreferences("home_settings", 0);
+            boolean darkModeUi_value = settings.getBoolean("ui_settings", false);
+            if (!darkModeUi_value) {
+                contactName.setTextColor(getResources().getColor(R.color.dark_grey));
+                contactPhoneno.setTextColor(getResources().getColor(R.color.dark_grey));
+                ImageView img1 = (ImageView) v.findViewById(R.id.imageView2);
+                img1.setImageResource(R.drawable.ic_contact_black);
+                CheckBox ch = (CheckBox) v.findViewById(R.id.checkbox_contact);
+                //ch.setButtonTint(getResources().getColor(R.color.dark_grey));
+                CompoundButtonCompat.setButtonTintList(ch, ColorStateList
+                        .valueOf(getResources().getColor(R.color.dark_grey)));
+            }
 
             return v;
         }

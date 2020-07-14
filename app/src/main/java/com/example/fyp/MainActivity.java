@@ -1,7 +1,12 @@
 package com.example.fyp;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
+import android.Manifest;
 import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.content.BroadcastReceiver;
@@ -10,23 +15,33 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.os.AsyncTask;
+import android.content.pm.PackageManager;
+import android.graphics.Color;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
-
-import com.example.fyp.customutilities.SharedPreferencesUtils;
+import android.widget.TextView;
+import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
-
-
 
     private static final String TAG = "MainActivity";
     BluetoothAdapter mBluetoothAdapter;
     Button btn1, assistanceMode;
     ImageView imgv1;
+
+    private static final int MY_PERMISSIONS_REQUEST_CAMERA_ACCESS = 5;
+
+    private static final String FINE_LOCATION = Manifest.permission.ACCESS_FINE_LOCATION;
+    private static final String COURSE_LOCATION = Manifest.permission.ACCESS_COARSE_LOCATION;
+    private static final int LOCATION_PERMISSION_REQUEST_CODE = 6;
+    private Boolean mLocationPermissionsGranted = false;
+    private Boolean CameraPermissionsGranted = false;
+
 
     private final BroadcastReceiver mBroadcastReceiver1 = new BroadcastReceiver() {
         public void onReceive(Context context, Intent intent) {
@@ -44,6 +59,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         break;
                     case BluetoothAdapter.STATE_ON:
                         Log.d(TAG, "mBroadcastReceiver1: STATE ON");
+                        Toast.makeText(getApplicationContext(), "You need to connect to your corresponding obd II device to enjoy accident detection feature.", Toast.LENGTH_LONG).show();
                         intent = new Intent(MainActivity.this, Bluetooth.class);
                         startActivity(intent);
                         break;
@@ -60,34 +76,66 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-
         btn1 = (Button) findViewById(R.id.btn);
         assistanceMode = findViewById(R.id.btn1);
-
-        assistanceMode.setOnClickListener(this);
         btn1.setOnClickListener(this);
+        assistanceMode.setOnClickListener(this);
 
+//        assistanceMode.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+////                Intent intent = new Intent(getApplicationContext(), AssistanceMode.class);
+////                startActivity(intent);
+//
+////                Intent intent = new Intent(getApplicationContext(),ImageProcessor.class);
+////                startActivity(intent);
+//
+//        });
+        TextView tv1 = (TextView) findViewById(R.id.textView2);
         imgv1 = (ImageView) findViewById(R.id.backbtn1);
+        SharedPreferences settings = getSharedPreferences("home_settings", 0);
+        boolean darkModeUi_value = settings.getBoolean("ui_settings", false);
+        if (!darkModeUi_value) {
+            ConstraintLayout constLayout;
+            constLayout = findViewById(R.id.mainview);
+            constLayout.setBackgroundResource(R.drawable.backgroundimage8);
+            tv1.setTextColor(getResources().getColor(R.color.dark_grey));
+            imgv1.setImageResource(R.drawable.ic_settings_black);
+            btn1.setTextColor(getResources().getColor(R.color.light_grey));
+            assistanceMode.setTextColor(getResources().getColor(R.color.light_grey));
+            ImageView img2=(ImageView)findViewById(R.id.imageView3);
+            img2.setImageResource(R.drawable.app_ic_grey);
+        }
+
 
         imgv1.setOnClickListener(this);
-//        LocationManager manager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-//        if (!manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-//            // Toast.makeText(this, "Enable gps", Toast.LENGTH_SHORT).show();
-//            buildAlertMessageNoGps();
-//
-//        }
+        LocationManager manager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        if (!manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+            // Toast.makeText(this, "Enable gps", Toast.LENGTH_SHORT).show();
+            buildAlertMessageNoGps();
 
-//        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-//        enableDisableBT()
+        }
 
-        new SaveDefaultValuesInPreferencesTask().execute();
+        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+//        SharedPreferences settings = getSharedPreferences("home_settings", 0);
+        if (settings.getBoolean("accident_detector_settings", false)) {
+            enableDisableBT();
+        }
     }
 
     @Override
     protected void onDestroy() {
         Log.d(TAG, "onDestroy: called.");
         super.onDestroy();
-//        unregisterReceiver(mBroadcastReceiver1);
+        try {
+            unregisterReceiver(mBroadcastReceiver1);
+            //Register or UnRegister your broadcast receiver here
+
+        } catch(IllegalArgumentException e) {
+
+            e.printStackTrace();
+        }
+
 
     }
 
@@ -115,71 +163,138 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
         if (!mBluetoothAdapter.isEnabled()) {
             Log.d(TAG, "enableDisableBT: enabling BT.");
+
+            Toast.makeText(getApplicationContext(), "You need to turn on your device's Bluetooth to enjoy accident detection feature.", Toast.LENGTH_LONG).show();
             Intent enableBTIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivity(enableBTIntent);
 
             IntentFilter BTIntent = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
             registerReceiver(mBroadcastReceiver1, BTIntent);
         }
+
     }
+
+//    @Override
+//    public void onBackPressed() {
+//        finish();
+//        System.exit(0);
+//        return;
+//    }
+//    @Override
+//    public boolean onKeyDown(int keyCode, KeyEvent event)
+//    {
+//        if(keyCode==KeyEvent.KEYCODE_BACK)
+//        {
+//            finish();
+//            System.exit(0);
+//        }
+//        return true;
+//    }
 
     @Override
     public void onClick(View v) {
-        if (v.getId() == assistanceMode.getId()){
-            Intent intent = new Intent(this,ImageProcessor.class);
-            startActivity(intent);
-        } if (v.getId() == btn1.getId()) {
-            Intent intent = new Intent(this, MapsActivity.class);
-            startActivity(intent);
+        if (v.getId() == btn1.getId()) {
+            getLocationPermission();
+            if (mLocationPermissionsGranted) {
+                LocationManager manager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+                if(!manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                    buildAlertMessageNoGps();
+                }else{
+                    Intent intent = new Intent(this, MapsActivity.class);
+                    startActivity(intent);
+                }
+            }
         } else if (v.getId() == imgv1.getId()) {
+
             Intent intent = new Intent(this, HomeSettings.class);
             startActivity(intent);
+            finish();
+
+        } else if (v.getId() == assistanceMode.getId()) {
+            getCameraPermission();
+            if (CameraPermissionsGranted) {
+                Intent intent = new Intent(getApplicationContext(), ImageProcessor.class);
+                startActivity(intent);
+            }
         }
     }
 
-    private  class SaveDefaultValuesInPreferencesTask extends AsyncTask<Object,Object,Object> {
+    private void getCameraPermission() {
+        Log.d("TAG", "getCameraPermission: getting camera permissions");
+        if (ActivityCompat.checkSelfPermission(getApplicationContext(),
+                Manifest.permission.CAMERA) ==
+                PackageManager.PERMISSION_GRANTED) {
+            CameraPermissionsGranted = true;
 
-        @Override
-        protected Object doInBackground(Object... objects) {
-            SharedPreferences sp_ld = getSharedPreferences(
-                    getString(R.string.sp_laneDetection),0);
-            String sp_ld_key_up = getString(R.string.sp_ld_key_user_pts);
-            if (!SharedPreferencesUtils.loadBool(sp_ld,sp_ld_key_up)) {
-                String sp_ld_key_tp = getString(R.string.sp_ld_key_transformed_mask_pts);
-                SharedPreferencesUtils.saveJsonString(sp_ld,sp_ld_key_tp,
-                        "[{\"x\":132.1875,\"y\":159.16666}," +
-                                "{\"x\":65.15625,\"y\":242.08333}," +
-                                "{\"x\":299.97595,\"y\":245.83333}," +
-                                "{\"x\":224.76562,\"y\":157.5}]");
-                String sp_ld_key_op = getString(R.string.sp_ld_key_original_mask_pts);
-                SharedPreferencesUtils.saveJsonString(sp_ld,sp_ld_key_op,
-                        "[{\"x\":564.0,\"y\":382.0}," +
-                                "{\"x\":278.0,\"y\":581.0}," +
-                                "{\"x\":1279.8973,\"y\":590.0}," +
-                                "{\"x\":959.0,\"y\":378.0}]");
-            }
-
-            String sp_ld_key_has_cal_md = getString(R.string.sp_ld_key_cal_mtx_dist);
-            if(!SharedPreferencesUtils.loadBool(sp_ld,sp_ld_key_has_cal_md)){
-                String sp_ld_key_m = getString(R.string.sp_ld_key_mtx);
-                SharedPreferencesUtils.saveJsonString(sp_ld,sp_ld_key_m,
-                        "{\n" +
-                                "\t\"rows\":3,\n" +
-                                "\t\"cols\":3,\n" +
-                                "\t\"type\":6,\n" +
-                                "\t\"data\":[1811.415378183913,0.0,119.25792229510265,0.0,7753.806031248129,148.15999705403362,0.0,0.0,1.0]\n" +
-                                "}");
-                String sp_ld_key_d = getString(R.string.sp_ld_key_dist);
-                SharedPreferencesUtils.saveJsonString(sp_ld,sp_ld_key_d,
-                        "{\n" +
-                                "\t\"rows\":1,\n" +
-                                "\t\"cols\":5,\n" +
-                                "\t\"type\":6,\n" +
-                                "\t\"data\":[1.6142722900467241]\n" +
-                                "}");
-            }
-            return null;
+        } else {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.CAMERA},
+                    MY_PERMISSIONS_REQUEST_CAMERA_ACCESS);
         }
     }
 
+
+    private void getLocationPermission() {
+        Log.d("TAG", "getLocationPermission: getting location permissions");
+        String[] permissions = {Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION};
+        if (ContextCompat.checkSelfPermission(this.getApplicationContext(),
+                FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            if (ContextCompat.checkSelfPermission(this.getApplicationContext(),
+                    COURSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                mLocationPermissionsGranted = true;
+            } else {
+                ActivityCompat.requestPermissions(this,
+                        permissions,
+                        LOCATION_PERMISSION_REQUEST_CODE);
+            }
+        } else {
+            ActivityCompat.requestPermissions(this,
+                    permissions,
+                    LOCATION_PERMISSION_REQUEST_CODE);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        Log.d(TAG, "onRequestPermissionsResult: called.");
+        mLocationPermissionsGranted = false;
+
+        switch (requestCode) {
+            case LOCATION_PERMISSION_REQUEST_CODE: {
+                if (grantResults.length > 0) {
+                    for (int i = 0; i < grantResults.length; i++) {
+                        if (grantResults[i] != PackageManager.PERMISSION_GRANTED) {
+                            mLocationPermissionsGranted = false;
+                            Toast.makeText(getApplicationContext(), "Please Enable Location permission first.", Toast.LENGTH_LONG).show();
+                            Log.d(TAG, "onRequestPermissionsResult: permission failed");
+                            return;
+                        }
+                    }
+                    Log.d(TAG, "onRequestPermissionsResult: permission granted");
+                    mLocationPermissionsGranted = true;
+                    Intent intent = new Intent(this, MapsActivity.class);
+                    startActivity(intent);
+                    return;
+                }
+            }
+            case MY_PERMISSIONS_REQUEST_CAMERA_ACCESS: {
+                if (grantResults.length > 0) {
+                    for (int i = 0; i < grantResults.length; i++) {
+                        if (grantResults[i] != PackageManager.PERMISSION_GRANTED) {
+                            CameraPermissionsGranted = false;
+                            Log.d(TAG, "onRequestPermissionsResult: permission failed");
+                            Toast.makeText(getApplicationContext(), "Please Enable Camera permission first.", Toast.LENGTH_LONG).show();
+                            return;
+                        }
+                    }
+                    Log.d(TAG, "onRequestPermissionsResult: permission granted");
+                    CameraPermissionsGranted = true;
+                    Intent intent = new Intent(getApplicationContext(), ImageProcessor.class);
+                    startActivity(intent);
+                }
+            }
+        }
+    }
 }
+

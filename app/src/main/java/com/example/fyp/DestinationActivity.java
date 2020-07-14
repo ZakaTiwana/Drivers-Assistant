@@ -9,10 +9,13 @@ import androidx.core.content.ContextCompat;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Build;
 import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
@@ -22,6 +25,7 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 
@@ -33,6 +37,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
@@ -65,7 +70,15 @@ public class DestinationActivity extends AppCompatActivity implements OnMapReady
         //     Toast.makeText(this, "Map is Ready", Toast.LENGTH_SHORT).show();
         Log.d(TAG, "onMapReady: map is ready");
         mMap = googleMap;
-
+        SharedPreferences settings = getSharedPreferences("home_settings", 0);
+        boolean darkModeUi_value = settings.getBoolean("ui_settings", false);
+        if (darkModeUi_value) {
+//            RelativeLayout rel=(RelativeLayout)findViewById(R.id.relLayout1);
+//            rel.setBackgroundResource(R.drawable.custom_border3);
+            ImageView img =(ImageView)findViewById(R.id.ic_gps2);
+            img.setImageResource(R.drawable.ic_gps_teal);
+            mMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(this, R.raw.map_in_night));
+        }
         if (mLocationPermissionsGranted) {
             getDeviceLocation();
 
@@ -119,6 +132,16 @@ public class DestinationActivity extends AppCompatActivity implements OnMapReady
         //  direction = (ImageView) findViewById(R.id.ic_direction2);
         btn1 = (Button) findViewById(R.id.btn);
         btn2 = (Button) findViewById(R.id.btn2);
+
+        SharedPreferences settings = getSharedPreferences("home_settings", 0);
+        boolean darkModeUi_value = settings.getBoolean("ui_settings", false);
+        if (!darkModeUi_value) {
+            btn1.setTextColor(getResources().getColor(R.color.light_grey));
+            btn2.setTextColor(getResources().getColor(R.color.light_grey));
+        }
+        if(!checkInternetAccess()){
+            Toast.makeText(this, "You need a working internet access to enjoy feature.", Toast.LENGTH_SHORT).show();
+        }
 
         Bundle bundle = getIntent().getParcelableExtra("bundle");
         fromPosition = bundle.getParcelable("from_position");
@@ -434,6 +457,20 @@ public class DestinationActivity extends AppCompatActivity implements OnMapReady
         super.onResume();
 //        Reinitialize the tts engines upon resuming from background such as after opening the browser
         initializeTextToSpeech();
+    }
+
+    public Boolean checkInternetAccess(){
+        boolean connected = false;
+        ConnectivityManager connectivityManager = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
+        if(connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_MOBILE).getState() == NetworkInfo.State.CONNECTED ||
+                connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI).getState() == NetworkInfo.State.CONNECTED) {
+            //we are connected to a network
+            connected = true;
+        }
+        else
+            connected = false;
+
+        return connected;
     }
 
 

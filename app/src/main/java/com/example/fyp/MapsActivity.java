@@ -12,11 +12,14 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationManager;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -24,6 +27,7 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 
@@ -35,6 +39,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -58,13 +63,23 @@ import io.nlopez.smartlocation.location.config.LocationParams;
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
 
-    private boolean gpscheck = false;
+//    private boolean gpscheck = false;
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
         Toast.makeText(this, "Map is Ready", Toast.LENGTH_SHORT).show();
         Log.d(TAG, "onMapReady: map is ready");
         mMap = googleMap;
+        SharedPreferences settings = getSharedPreferences("home_settings", 0);
+        boolean darkModeUi_value = settings.getBoolean("ui_settings", false);
+        if (darkModeUi_value) {
+//            RelativeLayout rel=(RelativeLayout)findViewById(R.id.relLayout1);
+//            rel.setBackgroundResource(R.drawable.custom_border3);
+            ImageView img =(ImageView)findViewById(R.id.ic_gps);
+            img.setImageResource(R.drawable.ic_gps_teal);
+            mMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(this, R.raw.map_in_night));
+        }
+
         // statusCheck();
         if (mLocationPermissionsGranted) {
             LocationManager manager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
@@ -78,6 +93,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 buildAlertMessageNoGps();
 
             } else {
+
                 getDeviceLocation();
             }
 
@@ -121,6 +137,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
  //       direction = (ImageView) findViewById(R.id.ic_direction);
         getLocationPermission();
         btn1 = (Button) findViewById(R.id.btn);
+
+        SharedPreferences settings = getSharedPreferences("home_settings", 0);
+        boolean darkModeUi_value = settings.getBoolean("ui_settings", false);
+        if (!darkModeUi_value) {
+            btn1.setTextColor(getResources().getColor(R.color.light_grey));
+        }
+        if(!checkInternetAccess()){
+            Toast.makeText(this, "You need a working internet access to enjoy feature.", Toast.LENGTH_SHORT).show();
+        }
 
 
     }
@@ -282,6 +307,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 //                                    double lon = location.getLongitude();
 //                                    double lat = location.getLatitude();
                                     fromPosition = new LatLng(location.getLatitude(), location.getLongitude());
+                                    btn1.setVisibility(View.VISIBLE);
                                     moveCamera(new LatLng(location.getLatitude(), location.getLongitude()),
                                             DEFAULT_ZOOM, "My Location");
                                 }
@@ -366,6 +392,20 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 }
             }
         }
+    }
+
+    public Boolean checkInternetAccess(){
+        boolean connected = false;
+        ConnectivityManager connectivityManager = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
+        if(connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_MOBILE).getState() == NetworkInfo.State.CONNECTED ||
+                connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI).getState() == NetworkInfo.State.CONNECTED) {
+            //we are connected to a network
+            connected = true;
+        }
+        else
+            connected = false;
+
+        return connected;
     }
 
 
