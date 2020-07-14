@@ -1,15 +1,12 @@
 package com.example.fyp.customview;
 
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
-import android.graphics.Point;
 import android.graphics.PointF;
-import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.util.Size;
@@ -18,13 +15,7 @@ import android.view.View;
 
 import androidx.annotation.Nullable;
 
-import com.example.fyp.LaneDetectorAdvance;
 import com.example.fyp.customutilities.ImageUtilities;
-import com.example.fyp.customutilities.SharedPreferencesUtils;
-import com.example.fyp.customutilities.SharedValues;
-import com.google.gson.Gson;
-import com.google.gson.JsonParseException;
-
 
 public class LanePointsView extends View {
     private static final String TAG = "LanePointsView";
@@ -38,8 +29,11 @@ public class LanePointsView extends View {
     private float cy ;
     private static final float onClicked_radius = 50;
     private static final float nearPoint_radius= 50;
+    private static final float point_radius = 20f;
 
     private PointF[] pts = null;
+    private PointF[] mid_line_pts = null;
+    private boolean isClickedOnMidPoint = false;
 
     private Path pointCirclesPath = null;
     private Path maskPath = null;
@@ -94,9 +88,9 @@ public class LanePointsView extends View {
 
         pts = new PointF[4];
         pts[0] = new PointF( centerX - 100, centerY - 100 );
-        pts[1] = new PointF( centerX - 100, centerY + 100 );
+        pts[1] = new PointF( centerX + 100, centerY - 100 );
         pts[2] = new PointF( centerX + 100, centerY + 100 );
-        pts[3] = new PointF( centerX + 100, centerY - 100 );
+        pts[3] = new PointF( centerX - 100, centerY + 100 );
 
         maskPath  = new Path();
         setMaskPath();
@@ -120,9 +114,16 @@ public class LanePointsView extends View {
 
     private void setCirclePointPath(){
         if (pointCirclesPath == null) return;
+        mid_line_pts = new PointF[4];
         pointCirclesPath.reset();
-        for (PointF pt : pts) {
-            pointCirclesPath.addCircle(pt.x, pt.y, 20f, Path.Direction.CCW);
+        int secondIndex;
+        for (int i=0; i < pts.length ; i++) {
+            pointCirclesPath.addCircle(pts[i].x, pts[i].y, point_radius, Path.Direction.CCW);
+            secondIndex  = i+1 >= pts.length ? 0 : i+1;
+            float mid_x = (pts[i].x + pts[secondIndex].x ) / 2f ;
+            float mid_y = (pts[i].y + pts[secondIndex].y) /2f;
+            mid_line_pts[i] = new PointF(mid_x,mid_y);
+            pointCirclesPath.addCircle(mid_x,mid_y, point_radius, Path.Direction.CCW);
         }
     }
 
@@ -156,6 +157,20 @@ public class LanePointsView extends View {
                 int center_x = (int) cx;
                 int center_y = (int) cy;
                 int radius_pow_2 = (int) Math.pow(nearPoint_radius,2);
+
+                // mid point on line, priority to mid line points
+                for (int i=0; i< mid_line_pts.length; i++) {
+                    if (  Math.pow(mid_line_pts[i].x - center_x,2) + Math.pow(mid_line_pts[i].y - center_y,2) < radius_pow_2){
+                        point_to_mov = i;
+                        gotPointToMov = true;
+                        isClickedOnMidPoint = true;
+                        break;
+                    }
+                    gotPointToMov = false;
+                    isClickedOnMidPoint = false;
+                }
+                if(isClickedOnMidPoint) break;
+                //corner points
                 for (int i=0; i< pts.length; i++) {
                    if (  Math.pow(pts[i].x - center_x,2) + Math.pow(pts[i].y - center_y,2) < radius_pow_2){
                        point_to_mov = i;
@@ -173,13 +188,35 @@ public class LanePointsView extends View {
                 cx = event.getX();
                 cy = event.getY();
 
-                if( cx > viewSize.getWidth()  ||
-                    cy > viewSize.getHeight() ||
-                    cx < 0  ||
-                    cy < 0) break;
-
                 if(gotPointToMov){
-                    pts[point_to_mov].set(x,y);
+                    if( cx > viewSize.getWidth()  ||
+                        cy > viewSize.getHeight() ||
+                        cx < 0  ||
+                        cy < 0) break;
+                   if (isClickedOnMidPoint){
+                       float movY = y - mid_line_pts[point_to_mov].y;
+                       float movX = x - mid_line_pts[point_to_mov].x;
+                       switch (point_to_mov){
+                           case 0:
+                               pts[0].set(pts[0].x,pts[0].y + movY);
+                               pts[1].set(pts[1].x,pts[1].y + movY);
+                               break;
+                           case 1:
+                               pts[1].set(pts[1].x + movX,pts[1].y);
+                               pts[2].set(pts[2].x + movX,pts[2].y);
+                               break;
+                           case 2:
+                               pts[2].set(pts[2].x,pts[2].y + movY);
+                               pts[3].set(pts[3].x,pts[3].y + movY);
+                               break;
+                           case 3:
+                               pts[3].set(pts[3].x + movX,pts[3].y);
+                               pts[0].set(pts[0].x + movX,pts[0].y);
+                               break;
+                       }
+                   }else {
+                       pts[point_to_mov].set(x,y);
+                   }
                     setMaskPath();
                     setCirclePointPath();
                 }
