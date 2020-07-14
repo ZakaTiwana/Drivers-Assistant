@@ -4,7 +4,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 
 import android.app.Activity;
-import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 //import android.bluetooth.BluetoothManager;
@@ -26,10 +25,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ListView;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -45,10 +42,8 @@ import android.widget.Toast;
 //import com.github.pires.obd.exceptions.NoDataException;
 //import com.github.pires.obd.exceptions.UnableToConnectException;
 
-import com.example.fyp.api.ApiHelper;
 import com.github.pires.obd.commands.SpeedCommand;
 import com.github.pires.obd.commands.engine.RPMCommand;
-import com.github.pires.obd.commands.fuel.FuelLevelCommand;
 import com.github.pires.obd.commands.protocol.EchoOffCommand;
 import com.github.pires.obd.commands.protocol.ObdResetCommand;
 import com.github.pires.obd.commands.protocol.SelectProtocolCommand;
@@ -62,9 +57,6 @@ import com.github.pires.obd.exceptions.UnableToConnectException;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -251,7 +243,7 @@ public class Bluetooth extends AppCompatActivity implements AdapterView.OnItemCl
             tv1.setTextColor(getResources().getColor(R.color.dark_grey));
             TextView tv2 = (TextView) findViewById(R.id.textView3);
             tv2.setTextColor(getResources().getColor(R.color.dark_grey));
-            TextView tv3 = (TextView) findViewById(R.id.textView4);
+            TextView tv3 = (TextView) findViewById(R.id.lane_text_view);
             tv3.setTextColor(getResources().getColor(R.color.dark_grey));
 
         }

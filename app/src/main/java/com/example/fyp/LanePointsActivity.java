@@ -6,6 +6,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
@@ -176,6 +177,15 @@ public class LanePointsActivity extends AppCompatActivity {
                 SharedPreferencesUtils.saveObject(sp,sp_ld_key_tp,tp);
                 //
                 SharedPreferencesUtils.saveBool(sp,sp_ld_key_up,true); // user defined points
+
+                Intent i = getIntent();
+                boolean check = i.getBooleanExtra(
+                        SharedValues.intent_toImageProcessor,false);
+                if(check){
+                    i.setClass(getApplicationContext(),ImageProcessor.class);
+                    startActivity(i);
+                }
+
             }
         });
 

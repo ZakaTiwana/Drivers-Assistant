@@ -7,14 +7,13 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.fyp.customview.LanePointsView;
+import com.example.fyp.customutilities.SharedValues;
 
 public class FeatureSettings extends AppCompatActivity implements View.OnClickListener {
 
@@ -50,7 +49,7 @@ public class FeatureSettings extends AppCompatActivity implements View.OnClickLi
             tv1=(TextView)findViewById(R.id.textView1);
             tv2=(TextView)findViewById(R.id.textView2);
             tv3=(TextView)findViewById(R.id.textView3);
-            tv4=(TextView)findViewById(R.id.textView4);
+            tv4=(TextView)findViewById(R.id.lane_text_view);
             tv5=(TextView)findViewById(R.id.textView5);
             constLayout = findViewById(R.id.featuresettings);
             constLayout.setBackgroundResource(R.drawable.backgroundimage8);
@@ -188,7 +187,8 @@ public class FeatureSettings extends AppCompatActivity implements View.OnClickLi
             startActivity(intent);
         }
         else if(v.getId() == laneTextButton.getId()){
-            Intent intent = new Intent(this, LanePointsActivity.class);
+            Intent intent = new Intent(getApplicationContext(), LanePointsActivity.class);
+            intent.putExtra(SharedValues.intent_toImageProcessor,false);
             startActivity(intent);
         }
     }

@@ -68,11 +68,11 @@ public class SharedPreferencesUtils {
         Log.d(TAG, String.format("saveString: (key:value) saved => %s : %s", key,json));
     }
 
-    public static void saveBool(SharedPreferences sp, String key,boolean flag){
+    public static void saveBool(SharedPreferences sp, String key,boolean value){
         SharedPreferences.Editor editor = sp.edit();
-        editor.putBoolean(key,flag);
+        editor.putBoolean(key,value);
         editor.apply();
-        Log.d(TAG, String.format("saveBool: (key:value) saved => %s : %b", key,flag));
+        Log.d(TAG, String.format("saveBool: (key:value) saved => %s : %b", key,value));
     }
 
     public static boolean loadBool(SharedPreferences sp, String key){

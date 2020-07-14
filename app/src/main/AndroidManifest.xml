@@ -23,7 +23,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".LanePointsActivity"></activity>
+        <activity android:screenOrientation="landscape" android:name=".LanePointsActivity"></activity>
         <activity android:name=".TestLaneAdvanceActivity" />
         <activity android:name=".TestVideoActivity" />
         <activity android:name=".AssistanceMode" />
@@ -41,7 +41,7 @@
         <activity android:name=".TestSignActivity" />
         <activity android:name=".TestLaneActivity" />
         <activity android:name=".CameraCaptureActivity" />
-        <activity android:name=".ImageProcessor" />
+        <activity android:screenOrientation="landscape" android:name=".ImageProcessor" />
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"

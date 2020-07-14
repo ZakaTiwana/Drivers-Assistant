@@ -21,6 +21,8 @@ public class SharedValues {
             };
     public static final Size CROP_SIZE = new Size(300,300);
 
+    public static final String  intent_toImageProcessor = "toImageProcessor";
+
     public static Path getPathFromPointF(PointF[] pts,boolean loop){
         Path path = new Path();
         path.moveTo(pts[0].x,pts[0].y);

@@ -1,6 +1,7 @@
 package com.example.fyp;
 
 import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -287,6 +288,13 @@ public class ImageProcessor extends CameraCaptureActivity {
 //        if(!isComputingSignDetection)new SignTask().execute(resizedBitmap.copy(Bitmap.Config.ARGB_8888,true));
         if(!isComputingDetection) new detectorTask().execute(resizedBitmap);
         readyForNextImage();
+    }
+
+    @Override
+    public void onBackPressed() {
+        finish();
+        Intent i = new Intent(getApplicationContext(),MainActivity.class);
+        startActivity(i);
     }
 
     @Override

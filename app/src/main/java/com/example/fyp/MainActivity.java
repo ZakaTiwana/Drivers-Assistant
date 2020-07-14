@@ -27,6 +27,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.fyp.customutilities.SharedValues;
+
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     private static final String TAG = "MainActivity";
@@ -213,7 +215,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         } else if (v.getId() == assistanceMode.getId()) {
             getCameraPermission();
             if (CameraPermissionsGranted) {
-                Intent intent = new Intent(getApplicationContext(), ImageProcessor.class);
+                Intent intent = new Intent(getApplicationContext(), LanePointsActivity.class);
+                intent.putExtra(SharedValues.intent_toImageProcessor,true);
                 startActivity(intent);
             }
         }
