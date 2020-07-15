@@ -7,6 +7,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PointF;
@@ -41,6 +42,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import io.nlopez.smartlocation.OnLocationUpdatedListener;
@@ -66,7 +68,7 @@ public class ImageProcessor extends CameraCaptureActivity {
     private int mHeight = 0;
 
     private Bitmap rgbFrameBitmap = null;
-    private Boolean isrgbFrameCreated = false;
+    private Boolean isRgbFrameCreated = false;
 
     //-- direction nav - steps
     private static volatile ArrayList<String> navigationSteps = null;
@@ -77,6 +79,7 @@ public class ImageProcessor extends CameraCaptureActivity {
     private static String maneuverDirection = null;
     private static volatile boolean turnOffManeuverDirectionIcon = true;
     private static boolean isDarkModeEnabled = false;
+    private Paint bitmapFilterPaint = null;
 
     private static Detector detector = null;
     private static float timeTakeByObjDetector = 0;
@@ -99,6 +102,7 @@ public class ImageProcessor extends CameraCaptureActivity {
     private Paint laneGuidPathPaint = null;
     private float maskWidth;
     private float maskHeight;
+    private Matrix maneuverMatrix;
 
     private Snackbar initSnackbar = null;
     private volatile boolean initialized = false;
@@ -114,7 +118,7 @@ public class ImageProcessor extends CameraCaptureActivity {
     private Paint borderBoxPaint = null;
     private Paint borderTextPaint = null;
 
-    private DirectionsTask directionsTask = null;
+    private static ScheduledFuture<Object> directionsTask = null;
 
 
     @Override
@@ -131,6 +135,9 @@ public class ImageProcessor extends CameraCaptureActivity {
         borderTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         borderTextPaint.setColor(Color.BLUE);
         borderTextPaint.setTextSize(23);
+
+        bitmapFilterPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        bitmapFilterPaint.setFilterBitmap(true);
 
         SharedPreferences sp_hs = getSharedPreferences(
                 getString(R.string.sp_homeSettings),0);
@@ -410,10 +417,18 @@ public class ImageProcessor extends CameraCaptureActivity {
                     }
                     if(bmp == null) return;
 
-                    Bitmap bmp_resized = ImageUtilities.getResizedBitmap(bmp,(int)(maskWidth - 5),
-                            (int)(maskHeight -5),true);
-                    canvas.drawBitmap(bmp_resized,pts[0].x ,
-                            pts[0].y,null);
+//                    Bitmap bmp_resized = ImageUtilities.getResizedBitmap(bmp,(int)(maskWidth - maskWidth/3),
+//                            (int)(maskHeight - maskHeight/10),true);
+                    if(maneuverMatrix != null){
+                        Bitmap newBitmap = Bitmap.createBitmap((int)maskWidth +50,
+                                (int)maskHeight+50, Bitmap.Config.ARGB_8888);
+                        Canvas canvas1 = new Canvas(newBitmap);
+                        canvas1.drawBitmap(bmp, maneuverMatrix,null);
+
+                    canvas.drawBitmap(newBitmap,pts[0].x - maskWidth/8,
+                            pts[0].y - maskHeight/3,bitmapFilterPaint);
+                    }
+
                 }
             }
         });
@@ -428,11 +443,11 @@ public class ImageProcessor extends CameraCaptureActivity {
 
         if ( aqWidth == 0 || aqHeight ==0 ) return;
 
-        if( !isrgbFrameCreated ) {
+        if( !isRgbFrameCreated) {
             rgbFrameBitmap = Bitmap.createBitmap(
                     aqWidth,
                     aqHeight, Bitmap.Config.ARGB_8888);
-            isrgbFrameCreated = true;
+            isRgbFrameCreated = true;
         }
 
         if (!initialized  ) { //|| isComputingDetection) {
@@ -563,8 +578,11 @@ public class ImageProcessor extends CameraCaptureActivity {
                 if(navigationSteps != null && navigationSteps.size() > 0) hasNavSteps = true;
                 if (hasNavSteps) {
                     getDeviceLocation();
-                    threadExecutor.scheduleAtFixedRate(new DirectionsTask(),
+                     directionsTask = (ScheduledFuture<Object>) threadExecutor.scheduleAtFixedRate(new DirectionsTask(),
                             1000,delayForCurrentLocation, TimeUnit.MILLISECONDS);
+//                    float width = maskWidth - maskWidth/3;
+//                    float height = maskHeight - maskHeight/10;
+                    maneuverMatrix = LaneDetectorAdvance.getFlatPerspectiveMatrix(maskWidth,maskHeight);
                 }
             } catch (Exception e) {
                 Log.e(TAG,"run: Exception initializing classifier!", e);
@@ -732,6 +750,7 @@ public class ImageProcessor extends CameraCaptureActivity {
                 Log.d(TAG, "doInBackground: navigationSteps is null");
                 return;
             }
+            Log.d(TAG, "run: in directionsTask");
             String[] step;
             String distance;
             String instructions;
@@ -748,21 +767,54 @@ public class ImageProcessor extends CameraCaptureActivity {
                 lat = Double.parseDouble(step[2]);
                 lng = Double.parseDouble(step[3]);
                 maneuver = step[4];
-                //       latlng=new LatLng(lat, lng);
-                    Log.d(TAG, "doInBackground: current longLat = "+fromPosition.latitude +", "+ fromPosition.latitude);
-                    if (Math.abs(lat - fromPosition.latitude) < 0.0001) {
-                        if (Math.abs(lng - fromPosition.longitude) < 0.0001) {
-                            navStepPassed++;
-                            tts.speak(instructions, TextToSpeech.QUEUE_FLUSH, null, null);
-                           if (maneuver != null) {
-                                maneuverDirection = maneuver;
-                           } else {
-                               maneuverDirection = "straight";
-                           }
+                Log.d(TAG, "doInBackground: current longLat = "+fromPosition.latitude +", "+ fromPosition.latitude);
+                if (Math.abs(lat - fromPosition.latitude) < 0.001) {
+                    if (Math.abs(lng - fromPosition.longitude) < 0.001) {
+                        navStepPassed++;
+                        tts.speak(instructions, TextToSpeech.QUEUE_FLUSH, null, null);
+                       if (maneuver != null) {
+                            maneuverDirection = maneuver;
+                       } else {
+                           maneuverDirection = "straight";
+                       }
+                        draw.postInvalidate();
+                       break;
+                    }
+                }
+            }
+            // return to straight
+            threadExecutor.schedule(new Runnable() {
+                @Override
+                public void run() {
+                    if(navStepPassed >= navigationSteps.size() ||
+                    maneuverDirection == null) return;
+                    String[] step = navigationSteps
+                            .get(navStepPassed -1 ).split("::"); // one previous
+                    String lat1 = step[2];
+                    double lat = Double.parseDouble(step[2]);
+                    double lng = Double.parseDouble(step[3]);
+                    // if passed current point
+                    Log.d(TAG, "run: in straight check diff lat= "+ (lat - fromPosition.latitude));
+                    Log.d(TAG, "run: in straight check diff long= "+ (lng - fromPosition.longitude));
+                    if (Math.abs(lat - fromPosition.latitude) > 0.001) {
+                        if (Math.abs(lng - fromPosition.longitude) > 0.001) {
+                            maneuverDirection = "Straight";
                             draw.postInvalidate();
                         }
                     }
                 }
+            }, 5, TimeUnit.SECONDS);
+
+
+            if(navStepPassed >= navigationSteps.size()){
+                // end navigation
+                // need to check langitude longitude
+                maneuverDirection = null;
+                tts.speak("You have reached Your destination", TextToSpeech.QUEUE_FLUSH, null, null);
+                if (directionsTask !=null){
+                    directionsTask.cancel(false);
+                }
+            }
         }
     }
 

@@ -580,7 +580,7 @@ public class LaneDetectorAdvance {
         return dist_s.toString();
     }
 
-    static void transformMatrix(Mat src, Matrix dst) {
+    private static void transformMatrix(Mat src, Matrix dst) {
 
         int columns = src.cols();
         int rows = src.rows();
@@ -596,6 +596,37 @@ public class LaneDetectorAdvance {
 
         dst.setValues(values);
     }
+
+    public static Matrix getFlatPerspectiveMatrix(float width, float height) {
+//        pts = np.float32([ [0,0],[w,0],[w,h],[0,h] ])
+//        pts2 = np.float32([ [w/4,h/2],[w - w/4, h/2],[w,h],[0,h] ])
+
+        Point[] p = new Point[4];
+        p[0] = new Point(0, 0);
+        p[1] = new Point(width,  0);
+
+        p[2] = new Point(width, height);
+        p[3] = new Point(0, height);
+
+        MatOfPoint2f inshape = new MatOfPoint2f(p);
+        Point[] p_d = new Point[4];
+        p_d[0] = new Point(width/5, height/2);
+        p_d[1] = new Point(width - width/4, height/2);
+
+        p_d[2] = new Point(width, height);
+        p_d[3] = new Point(0, height);
+
+        MatOfPoint2f outshape = new MatOfPoint2f(p_d);
+
+        Mat M = Imgproc.getPerspectiveTransform(inshape, outshape);
+        Matrix matrix = new Matrix();
+        transformMatrix(M,matrix);
+        float[] val = new float[9];
+        matrix.getValues(val);
+        return matrix;
+    }
+
+//    public static
 
     private static ArrayList<PointF> arrayToPointF(float[] pts){
         ArrayList<PointF> pts_list = new ArrayList<>();

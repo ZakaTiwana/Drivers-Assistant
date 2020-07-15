@@ -330,6 +330,10 @@ public class ImageUtilities {
         return matrix;
     }
 
+//    public static Bitmap applyMatrix(Bitmap src, Matrix matrix){
+////        Bitmap.createBitmap(src.getWidth(),src.getHeight(), Bitmap.Config.ARGB_8888);
+////        Canvas canvas = new Canvas();
+//    }
     public static Bitmap getResizedBitmap(@NotNull Bitmap bmp,int newWidth,int newHeight,boolean allowToRecycleBitmap){
         Matrix frameToCropTransform ;
 //        Matrix cropToFrameTransform = new Matrix();
