@@ -227,6 +227,7 @@ public class LaneDetectorAdvance {
         return res;
     }
     private void polyFit(ArrayList<PointF> pts, int degree){
+        if (pts.size() == 0) return;
         PolynomialCurveFitter
                 curveFitter = PolynomialCurveFitter.create(degree)
                 .withMaxIterations(500);
@@ -362,14 +363,14 @@ public class LaneDetectorAdvance {
                 Imgproc.drawMarker(wrapped,new Point(right_lane_index,row - windows_n_rows/2f),new Scalar(255,255,255));
             }
 
-//            left_lane_indexes.addAll(
-//                    nz_pts_lft_lane
-//            );
-//            right_lane_indexes.addAll(
-//                    nz_pts_rht_lane
-//            );
-            left_lane_indexes.add(new PointF(left_lane_index,row - windows_n_rows/2f));
-            right_lane_indexes.add(new PointF(right_lane_index,row - windows_n_rows/2f));
+            left_lane_indexes.addAll(
+                    nz_pts_lft_lane
+            );
+            right_lane_indexes.addAll(
+                    nz_pts_rht_lane
+            );
+//            left_lane_indexes.add(new PointF(left_lane_index,row - windows_n_rows/2f));
+//            right_lane_indexes.add(new PointF(right_lane_index,row - windows_n_rows/2f));
             if(nz_pts_lft_lane.size() >= min_px){
                 left_lane_index = meanXIndex(nz_pts_lft_lane);
                 Log.d(TAG, "windowSearch: new mean lft = "+ left_lane_index);

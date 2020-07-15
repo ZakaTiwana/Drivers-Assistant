@@ -16,11 +16,9 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.graphics.Color;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -176,12 +174,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     }
 
-//    @Override
-//    public void onBackPressed() {
-//        finish();
-//        System.exit(0);
-//        return;
-//    }
+    @Override
+    public void onBackPressed() {
+        finishAffinity();
+        System.exit(0);
+        return;
+    }
 //    @Override
 //    public boolean onKeyDown(int keyCode, KeyEvent event)
 //    {
@@ -216,7 +214,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             getCameraPermission();
             if (CameraPermissionsGranted) {
                 Intent intent = new Intent(getApplicationContext(), LanePointsActivity.class);
-                intent.putExtra(SharedValues.intent_toImageProcessor,true);
+                intent.putExtra(SharedValues.intent_LanePoints_to_ImageProcessor,true);
                 startActivity(intent);
             }
         }

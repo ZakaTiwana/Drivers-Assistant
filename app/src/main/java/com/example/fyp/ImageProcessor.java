@@ -11,10 +11,12 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PointF;
 import android.graphics.RectF;
+import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
+import android.speech.tts.TextToSpeech;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.Range;
@@ -22,31 +24,59 @@ import android.util.Size;
 import android.view.KeyEvent;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
+import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
 
 import com.example.fyp.customutilities.ImageUtilities;
 import com.example.fyp.customutilities.SharedPreferencesUtils;
 import com.example.fyp.customutilities.SharedValues;
+import com.google.android.gms.maps.model.LatLng;
 import com.google.android.material.snackbar.Snackbar;
 import com.example.fyp.customview.OverlayView;
 import org.opencv.android.OpenCVLoader;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+import io.nlopez.smartlocation.OnLocationUpdatedListener;
+import io.nlopez.smartlocation.SmartLocation;
+import io.nlopez.smartlocation.location.config.LocationAccuracy;
+import io.nlopez.smartlocation.location.config.LocationParams;
 
 public class ImageProcessor extends CameraCaptureActivity {
+
+    // thread handling
+//    private static int coreCount = Runtime.getRuntime().availableProcessors();
+    private static ScheduledExecutorService threadExecutor = Executors.newScheduledThreadPool(10);
+
+    private static final int delayForCurrentLocation = 1000; // ms
 
     private static final String TAG = "ImageProcessor";
     private static final Size[] DESIRED_PREVIEW_SIZES = SharedValues.DESIRED_PREVIEW_SIZES;
     private static final Size CROP_SIZE = SharedValues.CROP_SIZE;
     private static PointF[] pts_resized = null; // for lane
+    private static PointF[] pts = null;
 
     private int mWidth = 0;
     private int mHeight = 0;
 
     private Bitmap rgbFrameBitmap = null;
     private Boolean isrgbFrameCreated = false;
+
+    //-- direction nav - steps
+    private static volatile ArrayList<String> navigationSteps = null;
+    private static volatile boolean hasNavSteps = false;
+    private static int navStepPassed = 0;
+    private static TextToSpeech tts;
+    private static LatLng fromPosition = new LatLng(0,0);
+    private static String maneuverDirection = null;
+    private static volatile boolean turnOffManeuverDirectionIcon = true;
+    private static boolean isDarkModeEnabled = false;
 
     private static Detector detector = null;
     private static float timeTakeByObjDetector = 0;
@@ -67,6 +97,8 @@ public class ImageProcessor extends CameraCaptureActivity {
     private static boolean laneGuidLines = false;
     private Path laneGuidPath = null;
     private Paint laneGuidPathPaint = null;
+    private float maskWidth;
+    private float maskHeight;
 
     private Snackbar initSnackbar = null;
     private volatile boolean initialized = false;
@@ -81,6 +113,8 @@ public class ImageProcessor extends CameraCaptureActivity {
 
     private Paint borderBoxPaint = null;
     private Paint borderTextPaint = null;
+
+    private DirectionsTask directionsTask = null;
 
 
     @Override
@@ -98,6 +132,11 @@ public class ImageProcessor extends CameraCaptureActivity {
         borderTextPaint.setColor(Color.BLUE);
         borderTextPaint.setTextSize(23);
 
+        SharedPreferences sp_hs = getSharedPreferences(
+                getString(R.string.sp_homeSettings),0);
+        String sp_hs_dark_mod = getString(R.string.sp_hs_darkMode);
+        isDarkModeEnabled = SharedPreferencesUtils.loadBool(sp_hs,sp_hs_dark_mod);
+
         SharedPreferences sp_ld = getSharedPreferences(
                 getString(R.string.sp_laneDetection),0);
         String sp_ld_key_tp = getString(R.string.sp_ld_key_transformed_mask_pts);
@@ -105,9 +144,14 @@ public class ImageProcessor extends CameraCaptureActivity {
         pts_resized = (PointF[]) SharedPreferencesUtils.loadObject(
                 sp_ld,sp_ld_key_tp,PointF[].class);
 
-        PointF[] pts = (PointF[]) SharedPreferencesUtils.loadObject(
+        pts = (PointF[]) SharedPreferencesUtils.loadObject(
                 sp_ld,sp_ld_key_op,PointF[].class
         );
+
+        maskHeight = pts[3].y - pts[0].y;
+        float mid_x_1 = (pts[0].x + pts[3].x ) / 2f;
+        float mid_x_2 = (pts[1].x + pts[2].x ) / 2f;
+        maskWidth = mid_x_2 - mid_x_1;
 
         laneGuidPath = SharedValues.getPathFromPointF(pts,true);
 
@@ -120,6 +164,8 @@ public class ImageProcessor extends CameraCaptureActivity {
         lanePointsPaint.setColor(Color.argb(255,255,170,0)); // 255,170,0,255 orange
         lanePointsPaint.setStrokeWidth(8);
         lanePointsPaint.setStyle(Paint.Style.STROKE);
+
+
 
 
         FrameLayout container = (FrameLayout) findViewById(R.id.container);
@@ -137,17 +183,14 @@ public class ImageProcessor extends CameraCaptureActivity {
         mWidth = width;
         mHeight = height;
 
-//        rgbFrameBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-//        rgbFrameBitmap = Bitmap.createBitmap(
-//                DESIRED_PREVIEW_SIZES[0].getWidth(),
-//                DESIRED_PREVIEW_SIZES[0].getHeight(), Bitmap.Config.ARGB_8888);
         //object Detection.
         draw.addCallback(new OverlayView.DrawCallback() {
             @Override
             public void drawCallback(Canvas canvas) {
                 if (mappedRecognitions != null){
                     for (RecognizedObject object: mappedRecognitions){
-                        if(object.getScore() >= 0.6f) {
+                        if(object.getScore() >= 0.6f &&
+                            object.getLabel().matches("car|motorcycle|person|bicycle|truck|stop sign|laptop|bottle")) {
                             RectF  location = object.getLocation();
 
                             DistanceCalculator dc = new DistanceCalculator(location,object.getLabel());
@@ -168,6 +211,7 @@ public class ImageProcessor extends CameraCaptureActivity {
                                             (int)(location.height() -5),true);
                                     canvas.drawBitmap(bmp_resized,location.left + 5,
                                             location.top + 5,null);
+                                    // voice warning logic
                                 }
                             }
                         }
@@ -197,7 +241,7 @@ public class ImageProcessor extends CameraCaptureActivity {
                 }
         });
 
-        //LaneDetection
+        //LaneDetection - deprecated
         draw.addCallback(new OverlayView.DrawCallback() {
             @Override
             public void drawCallback(Canvas canvas) {
@@ -215,10 +259,10 @@ public class ImageProcessor extends CameraCaptureActivity {
         draw.addCallback(new OverlayView.DrawCallback() {
             @Override
             public void drawCallback(Canvas canvas) {
-                if(lft_lane_pts != null){
+                if(lft_lane_pts != null && lft_lane_pts.size() > 3){
                     canvas.drawPath(SharedValues.getPathFromPointF(lft_lane_pts,false),lanePointsPaint);
                 }
-                if(rht_lane_pts != null){
+                if(rht_lane_pts != null && rht_lane_pts.size() > 3){
                     canvas.drawPath(SharedValues.getPathFromPointF(rht_lane_pts,false),lanePointsPaint);
                 }
             }
@@ -249,6 +293,131 @@ public class ImageProcessor extends CameraCaptureActivity {
                 }
             }
         });
+
+        // direction maneuver
+        draw.addCallback(new OverlayView.DrawCallback() {
+            @Override
+            public void drawCallback(Canvas canvas) {
+                if(hasNavSteps  && maneuverDirection !=null){
+                    Bitmap bmp = null;
+                    //turn-slight-left, turn-sharp-left, uturn-left, turn-left, turn-slight-right,
+                    // turn-sharp-right, uturn-right, turn-right, straight, ramp-left, ramp-right,
+                    // merge, fork-left, fork-right, ferry, ferry-train, roundabout-left, roundabout-right
+                    switch (maneuverDirection){
+                        case "turn-right":
+                            if(isDarkModeEnabled)
+                                bmp = BitmapFactory.decodeResource(getResources(),R.drawable.dark_direction_turn_right);
+                            else
+                                bmp = BitmapFactory.decodeResource(getResources(),R.drawable.light_direction_turn_right);
+                            break;
+                        case "turn-slight-right":
+                            if (isDarkModeEnabled)
+                                bmp = BitmapFactory.decodeResource(getResources(),R.drawable.dark_direction_turn_slight_right);
+                            else
+                                bmp = BitmapFactory.decodeResource(getResources(),R.drawable.light_direction_turn_slight_right);
+                            break;
+                        case "turn-sharp-right":
+                            if (isDarkModeEnabled)
+                                bmp = BitmapFactory.decodeResource(getResources(),R.drawable.dark_direction_turn_sharp_right);
+                            else
+                                bmp = BitmapFactory.decodeResource(getResources(),R.drawable.light_direction_turn_sharp_right);
+                            break;
+                        case "uturn-right":
+                            if (isDarkModeEnabled)
+                                bmp = BitmapFactory.decodeResource(getResources(),R.drawable.dark_direction_uturn_right);
+                            else
+                                bmp = BitmapFactory.decodeResource(getResources(),R.drawable.light_direction_uturn_right);
+                            break;
+                        case "roundabout-right":
+                            if (isDarkModeEnabled)
+                                bmp = BitmapFactory.decodeResource(getResources(),R.drawable.dark_direction_roundabout_right);
+                            else
+                                bmp = BitmapFactory.decodeResource(getResources(),R.drawable.light_direction_roundabout_right);
+                            break;
+                        case "ramp-right":
+                            if (isDarkModeEnabled)
+                                bmp = BitmapFactory.decodeResource(getResources(),R.drawable.dark_direction_on_ramp_right);
+                            else
+                                bmp = BitmapFactory.decodeResource(getResources(),R.drawable.light_direction_on_ramp_right);
+                            break;
+                        case "fork-right":
+                            if (isDarkModeEnabled)
+                                bmp = BitmapFactory.decodeResource(getResources(),R.drawable.dark_direction_fork_right);
+                            else
+                                bmp = BitmapFactory.decodeResource(getResources(),R.drawable.light_direction_fork_right);
+                            break;
+                        case "turn-left":
+                            if(isDarkModeEnabled)
+                                bmp = BitmapFactory.decodeResource(getResources(),R.drawable.dark_direction_turn_left);
+                            else
+                                bmp = BitmapFactory.decodeResource(getResources(),R.drawable.light_direction_turn_left);
+                            break;
+                        case "turn-slight-left":
+                            if (isDarkModeEnabled)
+                                bmp = BitmapFactory.decodeResource(getResources(),R.drawable.dark_direction_turn_slight_left);
+                            else
+                                bmp = BitmapFactory.decodeResource(getResources(),R.drawable.light_direction_turn_slight_left);
+                            break;
+                        case "turn-sharp-left":
+                            if (isDarkModeEnabled)
+                                bmp = BitmapFactory.decodeResource(getResources(),R.drawable.dark_direction_turn_sharp_left);
+                            else
+                                bmp = BitmapFactory.decodeResource(getResources(),R.drawable.light_direction_turn_sharp_left);
+                            break;
+                        case "uturn-left":
+                            if (isDarkModeEnabled)
+                                bmp = BitmapFactory.decodeResource(getResources(),R.drawable.dark_direction_uturn_left);
+                            else
+                                bmp = BitmapFactory.decodeResource(getResources(),R.drawable.light_direction_uturn_left);
+                            break;
+                        case "roundabout-left":
+                            if (isDarkModeEnabled)
+                                bmp = BitmapFactory.decodeResource(getResources(),R.drawable.dark_direction_roundabout_left);
+                            else
+                                bmp = BitmapFactory.decodeResource(getResources(),R.drawable.light_direction_roundabout_left);
+                            break;
+                        case "ramp-left":
+                            if (isDarkModeEnabled)
+                                bmp = BitmapFactory.decodeResource(getResources(),R.drawable.dark_direction_on_ramp_left);
+                            else
+                                bmp = BitmapFactory.decodeResource(getResources(),R.drawable.light_direction_on_ramp_left);
+                            break;
+                        case "fork-left":
+                            if (isDarkModeEnabled)
+                                bmp = BitmapFactory.decodeResource(getResources(),R.drawable.dark_direction_fork_left);
+                            else
+                                bmp = BitmapFactory.decodeResource(getResources(),R.drawable.light_direction_fork_left);
+                            break;
+                        case "merge":
+                            if (isDarkModeEnabled)
+                                bmp = BitmapFactory.decodeResource(getResources(),R.drawable.dark_direction_merge);
+                            else
+                                bmp = BitmapFactory.decodeResource(getResources(),R.drawable.light_direction_merge);
+                            break;
+                        case "ferry":
+                            if (isDarkModeEnabled)
+                                bmp = BitmapFactory.decodeResource(getResources(),R.drawable.dark_directions_ferry);
+                            else
+                                bmp = BitmapFactory.decodeResource(getResources(),R.drawable.light_directions_ferry);
+                            break;
+                        default:
+                            //straight
+                            if (isDarkModeEnabled)
+                                bmp = BitmapFactory.decodeResource(getResources(),R.drawable.dark_direction_turn_straight);
+                            else
+                                bmp = BitmapFactory.decodeResource(getResources(),R.drawable.light_direction_turn_straight);
+                            break;
+                    }
+                    if(bmp == null) return;
+
+                    Bitmap bmp_resized = ImageUtilities.getResizedBitmap(bmp,(int)(maskWidth - 5),
+                            (int)(maskHeight -5),true);
+                    canvas.drawBitmap(bmp_resized,pts[0].x ,
+                            pts[0].y,null);
+                }
+            }
+        });
+
         // -----------------
         new Init().execute();
     }
@@ -284,9 +453,18 @@ public class ImageProcessor extends CameraCaptureActivity {
                 false);
 
 
-        if(!isComputingLaneDetection)new LaneTask().execute(resizedBitmap.copy(Bitmap.Config.ARGB_8888,true));
-//        if(!isComputingSignDetection)new SignTask().execute(resizedBitmap.copy(Bitmap.Config.ARGB_8888,true));
-        if(!isComputingDetection) new detectorTask().execute(resizedBitmap);
+        if(!isComputingLaneDetection){
+            threadExecutor.schedule(new LaneTask(resizedBitmap.copy(Bitmap.Config.ARGB_8888,true)),
+                    0,TimeUnit.MILLISECONDS);
+        }
+        if(!isComputingSignDetection){
+            threadExecutor.schedule(new SignTask(resizedBitmap.copy(Bitmap.Config.ARGB_8888,true)),
+                    10,TimeUnit.MILLISECONDS);
+        }
+        if(!isComputingDetection) {
+            threadExecutor.schedule(new DetectorTask(resizedBitmap),
+                    10,TimeUnit.MILLISECONDS);
+        }
         readyForNextImage();
     }
 
@@ -377,6 +555,17 @@ public class ImageProcessor extends CameraCaptureActivity {
                 laneDetectorAdvance = new LaneDetectorAdvance(mWidth,mHeight,
                         SharedValues.CROP_SIZE.getWidth(),SharedValues.CROP_SIZE.getHeight());
                 laneDetectorAdvance.setPtsResized(pts_resized);
+
+                //-- get step info --
+                Intent intent = getIntent();
+                navigationSteps = intent.getStringArrayListExtra(SharedValues.intent_step_info);
+                Log.d(TAG, "run: got navigationSteps = "+ navigationSteps);
+                if(navigationSteps != null && navigationSteps.size() > 0) hasNavSteps = true;
+                if (hasNavSteps) {
+                    getDeviceLocation();
+                    threadExecutor.scheduleAtFixedRate(new DirectionsTask(),
+                            1000,delayForCurrentLocation, TimeUnit.MILLISECONDS);
+                }
             } catch (Exception e) {
                 Log.e(TAG,"run: Exception initializing classifier!", e);
             }
@@ -394,51 +583,63 @@ public class ImageProcessor extends CameraCaptureActivity {
     }
 
 
-    private static class detectorTask extends AsyncTask<Bitmap,Object,Object>{
+    private static class DetectorTask implements Runnable{
+        private Bitmap resizedBmp = null;;
+        public DetectorTask(Bitmap resizedBmp){
+            this.resizedBmp = resizedBmp;
+        }
+
         @Override
-        protected Object doInBackground(Bitmap... params) {
+        public void run() {
+            if(resizedBmp == null) return;
             if(!isComputingDetection){
                 isComputingDetection = true;
                 float start = SystemClock.currentThreadTimeMillis();
-                mappedRecognitions = detector.run(params[0],true);
+                mappedRecognitions = detector.run(resizedBmp,true);
 
                 float end = SystemClock.currentThreadTimeMillis();
                 timeTakeByObjDetector = end - start;
                 draw.postInvalidate();
                 isComputingDetection = false;
             }
-            if(!params[0].isRecycled()) params[0].recycle();
-            return null;
+            if(!resizedBmp.isRecycled()) resizedBmp.recycle();
         }
     }
-    private static class SignTask extends AsyncTask<Bitmap,Object,Object>{
-
+    private static class SignTask implements Runnable{
+        private Bitmap resizedBmp = null;
+        public SignTask(Bitmap resizedBmp){
+            this.resizedBmp = resizedBmp;
+        }
         @Override
-        protected Object doInBackground(Bitmap... params) {
+        public void run() {
+            if(resizedBmp == null) return;
             if (!isComputingSignDetection){
                 isComputingSignDetection = true;
                 float start  = SystemClock.currentThreadTimeMillis();
-                mappedSignRecognitions = signDetector.run(params[0],true);
+                mappedSignRecognitions = signDetector.run(resizedBmp,true);
                 float end = SystemClock.currentThreadTimeMillis();
 //                Log.d(TAG, String.format("doInBackground in SignLaneTask: sign detection time = %f ms", (end-start)));
                 timeTakeBySignDetector = end - start;
 //                draw.postInvalidate();
                 isComputingSignDetection = false;
             }
-            if(!params[0].isRecycled()) params[0].recycle();
-            return null;
+            if(!resizedBmp.isRecycled()) resizedBmp.recycle();
         }
     }
 
-    private static class LaneTask extends AsyncTask<Bitmap,Object,Object>{
-
+    private static class LaneTask implements Runnable{
+        private Bitmap resizedBmp = null;
+        public LaneTask(Bitmap resizedBmp){
+            this.resizedBmp = resizedBmp;
+        }
         @Override
-        protected Object doInBackground(Bitmap... params) {
+        public void run() {
+            if(resizedBmp == null) return;
             if(!isComputingLaneDetection){
                 isComputingLaneDetection = true;
                 float start = SystemClock.currentThreadTimeMillis();
 
-                ArrayList<PointF>[] ret = laneDetectorAdvance.processFrame(params[0],false);
+                ArrayList<PointF>[] ret = laneDetectorAdvance.processFrame(resizedBmp,false);
                 lft_lane_pts = ret[0];
                 rht_lane_pts = ret[1];
                 float end = SystemClock.currentThreadTimeMillis();
@@ -447,8 +648,121 @@ public class ImageProcessor extends CameraCaptureActivity {
                 isComputingLaneDetection = false;
 //                System.gc();
             }
-            if(!params[0].isRecycled()) params[0].recycle();
-            return null;
+            if(!resizedBmp.isRecycled()) resizedBmp.recycle();
+        }
+    }
+
+    //------------ Navigation -------------
+    private void initializeTextToSpeech() {
+
+        tts = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
+            @Override
+            public void onInit(int status) {
+                if (tts.getEngines().size() == 0) {
+                    Toast.makeText(getApplicationContext(), "No TTS engine on your device", Toast.LENGTH_LONG).show();
+                    Log.d("check", "No TTS engine on your device");
+                } else {
+                    tts.setLanguage(Locale.getDefault());
+                    tts.setLanguage(Locale.US);
+                    //   Toast.makeText(getApplicationContext(),"check"+Locale.getDefault(),Toast.LENGTH_SHORT);
+                    Log.d("check", "language: " + Locale.getDefault());
+
+//                    speak("Oye bhai kesa hai");
+                }
+            }
+        });
+    }
+    @Override
+    protected void onPause() {
+        super.onPause();
+        tts.shutdown();
+    }
+
+    @Override
+    protected void onDestroy() {
+        if(threadExecutor != null){
+            threadExecutor.shutdown();
+        }
+        super.onDestroy();
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.M)
+    @Override
+    protected void onResume() {
+        super.onResume();
+//        Reinitialize the tts engines upon resuming from background such as after opening the browser
+        initializeTextToSpeech();
+    }
+
+    private void getDeviceLocation() {
+        Log.d("TAG", "getDeviceLocation: getting the devices current location");
+//        LatLng fromPosition = new LatLng(0,0);
+        try {
+            SmartLocation smartLocation = null;
+            LocationParams.Builder builder;
+            smartLocation = new SmartLocation.Builder(getApplicationContext()).logging(true).build();
+            builder = new LocationParams.Builder()
+                    .setAccuracy(LocationAccuracy.HIGH)
+                    .setDistance(0)
+                    .setInterval(delayForCurrentLocation);
+            try {
+                smartLocation.with(getApplicationContext())
+                        .location()
+                        .config(LocationParams.BEST_EFFORT)
+                        .continuous()
+                        .config(builder.build())
+                        .start(new OnLocationUpdatedListener() {
+                            @Override
+                            public void onLocationUpdated(Location location) {
+                                fromPosition = new LatLng(location.getLatitude(), location.getLongitude());
+                            }
+                        });
+            } catch (SecurityException se) {
+                se.printStackTrace();
+            }
+
+        } catch (SecurityException e) {
+            Log.e("TAG", "getDeviceLocation: SecurityException: " + e.getMessage());
+        }
+    }
+    public static class DirectionsTask implements Runnable {
+        @Override
+        public void run() {
+            if (navigationSteps == null) {
+                Log.d(TAG, "doInBackground: navigationSteps is null");
+                return;
+            }
+            String[] step;
+            String distance;
+            String instructions;
+            double lat;
+            double lng;
+            String maneuver;
+
+            for (int i = navStepPassed; i < navigationSteps.size(); i++) {
+                step = navigationSteps.get(i).split("::");
+                distance = step[0];
+                instructions = step[1];
+                instructions = instructions.replaceAll("\\<.*?\\>", "");
+                String lat1 = step[2];
+                lat = Double.parseDouble(step[2]);
+                lng = Double.parseDouble(step[3]);
+                maneuver = step[4];
+                //       latlng=new LatLng(lat, lng);
+                    Log.d(TAG, "doInBackground: current longLat = "+fromPosition.latitude +", "+ fromPosition.latitude);
+                    if (Math.abs(lat - fromPosition.latitude) < 0.0001) {
+                        if (Math.abs(lng - fromPosition.longitude) < 0.0001) {
+                            navStepPassed++;
+                            tts.speak(instructions, TextToSpeech.QUEUE_FLUSH, null, null);
+                           if (maneuver != null) {
+                                maneuverDirection = maneuver;
+                           } else {
+                               maneuverDirection = "straight";
+                           }
+                            draw.postInvalidate();
+                        }
+                    }
+                }
         }
     }
 

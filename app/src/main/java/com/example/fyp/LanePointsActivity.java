@@ -10,8 +10,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
-import android.graphics.Canvas;
-import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.graphics.PointF;
 import android.graphics.RectF;
@@ -23,13 +21,10 @@ import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.params.StreamConfigurationMap;
-import android.media.Image;
-import android.media.ImageReader;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.os.Trace;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.Range;
@@ -44,13 +39,10 @@ import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.Toast;
 
-import com.example.fyp.customutilities.ImageUtilities;
 import com.example.fyp.customutilities.SharedPreferencesUtils;
 import com.example.fyp.customutilities.SharedValues;
 import com.example.fyp.customview.LanePointsView;
-import com.example.fyp.customview.OverlayView;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -179,13 +171,19 @@ public class LanePointsActivity extends AppCompatActivity {
                 SharedPreferencesUtils.saveBool(sp,sp_ld_key_up,true); // user defined points
 
                 Intent i = getIntent();
+                boolean isFromDirection = i.getBooleanExtra(SharedValues.intent_from_direction,false);
                 boolean check = i.getBooleanExtra(
-                        SharedValues.intent_toImageProcessor,false);
+                        SharedValues.intent_LanePoints_to_ImageProcessor,false);
                 if(check){
                     i.setClass(getApplicationContext(),ImageProcessor.class);
+                    if (isFromDirection){
+                        i.putStringArrayListExtra(
+                                SharedValues.intent_step_info,
+                                i.getStringArrayListExtra(SharedValues.intent_step_info));
+                    }
                     startActivity(i);
                 }
-
+                finish();
             }
         });
 

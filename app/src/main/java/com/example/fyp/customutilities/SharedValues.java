@@ -21,7 +21,9 @@ public class SharedValues {
             };
     public static final Size CROP_SIZE = new Size(300,300);
 
-    public static final String  intent_toImageProcessor = "toImageProcessor";
+    public static final String intent_LanePoints_to_ImageProcessor = "lane_points_img_processor";
+    public static final String intent_step_info = "directions_steps_info";
+    public static final String intent_from_direction = "from_direction";
 
     public static Path getPathFromPointF(PointF[] pts,boolean loop){
         Path path = new Path();

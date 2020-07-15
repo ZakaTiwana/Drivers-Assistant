@@ -29,8 +29,6 @@ public class Directions extends AsyncTask<Object, String, String> {
 
     public Directions(Context context) {
         contextRef = new WeakReference<>(context);
-
-
     }
 
     @Override

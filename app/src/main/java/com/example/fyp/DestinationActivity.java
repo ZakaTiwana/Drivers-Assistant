@@ -9,6 +9,7 @@ import androidx.core.content.ContextCompat;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Address;
@@ -29,6 +30,7 @@ import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 
+import com.example.fyp.customutilities.SharedValues;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
@@ -119,7 +121,7 @@ public class DestinationActivity extends AppCompatActivity implements OnMapReady
     LatLng fromPosition;
     LatLng toPosition;
 
-    private TextToSpeech tts;
+//    private TextToSpeech tts;
 
     Button btn1, btn2;
 
@@ -228,9 +230,17 @@ public class DestinationActivity extends AppCompatActivity implements OnMapReady
             @Override
             public void onClick(View view) {
                 Log.d(TAG, "onClick: Start Directing thread started!");
-                Directions direct = new Directions(getApplicationContext());
-                direct.execute(stepsInformation, tts);
+//                Directions direct = new Directions(getApplicationContext());
+//                direct.execute(stepsInformation, tts);
                 Toast.makeText(getApplicationContext(), "Directions started!", Toast.LENGTH_SHORT).show();
+
+                // intent to image-processor
+                Intent intent = new Intent(getApplicationContext(), LanePointsActivity.class);
+                intent.putExtra(SharedValues.intent_LanePoints_to_ImageProcessor,true);
+                intent.putExtra(SharedValues.intent_from_direction,true);
+                intent.putStringArrayListExtra(SharedValues.intent_step_info,stepsInformation);
+                startActivity(intent);
+                finishAffinity();
             }
         });
 
@@ -274,7 +284,7 @@ public class DestinationActivity extends AppCompatActivity implements OnMapReady
     public void onTaskDone2(Object... values) {
         stepsInformation = (ArrayList<String>) values[0];
 //        Directions direct = new Directions(getApplicationContext());
-        speak("Hello there!");
+//        speak("Hello there!");
         btn2.setVisibility(View.VISIBLE);
         // direct.execute(stepsInformation, tts);
     }
@@ -418,46 +428,46 @@ public class DestinationActivity extends AppCompatActivity implements OnMapReady
         this.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
     }
 
-    private void initializeTextToSpeech() {
+//    private void initializeTextToSpeech() {
+//
+//        tts = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
+//            @Override
+//            public void onInit(int status) {
+//                if (tts.getEngines().size() == 0) {
+//                    Toast.makeText(DestinationActivity.this, "No TTS engine on your device", Toast.LENGTH_LONG).show();
+//                    Log.d("check", "No TTS engine on your device");
+//                } else {
+//                    tts.setLanguage(Locale.getDefault());
+//                    tts.setLanguage(Locale.US);
+//                    //   Toast.makeText(getApplicationContext(),"check"+Locale.getDefault(),Toast.LENGTH_SHORT);
+//                    Log.d("check", "language: " + Locale.getDefault());
+//
+////                    speak("Oye bhai kesa hai");
+//                }
+//            }
+//        });
+//    }
 
-        tts = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
-            @Override
-            public void onInit(int status) {
-                if (tts.getEngines().size() == 0) {
-                    Toast.makeText(DestinationActivity.this, "No TTS engine on your device", Toast.LENGTH_LONG).show();
-                    Log.d("check", "No TTS engine on your device");
-                } else {
-                    tts.setLanguage(Locale.getDefault());
-                    tts.setLanguage(Locale.US);
-                    //   Toast.makeText(getApplicationContext(),"check"+Locale.getDefault(),Toast.LENGTH_SHORT);
-                    Log.d("check", "language: " + Locale.getDefault());
+//    public void speak(String message) {
+//        if (Build.VERSION.SDK_INT >= 21) {
+//            tts.speak(message, TextToSpeech.QUEUE_FLUSH, null, null);
+//        } else {
+//            tts.speak(message, TextToSpeech.QUEUE_FLUSH, null);
+//        }
+//    }
 
-//                    speak("Oye bhai kesa hai");
-                }
-            }
-        });
-    }
-
-    public void speak(String message) {
-        if (Build.VERSION.SDK_INT >= 21) {
-            tts.speak(message, TextToSpeech.QUEUE_FLUSH, null, null);
-        } else {
-            tts.speak(message, TextToSpeech.QUEUE_FLUSH, null);
+        @Override
+        protected void onPause() {
+            super.onPause();
+//            tts.shutdown();
         }
-    }
 
-    @Override
-    protected void onPause() {
-        super.onPause();
-        tts.shutdown();
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-//        Reinitialize the tts engines upon resuming from background such as after opening the browser
-        initializeTextToSpeech();
-    }
+        @Override
+        protected void onResume() {
+            super.onResume();
+    //        Reinitialize the tts engines upon resuming from background such as after opening the browser
+//            initializeTextToSpeech();
+        }
 
     public Boolean checkInternetAccess(){
         boolean connected = false;

@@ -13,4 +13,7 @@
     <string name="sp_ld_key_mtx">sp_ld_mtx</string>
     <string name="sp_ld_key_dist">sp_ld_dist</string>
     <string name="sp_ld_key_cal_mtx_dist">has_user_cal_mtx_and_dist</string>
+
+    <string name="sp_homeSettings">home_settings</string>
+    <string name="sp_hs_darkMode">ui_settings</string>
 </resources>
