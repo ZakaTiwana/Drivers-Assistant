@@ -15,5 +15,17 @@
     <string name="sp_ld_key_cal_mtx_dist">has_user_cal_mtx_and_dist</string>
 
     <string name="sp_homeSettings">home_settings</string>
-    <string name="sp_hs_darkMode">ui_settings</string>
+    <string name="sp_hs_key_darkMode">ui_settings</string>
+
+    <string name="sp_blueTooth">bluetooth_settings</string>
+    <string name="sp_bt_key_isDeviceConnected">isObdConnected</string>
+    <string name="sp_bt_key_car_speed">speed_of_car</string>
+
+    <string name="sp_featureSettings">feature_settings</string>
+    <string name="sp_fs_key_isLaneAllowed">lane_guide</string>
+    <string name="sp_fs_key_isSignAllowed">sign_detection</string>
+    <string name="sp_fs_key_isObjDetectionAllowed">object_detection</string>
+    <string name="sp_fs_key_isDistCalAllowed">distance_calculator</string>
+    <string name="sp_fs_key_areWarningsMuted">mute_warnings</string>
+
 </resources>

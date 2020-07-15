@@ -25,6 +25,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.fyp.customutilities.SharedPreferencesUtils;
 import com.example.fyp.customutilities.SharedValues;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
@@ -121,6 +122,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (settings.getBoolean("accident_detector_settings", false)) {
             enableDisableBT();
         }
+
+        SharedPreferences sp_bt = getSharedPreferences(getString(R.string.sp_blueTooth),0);
+        String key_bt_conn = getString(R.string.sp_bt_key_isDeviceConnected);
+        SharedPreferencesUtils.saveBool(sp_bt,key_bt_conn,false);
     }
 
     @Override

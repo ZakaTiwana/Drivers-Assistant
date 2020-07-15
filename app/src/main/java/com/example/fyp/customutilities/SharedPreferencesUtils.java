@@ -61,7 +61,7 @@ public class SharedPreferencesUtils {
         return true;
     }
 
-    public static void saveJsonString(SharedPreferences sp, String key, String json){
+    public static void saveString(SharedPreferences sp, String key, String json){
         SharedPreferences.Editor editor = sp.edit();
         editor.putString(key,json);
         editor.apply();

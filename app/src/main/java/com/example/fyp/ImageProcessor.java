@@ -120,6 +120,17 @@ public class ImageProcessor extends CameraCaptureActivity {
 
     private static ScheduledFuture<Object> directionsTask = null;
 
+    private static String carSpeed = null;
+
+    // checks for features
+    private static boolean isLaneDetectionAllowed = false;
+    private static boolean isSignDetectionAllowed = false;
+    private static boolean isObjDetectionAllowed = false;
+    private static boolean isVoiceWarningAllowed = false;
+    private static boolean isDistanceCalculatorAllowed = false;
+
+    // distance calculator
+    private static DistanceCalculator distanceCalculator = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -141,7 +152,7 @@ public class ImageProcessor extends CameraCaptureActivity {
 
         SharedPreferences sp_hs = getSharedPreferences(
                 getString(R.string.sp_homeSettings),0);
-        String sp_hs_dark_mod = getString(R.string.sp_hs_darkMode);
+        String sp_hs_dark_mod = getString(R.string.sp_hs_key_darkMode);
         isDarkModeEnabled = SharedPreferencesUtils.loadBool(sp_hs,sp_hs_dark_mod);
 
         SharedPreferences sp_ld = getSharedPreferences(
@@ -172,9 +183,6 @@ public class ImageProcessor extends CameraCaptureActivity {
         lanePointsPaint.setStrokeWidth(8);
         lanePointsPaint.setStyle(Paint.Style.STROKE);
 
-
-
-
         FrameLayout container = (FrameLayout) findViewById(R.id.container);
         initSnackbar = Snackbar.make(container, "Initializing...", Snackbar.LENGTH_INDEFINITE);
         Log.d(TAG, "onCreate: snackbar declared");
@@ -194,20 +202,19 @@ public class ImageProcessor extends CameraCaptureActivity {
         draw.addCallback(new OverlayView.DrawCallback() {
             @Override
             public void drawCallback(Canvas canvas) {
-                if (mappedRecognitions != null){
+                if (mappedRecognitions != null && isObjDetectionAllowed){
                     for (RecognizedObject object: mappedRecognitions){
                         if(object.getScore() >= 0.6f &&
                             object.getLabel().matches("car|motorcycle|person|bicycle|truck|stop sign|laptop|bottle")) {
                             RectF  location = object.getLocation();
 
-                            DistanceCalculator dc = new DistanceCalculator(location,object.getLabel());
-                            float dist = dc.getDistance();
-
                             canvas.drawRect(location,borderBoxPaint);
                             canvas.drawText(
                                     String.format("%s , %.1f %%",object.getLabel(),object.getScore()*100  ),
                                     location.left,location.top < 50? location.top+60:location.top-10,borderTextPaint);
-                            if(object.getLabel().matches("(?i)^car|bottle$")){
+                            if (distanceCalculator != null && object.getLabel().matches("(?i)^truck|motorcycle|person|car|bottle$")
+                                && isDistanceCalculatorAllowed){
+                                float dist = distanceCalculator.calculateDistance(location,object.getLabel());
                                 canvas.drawText(String.format("%.1f m", dist),location.left,
                                         location.top < 50 ? location.top + 20:location.top - 35,
                                         borderTextPaint);
@@ -218,7 +225,9 @@ public class ImageProcessor extends CameraCaptureActivity {
                                             (int)(location.height() -5),true);
                                     canvas.drawBitmap(bmp_resized,location.left + 5,
                                             location.top + 5,null);
+
                                     // voice warning logic
+                                    speak("A "+object.getLabel()+" is approaching beware");
                                 }
                             }
                         }
@@ -232,7 +241,7 @@ public class ImageProcessor extends CameraCaptureActivity {
             @SuppressLint("DefaultLocale")
             @Override
             public void drawCallback(Canvas canvas) {
-                if (mappedSignRecognitions != null){
+                if (mappedSignRecognitions != null && isSignDetectionAllowed){
                     int count = 0;
                     for (RecognizedObject object: mappedSignRecognitions){
                         if(count >=2) break;
@@ -252,7 +261,7 @@ public class ImageProcessor extends CameraCaptureActivity {
         draw.addCallback(new OverlayView.DrawCallback() {
             @Override
             public void drawCallback(Canvas canvas) {
-                if(lanePoints !=null){
+                if(lanePoints !=null && isLaneDetectionAllowed){
 //                    Log.d(TAG, "drawCallback: lanePoints = "+lanePoints.toString());
                     for(float[] line : lanePoints){
                         canvas.drawLine(line[0],line[1],
@@ -266,6 +275,7 @@ public class ImageProcessor extends CameraCaptureActivity {
         draw.addCallback(new OverlayView.DrawCallback() {
             @Override
             public void drawCallback(Canvas canvas) {
+                if (!isLaneDetectionAllowed) return;
                 if(lft_lane_pts != null && lft_lane_pts.size() > 3){
                     canvas.drawPath(SharedValues.getPathFromPointF(lft_lane_pts,false),lanePointsPaint);
                 }
@@ -297,6 +307,11 @@ public class ImageProcessor extends CameraCaptureActivity {
                             String.format( "Time Taken Sign Detection: %.0f ms",timeTakeBySignDetector),10,100,borderTextPaint);
                     canvas.drawText(
                             String.format("Time Taken Lane Detection: %.0f ms",timeTakeByLaneDetector),10,150,borderTextPaint);
+
+                    if (carSpeed != null)
+                        canvas.drawText(
+                                "Speed of Car: "+carSpeed,10,200,borderTextPaint
+                        );
                 }
             }
         });
@@ -443,22 +458,21 @@ public class ImageProcessor extends CameraCaptureActivity {
 
         if ( aqWidth == 0 || aqHeight ==0 ) return;
 
-        if( !isRgbFrameCreated) {
+        if(!isRgbFrameCreated) {
             rgbFrameBitmap = Bitmap.createBitmap(
                     aqWidth,
                     aqHeight, Bitmap.Config.ARGB_8888);
             isRgbFrameCreated = true;
         }
 
-        if (!initialized  ) { //|| isComputingDetection) {
+        if (!initialized ||
+            (!isLaneDetectionAllowed && !isObjDetectionAllowed && !isSignDetectionAllowed) ||
+            (isComputingLaneDetection  && isComputingDetection && isComputingSignDetection) ) {
+
             readyForNextImage();
             return;
         }
 
-        if (isComputingLaneDetection  && isComputingDetection){
-            readyForNextImage();
-            return;
-        }
 
         rgbFrameBitmap.setPixels(getRgbBytes(),
                 0, aqWidth, 0, 0, aqWidth, aqHeight);
@@ -468,15 +482,15 @@ public class ImageProcessor extends CameraCaptureActivity {
                 false);
 
 
-        if(!isComputingLaneDetection){
+        if(isLaneDetectionAllowed && !isComputingLaneDetection){
             threadExecutor.schedule(new LaneTask(resizedBitmap.copy(Bitmap.Config.ARGB_8888,true)),
                     0,TimeUnit.MILLISECONDS);
         }
-        if(!isComputingSignDetection){
+        if(isSignDetectionAllowed && !isComputingSignDetection){
             threadExecutor.schedule(new SignTask(resizedBitmap.copy(Bitmap.Config.ARGB_8888,true)),
                     10,TimeUnit.MILLISECONDS);
         }
-        if(!isComputingDetection) {
+        if(isObjDetectionAllowed && !isComputingDetection) {
             threadExecutor.schedule(new DetectorTask(resizedBitmap),
                     10,TimeUnit.MILLISECONDS);
         }
@@ -560,6 +574,8 @@ public class ImageProcessor extends CameraCaptureActivity {
             }
 
             try {
+                distanceCalculator = new DistanceCalculator();
+
                 detector = Detector.create(getAssets(), Detector.OBJ_DETECTOR_MODEL,mWidth,mHeight);
                 Log.d(TAG, "run: detector created");
 
@@ -584,6 +600,36 @@ public class ImageProcessor extends CameraCaptureActivity {
 //                    float height = maskHeight - maskHeight/10;
                     maneuverMatrix = LaneDetectorAdvance.getFlatPerspectiveMatrix(maskWidth,maskHeight);
                 }
+                final SharedPreferences sp_bt = getSharedPreferences(getString(R.string.sp_blueTooth),0);
+                final String key_bt_conn = getString(R.string.sp_bt_key_isDeviceConnected);
+                final String key_bt_speed = getString(R.string.sp_bt_key_car_speed);
+                // if obd connected then get speed at intervals
+                if (SharedPreferencesUtils.loadBool(sp_bt,key_bt_conn)) {
+                    threadExecutor.scheduleWithFixedDelay(new Runnable() {
+                        @Override
+                        public void run() {
+                            carSpeed = sp_bt.getString(key_bt_speed,null);
+                        }
+                    }, 2, 5, TimeUnit.SECONDS);
+                }
+
+                final SharedPreferences sp_fs = getSharedPreferences(getString(R.string.sp_featureSettings),0);
+                final String fs_lane = getString(R.string.sp_fs_key_isLaneAllowed);
+                final String fs_obj_detect = getString(R.string.sp_fs_key_isObjDetectionAllowed);
+                final String fs_sign = getString(R.string.sp_fs_key_isSignAllowed);
+                final String fs_dist = getString(R.string.sp_fs_key_isDistCalAllowed);
+                final String fs_mute = getString(R.string.sp_fs_key_areWarningsMuted);
+                threadExecutor.scheduleWithFixedDelay(new Runnable() {
+                    @Override
+                    public void run() {
+                        isLaneDetectionAllowed = SharedPreferencesUtils.loadBool(sp_fs,fs_lane);
+                        isSignDetectionAllowed = SharedPreferencesUtils.loadBool(sp_fs,fs_sign);
+                        isObjDetectionAllowed = SharedPreferencesUtils.loadBool(sp_fs,fs_obj_detect);
+                        isDistanceCalculatorAllowed = SharedPreferencesUtils.loadBool(sp_fs,fs_dist);
+                        isVoiceWarningAllowed = ! SharedPreferencesUtils.loadBool(sp_fs,fs_mute);
+                    }
+                }, 10, 5, TimeUnit.SECONDS);
+
             } catch (Exception e) {
                 Log.e(TAG,"run: Exception initializing classifier!", e);
             }
@@ -638,7 +684,7 @@ public class ImageProcessor extends CameraCaptureActivity {
                 float end = SystemClock.currentThreadTimeMillis();
 //                Log.d(TAG, String.format("doInBackground in SignLaneTask: sign detection time = %f ms", (end-start)));
                 timeTakeBySignDetector = end - start;
-//                draw.postInvalidate();
+                draw.postInvalidate();
                 isComputingSignDetection = false;
             }
             if(!resizedBmp.isRecycled()) resizedBmp.recycle();
@@ -771,7 +817,7 @@ public class ImageProcessor extends CameraCaptureActivity {
                 if (Math.abs(lat - fromPosition.latitude) < 0.001) {
                     if (Math.abs(lng - fromPosition.longitude) < 0.001) {
                         navStepPassed++;
-                        tts.speak(instructions, TextToSpeech.QUEUE_FLUSH, null, null);
+                        speak(instructions);
                        if (maneuver != null) {
                             maneuverDirection = maneuver;
                        } else {
@@ -786,7 +832,7 @@ public class ImageProcessor extends CameraCaptureActivity {
             threadExecutor.schedule(new Runnable() {
                 @Override
                 public void run() {
-                    if(navStepPassed >= navigationSteps.size() ||
+                    if( navStepPassed == 0 || navStepPassed >= navigationSteps.size() ||
                     maneuverDirection == null) return;
                     String[] step = navigationSteps
                             .get(navStepPassed -1 ).split("::"); // one previous
@@ -810,7 +856,7 @@ public class ImageProcessor extends CameraCaptureActivity {
                 // end navigation
                 // need to check langitude longitude
                 maneuverDirection = null;
-                tts.speak("You have reached Your destination", TextToSpeech.QUEUE_FLUSH, null, null);
+                speak("You have reached Your destination");
                 if (directionsTask !=null){
                     directionsTask.cancel(false);
                 }
@@ -818,4 +864,9 @@ public class ImageProcessor extends CameraCaptureActivity {
         }
     }
 
+    private static void speak(String msg){
+        if(isVoiceWarningAllowed){
+            tts.speak(msg, TextToSpeech.QUEUE_FLUSH, null, null);
+        }
+    }
 }

@@ -42,6 +42,7 @@ import android.widget.Toast;
 //import com.github.pires.obd.exceptions.NoDataException;
 //import com.github.pires.obd.exceptions.UnableToConnectException;
 
+import com.example.fyp.customutilities.SharedPreferencesUtils;
 import com.github.pires.obd.commands.SpeedCommand;
 import com.github.pires.obd.commands.engine.RPMCommand;
 import com.github.pires.obd.commands.protocol.EchoOffCommand;
@@ -1211,6 +1212,14 @@ public class Bluetooth extends AppCompatActivity implements AdapterView.OnItemCl
                             //      Log.d(TAG, "Fuel level: " + flc.getFormattedResult());
 
                             Log.d(TAG, "Trouble codes: " + result);
+
+                            // save speed to sharedPreferences
+                            String speed = speedCommand.getCalculatedResult();
+                            SharedPreferences sp_bt = getSharedPreferences(getString(R.string.sp_blueTooth),0);
+                            String key_bt_conn = getString(R.string.sp_bt_key_isDeviceConnected);
+                            String key_bt_speed = getString(R.string.sp_bt_key_car_speed);
+                            SharedPreferencesUtils.saveBool(sp_bt,key_bt_conn,true);
+                            SharedPreferencesUtils.saveString(sp_bt,key_bt_speed,speed);
 
                             //          if(result.contains("B1904")||result.contains("B1902")){
 //                            Intent intent = new Intent(getApplicationContext(), Sms.class);
