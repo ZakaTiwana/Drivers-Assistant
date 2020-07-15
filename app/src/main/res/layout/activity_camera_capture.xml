@@ -6,23 +6,39 @@
     android:layout_height="match_parent"
     tools:context=".CameraCaptureActivity">
 
+    <Button
+        android:id="@+id/btn_mic"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:background="@drawable/ic_mic"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.94"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.85"
+        app:srcCompat="@drawable/ic_mic" />
+
     <FrameLayout
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:id="@+id/container"
-        android:background="@color/bg">
+        android:id="@+id/container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/bg"
+        tools:layout_editor_absoluteX="55dp"
+        tools:layout_editor_absoluteY="0dp">
+
 
         <TextureView
             android:id="@+id/textureView"
             android:layout_width="1280px"
             android:layout_height="720px"
-            android:layout_gravity="center"/>
+            android:layout_gravity="center" />
 
         <com.example.fyp.customview.OverlayView
             android:id="@+id/overlay"
             android:layout_width="1280px"
             android:layout_height="720px"
-            android:layout_gravity="center"/>
+            android:layout_gravity="center" />
 
     </FrameLayout>
 

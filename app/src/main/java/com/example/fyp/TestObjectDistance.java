@@ -142,7 +142,7 @@ public class TestObjectDistance extends AppCompatActivity {
 
                     location = object.getLocation();
                     canvas.drawRect(location, borderBoxPaint);
-                    distanceCalculator = new DistanceCalculator(location,object.getLabel());
+                    distanceCalculator = new DistanceCalculator();
                     float dist = distanceCalculator.getDistance();
                     canvas.drawText(String.format("%.1f m", dist),location.left,
                             location.top < 10 ? location.top+20:location.top-20,

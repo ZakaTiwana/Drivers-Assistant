@@ -23,7 +23,9 @@ import android.util.Log;
 import android.util.Range;
 import android.util.Size;
 import android.view.KeyEvent;
+import android.view.View;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.Toast;
 
@@ -118,7 +120,9 @@ public class ImageProcessor extends CameraCaptureActivity {
     private Paint borderBoxPaint = null;
     private Paint borderTextPaint = null;
 
-    private static ScheduledFuture<Object> directionsTask = null;
+    // background threads
+    private static ScheduledFuture<?> directionsTask = null;
+    private static ScheduledFuture<?> optionCheckTask = null;
 
     private static String carSpeed = null;
 
@@ -128,15 +132,20 @@ public class ImageProcessor extends CameraCaptureActivity {
     private static boolean isObjDetectionAllowed = false;
     private static boolean isVoiceWarningAllowed = false;
     private static boolean isDistanceCalculatorAllowed = false;
+    private static boolean isVoiceCommandsAllowed = false;
 
     // distance calculator
     private static DistanceCalculator distanceCalculator = null;
+
+    //voice commands
+    private Button voiceButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         draw = (OverlayView) findViewById(R.id.overlay);
+        voiceButton = findViewById(R.id.btn_mic);
 
         borderBoxPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         borderBoxPaint.setColor(Color.RED);
@@ -154,6 +163,11 @@ public class ImageProcessor extends CameraCaptureActivity {
                 getString(R.string.sp_homeSettings),0);
         String sp_hs_dark_mod = getString(R.string.sp_hs_key_darkMode);
         isDarkModeEnabled = SharedPreferencesUtils.loadBool(sp_hs,sp_hs_dark_mod);
+
+        // change icon of mic
+        if (isDarkModeEnabled){
+            voiceButton.setBackgroundResource(R.drawable.ic_mic_black);
+        }
 
         SharedPreferences sp_ld = getSharedPreferences(
                 getString(R.string.sp_laneDetection),0);
@@ -499,9 +513,20 @@ public class ImageProcessor extends CameraCaptureActivity {
 
     @Override
     public void onBackPressed() {
-        finish();
+        finishAffinity();
         Intent i = new Intent(getApplicationContext(),MainActivity.class);
         startActivity(i);
+//        mappedRecognitions = null;
+//        mappedSignRecognitions = null;
+//        lft_lane_pts = null;
+//        rht_lane_pts = null;
+//        carSpeed = null;
+//        timeTakeByLaneDetector = 0;
+//        timeTakeByObjDetector = 0;
+//        timeTakeBySignDetector = 0;
+//        if(threadExecutor != null){
+//            threadExecutor.shutdown();
+//        }
     }
 
     @Override
@@ -594,7 +619,7 @@ public class ImageProcessor extends CameraCaptureActivity {
                 if(navigationSteps != null && navigationSteps.size() > 0) hasNavSteps = true;
                 if (hasNavSteps) {
                     getDeviceLocation();
-                     directionsTask = (ScheduledFuture<Object>) threadExecutor.scheduleAtFixedRate(new DirectionsTask(),
+                     directionsTask =  threadExecutor.scheduleAtFixedRate(new DirectionsTask(),
                             1000,delayForCurrentLocation, TimeUnit.MILLISECONDS);
 //                    float width = maskWidth - maskWidth/3;
 //                    float height = maskHeight - maskHeight/10;
@@ -613,13 +638,20 @@ public class ImageProcessor extends CameraCaptureActivity {
                     }, 2, 5, TimeUnit.SECONDS);
                 }
 
+
                 final SharedPreferences sp_fs = getSharedPreferences(getString(R.string.sp_featureSettings),0);
                 final String fs_lane = getString(R.string.sp_fs_key_isLaneAllowed);
                 final String fs_obj_detect = getString(R.string.sp_fs_key_isObjDetectionAllowed);
                 final String fs_sign = getString(R.string.sp_fs_key_isSignAllowed);
                 final String fs_dist = getString(R.string.sp_fs_key_isDistCalAllowed);
                 final String fs_mute = getString(R.string.sp_fs_key_areWarningsMuted);
-                threadExecutor.scheduleWithFixedDelay(new Runnable() {
+
+                final SharedPreferences sp_hs = getSharedPreferences(getString(R.string.sp_homeSettings),0);
+                final String hs_voice = getString(R.string.sp_hs_key_isVoiceCommandAllowed);
+                isVoiceCommandsAllowed = SharedPreferencesUtils.loadBool(sp_hs,hs_voice);
+                if(!isVoiceCommandsAllowed) voiceButton.setVisibility(Button.INVISIBLE);
+                // repeatedly check if changed
+                 optionCheckTask =  threadExecutor.scheduleWithFixedDelay(new Runnable() {
                     @Override
                     public void run() {
                         isLaneDetectionAllowed = SharedPreferencesUtils.loadBool(sp_fs,fs_lane);
@@ -628,8 +660,7 @@ public class ImageProcessor extends CameraCaptureActivity {
                         isDistanceCalculatorAllowed = SharedPreferencesUtils.loadBool(sp_fs,fs_dist);
                         isVoiceWarningAllowed = ! SharedPreferencesUtils.loadBool(sp_fs,fs_mute);
                     }
-                }, 10, 5, TimeUnit.SECONDS);
-
+                }, 3, 5, TimeUnit.SECONDS);
             } catch (Exception e) {
                 Log.e(TAG,"run: Exception initializing classifier!", e);
             }
@@ -738,7 +769,11 @@ public class ImageProcessor extends CameraCaptureActivity {
     }
     @Override
     protected void onPause() {
+        readyForNextImage();
         super.onPause();
+        if(threadExecutor != null){
+            threadExecutor.shutdown();
+        }
         tts.shutdown();
     }
 
@@ -754,6 +789,38 @@ public class ImageProcessor extends CameraCaptureActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        if (threadExecutor.isShutdown()){
+            threadExecutor = Executors.newScheduledThreadPool(10);
+        }
+        if (directionsTask != null && directionsTask.isCancelled()) {
+            directionsTask = threadExecutor.scheduleAtFixedRate(new DirectionsTask(),
+                    1000,delayForCurrentLocation, TimeUnit.MILLISECONDS);;//
+        }
+        if (optionCheckTask != null && optionCheckTask.isCancelled()){
+            final SharedPreferences sp_fs = getSharedPreferences(getString(R.string.sp_featureSettings),0);
+            final String fs_lane = getString(R.string.sp_fs_key_isLaneAllowed);
+            final String fs_obj_detect = getString(R.string.sp_fs_key_isObjDetectionAllowed);
+            final String fs_sign = getString(R.string.sp_fs_key_isSignAllowed);
+            final String fs_dist = getString(R.string.sp_fs_key_isDistCalAllowed);
+            final String fs_mute = getString(R.string.sp_fs_key_areWarningsMuted);
+
+            final SharedPreferences sp_hs = getSharedPreferences(getString(R.string.sp_homeSettings),0);
+            final String hs_voice = getString(R.string.sp_hs_key_isVoiceCommandAllowed);
+            isVoiceCommandsAllowed = SharedPreferencesUtils.loadBool(sp_hs,hs_voice);
+
+            // repeatedly check if changed
+            optionCheckTask =
+                     threadExecutor.scheduleWithFixedDelay(new Runnable() {
+                @Override
+                public void run() {
+                    isLaneDetectionAllowed = SharedPreferencesUtils.loadBool(sp_fs,fs_lane);
+                    isSignDetectionAllowed = SharedPreferencesUtils.loadBool(sp_fs,fs_sign);
+                    isObjDetectionAllowed = SharedPreferencesUtils.loadBool(sp_fs,fs_obj_detect);
+                    isDistanceCalculatorAllowed = SharedPreferencesUtils.loadBool(sp_fs,fs_dist);
+                    isVoiceWarningAllowed = ! SharedPreferencesUtils.loadBool(sp_fs,fs_mute);
+                }
+            }, 3, 5, TimeUnit.SECONDS);
+        }
 //        Reinitialize the tts engines upon resuming from background such as after opening the browser
         initializeTextToSpeech();
     }
