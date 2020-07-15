@@ -1,8 +1,11 @@
 package com.example.fyp;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -17,6 +20,9 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
+import android.speech.RecognitionListener;
+import android.speech.RecognizerIntent;
+import android.speech.SpeechRecognizer;
 import android.speech.tts.TextToSpeech;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -30,6 +36,7 @@ import android.widget.FrameLayout;
 import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
+import androidx.core.app.ActivityCompat;
 
 import com.example.fyp.customutilities.ImageUtilities;
 import com.example.fyp.customutilities.SharedPreferencesUtils;
@@ -138,14 +145,37 @@ public class ImageProcessor extends CameraCaptureActivity {
     private static DistanceCalculator distanceCalculator = null;
 
     //voice commands
-    private Button voiceButton;
+    private  VoiceCommandRecognizer voiceCommandRecognizer = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         draw = (OverlayView) findViewById(R.id.overlay);
-        voiceButton = findViewById(R.id.btn_mic);
+        //voice commands
+        Button voiceButton = findViewById(R.id.btn_mic);
+        voiceButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.d(TAG, "onClick: isvoice = "+isVoiceCommandsAllowed + " voiceComRec = "+voiceCommandRecognizer);
+                if (isVoiceCommandsAllowed && voiceCommandRecognizer != null){
+                    Toast.makeText(getApplicationContext(),"Speak",Toast.LENGTH_LONG).show();
+                    boolean success = voiceCommandRecognizer.run();
+                    if (success){
+                        voiceCommandRecognizer.setOnResultCallback(new VoiceCommandRecognizer.OnResultCallback() {
+                            @Override
+                            public void performTask(String msg) {
+                                speak(msg);
+                            }
+                        });
+                    }
+                    else {
+                        speak("Voice command unsuccessful");
+                    }
+
+                }
+            }
+        });
 
         borderBoxPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         borderBoxPaint.setColor(Color.RED);
@@ -200,6 +230,15 @@ public class ImageProcessor extends CameraCaptureActivity {
         FrameLayout container = (FrameLayout) findViewById(R.id.container);
         initSnackbar = Snackbar.make(container, "Initializing...", Snackbar.LENGTH_INDEFINITE);
         Log.d(TAG, "onCreate: snackbar declared");
+
+        final String hs_voice = getString(R.string.sp_hs_key_isVoiceCommandAllowed);
+        isVoiceCommandsAllowed = SharedPreferencesUtils.loadBool(sp_hs,hs_voice);
+        if(!isVoiceCommandsAllowed) {
+            voiceButton.setVisibility(Button.INVISIBLE);
+        }else {
+            voiceCommandRecognizer = new VoiceCommandRecognizer(getApplicationContext());
+            voiceCommandRecognizer.initializeSpeechRecognizer();
+        }
     }
 
 
@@ -516,17 +555,6 @@ public class ImageProcessor extends CameraCaptureActivity {
         finishAffinity();
         Intent i = new Intent(getApplicationContext(),MainActivity.class);
         startActivity(i);
-//        mappedRecognitions = null;
-//        mappedSignRecognitions = null;
-//        lft_lane_pts = null;
-//        rht_lane_pts = null;
-//        carSpeed = null;
-//        timeTakeByLaneDetector = 0;
-//        timeTakeByObjDetector = 0;
-//        timeTakeBySignDetector = 0;
-//        if(threadExecutor != null){
-//            threadExecutor.shutdown();
-//        }
     }
 
     @Override
@@ -646,10 +674,7 @@ public class ImageProcessor extends CameraCaptureActivity {
                 final String fs_dist = getString(R.string.sp_fs_key_isDistCalAllowed);
                 final String fs_mute = getString(R.string.sp_fs_key_areWarningsMuted);
 
-                final SharedPreferences sp_hs = getSharedPreferences(getString(R.string.sp_homeSettings),0);
-                final String hs_voice = getString(R.string.sp_hs_key_isVoiceCommandAllowed);
-                isVoiceCommandsAllowed = SharedPreferencesUtils.loadBool(sp_hs,hs_voice);
-                if(!isVoiceCommandsAllowed) voiceButton.setVisibility(Button.INVISIBLE);
+
                 // repeatedly check if changed
                  optionCheckTask =  threadExecutor.scheduleWithFixedDelay(new Runnable() {
                     @Override
@@ -774,7 +799,8 @@ public class ImageProcessor extends CameraCaptureActivity {
         if(threadExecutor != null){
             threadExecutor.shutdown();
         }
-        tts.shutdown();
+
+        if(tts != null) tts.shutdown();
     }
 
     @Override
@@ -823,6 +849,7 @@ public class ImageProcessor extends CameraCaptureActivity {
         }
 //        Reinitialize the tts engines upon resuming from background such as after opening the browser
         initializeTextToSpeech();
+        if(voiceCommandRecognizer != null) voiceCommandRecognizer.initializeSpeechRecognizer();
     }
 
     private void getDeviceLocation() {
@@ -856,7 +883,7 @@ public class ImageProcessor extends CameraCaptureActivity {
             Log.e("TAG", "getDeviceLocation: SecurityException: " + e.getMessage());
         }
     }
-    public static class DirectionsTask implements Runnable {
+    public class DirectionsTask implements Runnable {
         @Override
         public void run() {
             if (navigationSteps == null) {
@@ -931,9 +958,13 @@ public class ImageProcessor extends CameraCaptureActivity {
         }
     }
 
-    private static void speak(String msg){
+    private  void speak(String msg){
         if(isVoiceWarningAllowed){
             tts.speak(msg, TextToSpeech.QUEUE_FLUSH, null, null);
+        }else {
+            Toast.makeText(getApplicationContext(),msg,Toast.LENGTH_LONG).show();
         }
     }
+
+
 }
