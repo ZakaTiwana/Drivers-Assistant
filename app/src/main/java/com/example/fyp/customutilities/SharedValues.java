@@ -15,7 +15,9 @@ public class SharedValues {
                     new Size(1280,720),
                     new Size(1440,1080),
                     new Size(1920,1080),
+                    new Size(2288,1080),
                     new Size(2048,1152),
+                    new Size(2560,1440),
                     new Size(3264,1836),
                     new Size(4128,2322)
             };
