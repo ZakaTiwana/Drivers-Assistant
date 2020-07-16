@@ -168,6 +168,14 @@ public abstract class CameraCaptureActivity extends AppCompatActivity implements
         mTextureView = (TextureView) findViewById(R.id.textureView);
         mOverlayView = findViewById(R.id.overlay);
 
+        mPreviewSize = getDesiredPreviewSize();
+        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
+                mPreviewSize.getWidth(),mPreviewSize.getHeight());
+        params.gravity = Gravity.CENTER;
+
+        mTextureView.setLayoutParams(params);
+        mOverlayView.setLayoutParams(params);
+
 
     }
 
@@ -243,12 +251,12 @@ public abstract class CameraCaptureActivity extends AppCompatActivity implements
 
                 onPreviewSizeSelected(mWidth,mHeight);
                 // set overlay and texture view width and height
-                FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
-                        mPreviewSize.getWidth(),mPreviewSize.getHeight());
-                params.gravity = Gravity.CENTER_HORIZONTAL;
-
-                mTextureView.setLayoutParams(params);
-                mOverlayView.setLayoutParams(params);
+//                FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
+//                        mPreviewSize.getWidth(),mPreviewSize.getHeight());
+//                params.gravity = Gravity.CENTER_HORIZONTAL;
+//
+//                mTextureView.setLayoutParams(params);
+//                mOverlayView.setLayoutParams(params);
 
 //                mImageReader = ImageReader.newInstance(mWidth,mHeight, ImageFormat.YUV_420_888, 2);
                 Size imageReaderSize = getDesiredImageReaderSize();

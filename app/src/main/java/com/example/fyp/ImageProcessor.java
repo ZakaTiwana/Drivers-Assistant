@@ -638,6 +638,7 @@ public class ImageProcessor extends CameraCaptureActivity {
         Log.d(TAG, String.format("getDesiredPreviewSize: (device resolution) chosen width = %d :height = %d",
                 DESIRED_PREVIEW_SIZES[selectedSize].getWidth(), DESIRED_PREVIEW_SIZES[selectedSize].getHeight()));
         return DESIRED_PREVIEW_SIZES[selectedSize];
+//        return DESIRED_PREVIEW_SIZES[0];
     }
 
     @Override

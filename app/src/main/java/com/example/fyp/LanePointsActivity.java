@@ -151,6 +151,16 @@ public class LanePointsActivity extends AppCompatActivity {
 
         mTextureView = (TextureView) findViewById(R.id.textureView_lane_points);
         lanePointsView = findViewById(R.id.lanePointsView);
+
+        mPreviewSize = getDesiredPreviewSize();
+        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
+                mPreviewSize.getWidth(),mPreviewSize.getHeight());
+        params.gravity = Gravity.CENTER;
+
+        mTextureView.setLayoutParams(params);
+        lanePointsView.setLayoutParams(params);
+
+
         Button btn_set_lane_p = findViewById(R.id.btn_set_lane_points);
 
         final String sp_ld = getString(R.string.sp_laneDetection);
@@ -260,12 +270,12 @@ public class LanePointsActivity extends AppCompatActivity {
 
                 onPreviewSizeSelected(mWidth, mHeight);
                 // set overlay and texture view width and height
-                FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
-                        mPreviewSize.getWidth(),mPreviewSize.getHeight());
-                params.gravity = Gravity.CENTER_HORIZONTAL;
-
-                mTextureView.setLayoutParams(params);
-                lanePointsView.setLayoutParams(params);
+//                FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
+//                        mPreviewSize.getWidth(),mPreviewSize.getHeight());
+//                params.gravity = Gravity.CENTER_HORIZONTAL;
+//
+//                mTextureView.setLayoutParams(params);
+//                lanePointsView.setLayoutParams(params);
 
                 mCameraId = cameraId;
 
@@ -431,6 +441,7 @@ public class LanePointsActivity extends AppCompatActivity {
         Log.d(TAG, String.format("getDesiredPreviewSize: (device resolution) chosen width = %d :height = %d",
                 DESIRED_PREVIEW_SIZES[selectedSize].getWidth(),DESIRED_PREVIEW_SIZES[selectedSize].getHeight()));
         return DESIRED_PREVIEW_SIZES[selectedSize];
+//        return DESIRED_PREVIEW_SIZES[0];
     }
 
 
