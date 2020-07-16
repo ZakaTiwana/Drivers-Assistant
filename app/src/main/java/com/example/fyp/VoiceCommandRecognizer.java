@@ -113,12 +113,12 @@ public class VoiceCommandRecognizer {
         String task_result_msg = DEFAULT_UNSUCCESSFUL_MSG;
         //       if ((result_message.contains("turn"))) {
         if (result_message.contains("turn on")) {
-            if (result_message.contains("lane guide")) {
+            if (result_message.contains("guide")) {
                 SharedPreferences settings = context.getSharedPreferences("feature_settings", 0);
                 SharedPreferences.Editor editor = settings.edit();
                 editor.putBoolean("lane_guide", true);
                 editor.apply();
-                task_result_msg = "lane guide turned on";
+                task_result_msg = "lane guide has been turned on";
             } else if (result_message.contains("distance calculator")) {
                 SharedPreferences settings = context.getSharedPreferences("feature_settings", 0);
                 SharedPreferences.Editor editor = settings.edit();
@@ -146,7 +146,7 @@ public class VoiceCommandRecognizer {
             }
 
         } else if (result_message.contains("turn off")) {
-            if (result_message.contains("lane guide")) {
+            if (result_message.contains("guide")) {
                 SharedPreferences settings = context.getSharedPreferences("feature_settings", 0);
                 SharedPreferences.Editor editor = settings.edit();
                 editor.putBoolean("lane_guide", false);
@@ -169,7 +169,7 @@ public class VoiceCommandRecognizer {
                 SharedPreferences.Editor editor = settings.edit();
                 editor.putBoolean("sign_detection", false);
                 editor.apply();
-                task_result_msg = "sign detection turned off";
+                task_result_msg = "sign detection has been turned off";
 
             } else if (result_message.contains("mute warnings")) {
                 SharedPreferences settings = context.getSharedPreferences("feature_settings", 0);
