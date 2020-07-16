@@ -162,6 +162,7 @@ public class LanePointsActivity extends AppCompatActivity {
 
 
         Button btn_set_lane_p = findViewById(R.id.btn_set_lane_points);
+        Button btn_reset_lane_p = findViewById(R.id.btn_reset_lane_points);
 
         final String sp_ld = getString(R.string.sp_laneDetection);
         final String sp_ld_key_op = getString(R.string.sp_ld_key_original_mask_pts);
@@ -194,6 +195,12 @@ public class LanePointsActivity extends AppCompatActivity {
                     startActivity(i);
                 }
                 finish();
+            }
+        });
+        btn_reset_lane_p.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                lanePointsView.resetMask();
             }
         });
 

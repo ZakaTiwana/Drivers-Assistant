@@ -97,6 +97,21 @@ public class LanePointsView extends View {
         pointCirclesPath = new Path();
         setCirclePointPath();
     }
+    public void resetMask(){
+
+        float centerX = getWidth()/2f;  // landscape mode.
+        float centerY = getHeight()/2f; //
+        viewSize = new Size(getWidth() , getHeight());
+
+        pts = new PointF[4];
+        pts[0] = new PointF( centerX - 100, centerY - 100 );
+        pts[1] = new PointF( centerX + 100, centerY - 100 );
+        pts[2] = new PointF( centerX + 100, centerY + 100 );
+        pts[3] = new PointF( centerX - 100, centerY + 100 );
+        setMaskPath();
+        setCirclePointPath();
+        invalidate();
+    }
     public void setSize(Size size){
         viewSize = size;
         float centerX = size.getWidth()/2f;  // landscape mode.
