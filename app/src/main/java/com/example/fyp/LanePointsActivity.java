@@ -426,22 +426,26 @@ public class LanePointsActivity extends AppCompatActivity {
         getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
         int height = displayMetrics.heightPixels;
         int width = displayMetrics.widthPixels;
+
         Log.d(TAG, String.format("getDesiredPreviewSize: (device resolution) device width = %d :height = %d", width,height));
-        int max = Math.max(height, width);
-        Log.d(TAG, String.format("getDesiredPreviewSize: (device resolution) max %d", max));
-        int selectedSize = 0;
-        Range<Integer> check = Range.create(max -20,max+20);
+        ArrayList<Size> temp = new ArrayList<>();
         for (Size choice :
                 DESIRED_PREVIEW_SIZES) {
-            Log.d(TAG, String.format("getDesiredPreviewSize: (device resolution) selectedSize %d", selectedSize));
-            if (check.contains(choice.getWidth())) break;
-            selectedSize++;
+            if (height == choice.getHeight()) {
+                temp.add(choice);
+            }
         }
-        selectedSize= selectedSize == 0 ? 0 : selectedSize -1;
-        Log.d(TAG, String.format("getDesiredPreviewSize: (device resolution) chosen width = %d :height = %d",
-                DESIRED_PREVIEW_SIZES[selectedSize].getWidth(),DESIRED_PREVIEW_SIZES[selectedSize].getHeight()));
-        return DESIRED_PREVIEW_SIZES[selectedSize];
-//        return DESIRED_PREVIEW_SIZES[0];
+
+        if (temp.size() == 0) return DESIRED_PREVIEW_SIZES[0];
+        int i = 0;
+        for (i = 0; i < temp.size(); i++) {
+            if (temp.get(i).getWidth() == width){
+                return temp.get(i);
+            }else if (temp.get(i).getWidth() > width){
+                return temp.get(Math.max(i - 1, 0));
+            }
+        }
+        return temp.get(i-1);
     }
 
 
