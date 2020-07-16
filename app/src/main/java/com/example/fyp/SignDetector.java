@@ -127,7 +127,7 @@ public class SignDetector{
         String line;
         while ((line = br.readLine()) != null) {
 //            Log.w(TAG,line);
-            s.labels.add(line.toLowerCase().trim());
+            s.labels.add(line);
         }
         br.close();
 

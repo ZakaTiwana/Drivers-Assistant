@@ -272,9 +272,7 @@ public class ImageProcessor extends CameraCaptureActivity {
                         if (object.getScore() >= 0.6f &&
                                 object.getLabel().matches("car|motorcycle|person|bicycle|truck|stop sign|laptop|bottle")) {
                             RectF location = object.getLocation();
-                            if (object.getLabel().contentEquals("stop sign")){
-                                speak(object.getLabel());
-                            }
+
                             canvas.drawRect(location, borderBoxPaint);
                             canvas.drawText(
                                     String.format("%s , %.1f %%", object.getLabel(), object.getScore() * 100),
@@ -311,9 +309,7 @@ public class ImageProcessor extends CameraCaptureActivity {
                 if (mappedSignRecognitions != null && isSignDetectionAllowed) {
                     int count = 0;
                     for (RecognizedObject object : mappedSignRecognitions) {
-                        if (object.getLabel().contentEquals("yield")) continue;
                         if (count >= 2) break;
-                        speak(object.getLabel());
                         RectF location = object.getLocation();
 
                         canvas.drawRect(location, borderBoxPaint);
@@ -359,11 +355,10 @@ public class ImageProcessor extends CameraCaptureActivity {
                 float y1 = mHeight;
                 float x2 = x1;
                 float y2 = mHeight - (maskHeight - maskHeight / 4f);
+                canvas.drawLine(x1, y1,
+                        x2, y2, carLinePaint);
 
                 float x2_n = x2 + laneDetectorAdvance.getPixOffcenter();
-                canvas.drawLine(x1, y1,
-                        x2_n, y2, carLinePaint);
-
                 float offset = Math.abs(laneDetectorAdvance.getOff_center());
                 if (offset > 0.6) {
                     canvas.drawCircle(x2, y2, 10f, offsetLinePaint);
@@ -852,21 +847,61 @@ public class ImageProcessor extends CameraCaptureActivity {
     protected void onPause() {
         readyForNextImage();
         super.onPause();
-        mappedSignRecognitions = null;
-        mappedRecognitions = null;
-        lft_lane_pts = null;
-        rht_lane_pts = null;
-        maneuverDirection = null;
-        draw.postInvalidate();
+        if (threadExecutor != null) {
+            threadExecutor.shutdown();
+        }
+
         if (tts != null) tts.shutdown();
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (threadExecutor != null) {
+            threadExecutor.shutdown();
+        }
+        super.onDestroy();
     }
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onResume() {
         super.onResume();
+        if (threadExecutor.isShutdown()) {
+            threadExecutor = Executors.newScheduledThreadPool(10);
+        }
+        if (directionsTask != null && directionsTask.isCancelled()) {
+            directionsTask = threadExecutor.scheduleAtFixedRate(new DirectionsTask(),
+                    1000, delayForCurrentLocation, TimeUnit.MILLISECONDS);
+            ;//
+        }
+        if (optionCheckTask != null && optionCheckTask.isCancelled()) {
+            final SharedPreferences sp_fs = getSharedPreferences(getString(R.string.sp_featureSettings), 0);
+            final String fs_lane = getString(R.string.sp_fs_key_isLaneAllowed);
+            final String fs_obj_detect = getString(R.string.sp_fs_key_isObjDetectionAllowed);
+            final String fs_sign = getString(R.string.sp_fs_key_isSignAllowed);
+            final String fs_dist = getString(R.string.sp_fs_key_isDistCalAllowed);
+            final String fs_mute = getString(R.string.sp_fs_key_areWarningsMuted);
+
+            final SharedPreferences sp_hs = getSharedPreferences(getString(R.string.sp_homeSettings), 0);
+            final String hs_voice = getString(R.string.sp_hs_key_isVoiceCommandAllowed);
+            isVoiceCommandsAllowed = SharedPreferencesUtils.loadBool(sp_hs, hs_voice);
+
+            // repeatedly check if changed
+            optionCheckTask =
+                    threadExecutor.scheduleWithFixedDelay(new Runnable() {
+                        @Override
+                        public void run() {
+                            isLaneDetectionAllowed = SharedPreferencesUtils.loadBool(sp_fs, fs_lane);
+                            isSignDetectionAllowed = SharedPreferencesUtils.loadBool(sp_fs, fs_sign);
+                            isObjDetectionAllowed = SharedPreferencesUtils.loadBool(sp_fs, fs_obj_detect);
+                            isDistanceCalculatorAllowed = SharedPreferencesUtils.loadBool(sp_fs, fs_dist);
+                            isVoiceWarningAllowed = !SharedPreferencesUtils.loadBool(sp_fs, fs_mute);
+                        }
+                    }, 3, 5, TimeUnit.SECONDS);
+        }
 //        Reinitialize the tts engines upon resuming from background such as after opening the browser
         initializeTextToSpeech();
+        if (voiceCommandRecognizer != null) voiceCommandRecognizer.initializeSpeechRecognizer();
     }
 
     private void getDeviceLocation() {
@@ -982,7 +1017,7 @@ public class ImageProcessor extends CameraCaptureActivity {
                 tts.speak(msg, TextToSpeech.QUEUE_ADD, null, null);
             }
         } else {
-            Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_SHORT).show();
+            Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_LONG).show();
         }
     }
 
