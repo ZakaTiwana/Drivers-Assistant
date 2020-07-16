@@ -205,8 +205,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 if(!manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
                     buildAlertMessageNoGps();
                 }else{
-                    Intent intent = new Intent(this, MapsActivity.class);
-                    startActivity(intent);
+                    getCameraPermission();
+                    if (CameraPermissionsGranted) {
+                        Intent intent = new Intent(this, MapsActivity.class);
+                        startActivity(intent);
+                    }
                 }
             }
         } else if (v.getId() == imgv1.getId()) {

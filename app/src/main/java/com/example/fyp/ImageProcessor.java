@@ -743,7 +743,7 @@ public class ImageProcessor extends CameraCaptureActivity {
 
     private static class DetectorTask implements Runnable {
         private Bitmap resizedBmp = null;
-        ;
+
 
         public DetectorTask(Bitmap resizedBmp) {
             this.resizedBmp = resizedBmp;
@@ -984,8 +984,8 @@ public class ImageProcessor extends CameraCaptureActivity {
                     // if passed current point
                     Log.d(TAG, "run: in straight check diff lat= " + (lat - fromPosition.latitude));
                     Log.d(TAG, "run: in straight check diff long= " + (lng - fromPosition.longitude));
-                    if (Math.abs(lat - fromPosition.latitude) > 0.001) {
-                        if (Math.abs(lng - fromPosition.longitude) > 0.001) {
+                    if (Math.abs(lat - fromPosition.latitude) > 0.005) {
+                        if (Math.abs(lng - fromPosition.longitude) > 0.005) {
                             maneuverDirection = "Straight";
                             draw.postInvalidate();
                         }
