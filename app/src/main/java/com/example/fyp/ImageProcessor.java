@@ -979,10 +979,10 @@ public class ImageProcessor extends CameraCaptureActivity {
                 // end navigation
                 // need to check langitude longitude
                 maneuverDirection = null;
-                speak("You have reached Your destination");
-                if (directionsTask !=null){
-                    directionsTask.cancel(false);
-                }
+                speak("Follow this last direction and you will reach your destination.");
+        //        if (directionsTask !=null){
+        //            directionsTask.cancel(false);
+        //        }
             }
         }
     }
