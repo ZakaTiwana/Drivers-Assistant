@@ -24,9 +24,14 @@ public class VoiceCommandRecognizer {
     private Context context;
     private boolean isMicrophonePermissionsGranted = false;
     private OnResultCallback onResultCallback;
+    private OnReadyCallback onReadyCallback;
 
     public interface OnResultCallback {
         public void performTask(String msg);
+    }
+
+    public interface OnReadyCallback {
+        public void ready();
     }
 
     public VoiceCommandRecognizer(Context context) {
@@ -59,7 +64,9 @@ public class VoiceCommandRecognizer {
             speechRecog = SpeechRecognizer.createSpeechRecognizer(context);
             speechRecog.setRecognitionListener(new RecognitionListener() {
                 @Override
-                public void onReadyForSpeech(Bundle params) { }
+                public void onReadyForSpeech(Bundle params) {
+                    onReadyCallback.ready();
+                }
 
                 @Override
                 public void onBeginningOfSpeech() { }
@@ -97,7 +104,7 @@ public class VoiceCommandRecognizer {
 
         String task_result_msg = DEFAULT_UNSUCCESSFUL_MSG;
         if ((result_message.contains("turn"))) {
-            if (result_message.matches("^on$")) {
+            if (result_message.contains("on")) {
                 if (result_message.contains("lane guide")) {
                     SharedPreferences settings = context.getSharedPreferences("feature_settings", 0);
                     SharedPreferences.Editor editor = settings.edit();
@@ -170,5 +177,9 @@ public class VoiceCommandRecognizer {
 
     public void setOnResultCallback(OnResultCallback onResultCallback) {
         this.onResultCallback = onResultCallback;
+    }
+
+    public void setOnReadyCallback(OnReadyCallback onReadyCallback) {
+        this.onReadyCallback = onReadyCallback;
     }
 }
