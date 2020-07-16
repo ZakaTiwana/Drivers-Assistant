@@ -50,6 +50,9 @@ public class LaneDetectorAdvance {
     private Mat M_inv;
     private Mat image;
 
+    private float carMidpoint = 0;
+    private float off_center;
+
     private static SharedPreferences config;
     private static String mtx_in_sp;
     private static String dist_in_sp;
@@ -219,6 +222,7 @@ public class LaneDetectorAdvance {
 
         lft_lane_pts = arrayToPointF(p_lft_float);
         rht_lane_pts = arrayToPointF(p_rht_float);
+        offCenter(lft_lane_pts,rht_lane_pts);
         polyFit(lft_lane_pts,2);
         polyFit(rht_lane_pts,2);
         ArrayList<PointF>[] res = new ArrayList[2];
@@ -285,21 +289,69 @@ public class LaneDetectorAdvance {
         return s.toString();
     }
 
-    private float offCenter(float left, float car , float right) {
+    public void setCarMidpoint(float carMidpoint) {
+        this.carMidpoint = carMidpoint;
+    }
 
-        float a = car - left;
-        float b = car - right;
+    public float getOff_center() {
+        return off_center;
+    }
+
+    private float pixOffcenter;
+    public float getPixOffcenter(){
+        return pixOffcenter;
+    }
+
+    private void offCenter(ArrayList<PointF> lft, ArrayList<PointF> rht){
+
+        if (lft.size() < 10 || rht.size() < 10) {
+             off_center = 0;
+             pixOffcenter = 0;
+            return;
+        }
+        float left = 0;
+        int total = 0;
+        for (int i = lft.size()/3; i < lft.size() - lft.size()/3 ; i++) {
+            left += lft.get(i).x;
+            total++;
+        }
+
+        left /= total > 0 ? total : 1;
+        Log.d(TAG, "offCenter: left = "+left);
+
+        float right = 0;
+        total = 0;
+        for (int i = rht.size()/3; i < rht.size() - rht.size()/3 ; i++) {
+            right += rht.get(i).x;
+            total++;
+        }
+        right /= total > 0 ? total : 1;
+        Log.d(TAG, "offCenter: right = "+right);
+        Log.d(TAG, "offCenter: carMidpoint = "+carMidpoint);
+
+
+
+        float a = carMidpoint - left;
+        float b = carMidpoint - right;
+        Log.d(TAG, "offCenter: a = "+a+", b = "+b);
         float width = right - left;
+        Log.d(TAG, "offCenter: widht = " + width);
         float LANE_WIDTH = 3.7f; // average lane width meter (m)
         float offset = 0;
 
         if ( Math.abs(a) >= Math.abs(b) ) {
-            offset = a / width * LANE_WIDTH - LANE_WIDTH /2f;
+            off_center = a / width * LANE_WIDTH - LANE_WIDTH /2f;
+            pixOffcenter = a - LANE_WIDTH/2f;
+            Log.d(TAG, "offCenter: a >= b");
         }
         else {
-            offset =  b / width * LANE_WIDTH  + LANE_WIDTH /2f;
+            off_center =  b / width * LANE_WIDTH  + LANE_WIDTH /2f;
+            pixOffcenter = b + LANE_WIDTH/2f;
+            Log.d(TAG, "offCenter: a < b");
         }
-        return offset;
+        Log.d(TAG, "offCenter: off_center = "+off_center);
+
+
     }
 
     private ArrayList<PointF>[] windowSearch(Mat wrapped, boolean visualize){

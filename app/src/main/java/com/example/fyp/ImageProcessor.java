@@ -1,11 +1,8 @@
 package com.example.fyp;
 
-import android.Manifest;
 import android.annotation.SuppressLint;
-import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -20,9 +17,6 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
-import android.speech.RecognitionListener;
-import android.speech.RecognizerIntent;
-import android.speech.SpeechRecognizer;
 import android.speech.tts.TextToSpeech;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -36,7 +30,6 @@ import android.widget.FrameLayout;
 import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
-import androidx.core.app.ActivityCompat;
 
 import com.example.fyp.customutilities.ImageUtilities;
 import com.example.fyp.customutilities.SharedPreferencesUtils;
@@ -109,6 +102,8 @@ public class ImageProcessor extends CameraCaptureActivity {
     private static boolean laneGuidLines = false;
     private Path laneGuidPath = null;
     private Paint laneGuidPathPaint = null;
+    private Paint carLinePaint = null;
+    private Paint offsetLinePaint = null;
     private float maskWidth;
     private float maskHeight;
     private Matrix maneuverMatrix;
@@ -185,6 +180,17 @@ public class ImageProcessor extends CameraCaptureActivity {
         borderTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         borderTextPaint.setColor(Color.BLUE);
         borderTextPaint.setTextSize(23);
+
+        carLinePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        carLinePaint.setColor(Color.GREEN);
+        carLinePaint.setStrokeWidth(5);
+        carLinePaint.setTextSize(23);
+
+        offsetLinePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        offsetLinePaint.setColor(Color.RED);
+        offsetLinePaint.setStrokeWidth(5);
+        offsetLinePaint.setTextSize(23);
+
 
         bitmapFilterPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         bitmapFilterPaint.setFilterBitmap(true);
@@ -329,12 +335,34 @@ public class ImageProcessor extends CameraCaptureActivity {
             @Override
             public void drawCallback(Canvas canvas) {
                 if (!isLaneDetectionAllowed) return;
+                Log.d(TAG, "drawCallback: lane detection off center = "+laneDetectorAdvance.getOff_center());
                 if(lft_lane_pts != null && lft_lane_pts.size() > 3){
                     canvas.drawPath(SharedValues.getPathFromPointF(lft_lane_pts,false),lanePointsPaint);
                 }
                 if(rht_lane_pts != null && rht_lane_pts.size() > 3){
                     canvas.drawPath(SharedValues.getPathFromPointF(rht_lane_pts,false),lanePointsPaint);
                 }
+                float x1 = (pts[3].x +pts[2].x)/2;
+                float y1 = mHeight;
+                float x2 = x1;
+                float y2 = mHeight - (maskHeight - maskHeight/4f) ;
+                canvas.drawLine(x1,y1,
+                        x2,y2,carLinePaint);
+
+                float x2_n = x2 + laneDetectorAdvance.getPixOffcenter();
+                float offset = Math.abs(laneDetectorAdvance.getOff_center());
+                if ( offset> 0.6) {
+                    canvas.drawCircle(x2,y2,10f,offsetLinePaint);
+                    canvas.drawLine(x2 ,y2,
+                            x2_n,y2,offsetLinePaint);
+                    canvas.drawText(String.format("offset : %.3f", offset),x2,y2+20,offsetLinePaint);
+                }else {
+                    canvas.drawCircle(x2,y2,10f,carLinePaint);
+                    canvas.drawLine(x2 ,y2,
+                            x2_n,y2,carLinePaint);
+                    canvas.drawText(String.format("offset : %.3f", offset),x2,y2+20,carLinePaint);
+                }
+
             }
         });
 
@@ -639,6 +667,7 @@ public class ImageProcessor extends CameraCaptureActivity {
                 laneDetectorAdvance = new LaneDetectorAdvance(mWidth,mHeight,
                         SharedValues.CROP_SIZE.getWidth(),SharedValues.CROP_SIZE.getHeight());
                 laneDetectorAdvance.setPtsResized(pts_resized);
+                laneDetectorAdvance.setCarMidpoint((pts[3].x +pts[2].x)/2);
 
                 //-- get step info --
                 Intent intent = getIntent();
