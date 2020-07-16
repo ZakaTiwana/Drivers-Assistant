@@ -57,7 +57,7 @@ public class ImageProcessor extends CameraCaptureActivity {
 
     // thread handling
 //    private static int coreCount = Runtime.getRuntime().availableProcessors();
-    private static ScheduledExecutorService threadExecutor = Executors.newScheduledThreadPool(10);
+    private static ScheduledExecutorService threadExecutor = null;
 
     private static final int delayForCurrentLocation = 1000; // ms
 
@@ -124,8 +124,8 @@ public class ImageProcessor extends CameraCaptureActivity {
     private Paint borderTextPaint = null;
 
     // background threads
-    private static ScheduledFuture<?> directionsTask = null;
-    private static ScheduledFuture<?> optionCheckTask = null;
+//    private static ScheduledFuture<?> directionsTask = null;
+//    private static ScheduledFuture<?> optionCheckTask = null;
 
     private static String carSpeed = null;
 
@@ -148,6 +148,7 @@ public class ImageProcessor extends CameraCaptureActivity {
         super.onCreate(savedInstanceState);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         draw = (OverlayView) findViewById(R.id.overlay);
+        threadExecutor = Executors.newScheduledThreadPool(10);
         //voice commands
         Button voiceButton = findViewById(R.id.btn_mic);
         voiceButton.setOnClickListener(new View.OnClickListener() {
@@ -251,6 +252,8 @@ public class ImageProcessor extends CameraCaptureActivity {
             voiceCommandRecognizer = new VoiceCommandRecognizer(getApplicationContext());
             voiceCommandRecognizer.initializeSpeechRecognizer();
         }
+        threadExecutor.scheduleWithFixedDelay(new DirectionsTask(),500,500,TimeUnit.MILLISECONDS);
+        getDeviceLocation();
     }
 
 
@@ -272,6 +275,9 @@ public class ImageProcessor extends CameraCaptureActivity {
                         if (object.getScore() >= 0.6f &&
                                 object.getLabel().matches("car|motorcycle|person|bicycle|truck|stop sign|laptop|bottle")) {
                             RectF location = object.getLocation();
+
+                            if (object.getLabel().contentEquals("stop sign"))
+                                speak(object.getLabel());
 
                             canvas.drawRect(location, borderBoxPaint);
                             canvas.drawText(
@@ -309,9 +315,10 @@ public class ImageProcessor extends CameraCaptureActivity {
                 if (mappedSignRecognitions != null && isSignDetectionAllowed) {
                     int count = 0;
                     for (RecognizedObject object : mappedSignRecognitions) {
+                        if (object.getLabel().contentEquals("yield")) continue;
                         if (count >= 2) break;
                         RectF location = object.getLocation();
-
+                        speak(object.getLabel());
                         canvas.drawRect(location, borderBoxPaint);
                         canvas.drawText(
                                 String.format("%s , %.1f %%", object.getLabel(), object.getScore() * 100),
@@ -689,9 +696,9 @@ public class ImageProcessor extends CameraCaptureActivity {
                 Log.d(TAG, "run: got navigationSteps = " + navigationSteps);
                 if (navigationSteps != null && navigationSteps.size() > 0) hasNavSteps = true;
                 if (hasNavSteps) {
-                    getDeviceLocation();
-                    directionsTask = threadExecutor.scheduleAtFixedRate(new DirectionsTask(),
-                            1000, delayForCurrentLocation, TimeUnit.MILLISECONDS);
+//                    getDeviceLocation();
+//                    directionsTask = threadExecutor.scheduleAtFixedRate(new DirectionsTask(),
+//                            1000, delayForCurrentLocation, TimeUnit.MILLISECONDS);
 //                    float width = maskWidth - maskWidth/3;
 //                    float height = maskHeight - maskHeight/10;
                     maneuverMatrix = LaneDetectorAdvance.getFlatPerspectiveMatrix(maskWidth, maskHeight);
@@ -701,7 +708,7 @@ public class ImageProcessor extends CameraCaptureActivity {
                 final String key_bt_speed = getString(R.string.sp_bt_key_car_speed);
                 // if obd connected then get speed at intervals
                 if (SharedPreferencesUtils.loadBool(sp_bt, key_bt_conn)) {
-                    threadExecutor.scheduleWithFixedDelay(new Runnable() {
+                    threadExecutor.scheduleAtFixedRate(new Runnable() {
                         @Override
                         public void run() {
                             carSpeed = sp_bt.getString(key_bt_speed, null);
@@ -719,7 +726,7 @@ public class ImageProcessor extends CameraCaptureActivity {
 
 
                 // repeatedly check if changed
-                optionCheckTask = threadExecutor.scheduleWithFixedDelay(new Runnable() {
+                threadExecutor.scheduleAtFixedRate(new Runnable() {
                     @Override
                     public void run() {
                         isLaneDetectionAllowed = SharedPreferencesUtils.loadBool(sp_fs, fs_lane);
@@ -845,63 +852,18 @@ public class ImageProcessor extends CameraCaptureActivity {
 
     @Override
     protected void onPause() {
-        readyForNextImage();
         super.onPause();
-        if (threadExecutor != null) {
-            threadExecutor.shutdown();
-        }
-
+        readyForNextImage();
+//        super.onPause();
         if (tts != null) tts.shutdown();
     }
 
-    @Override
-    protected void onDestroy() {
-        if (threadExecutor != null) {
-            threadExecutor.shutdown();
-        }
-        super.onDestroy();
-    }
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onResume() {
         super.onResume();
-        if (threadExecutor.isShutdown()) {
-            threadExecutor = Executors.newScheduledThreadPool(10);
-        }
-        if (directionsTask != null && directionsTask.isCancelled()) {
-            directionsTask = threadExecutor.scheduleAtFixedRate(new DirectionsTask(),
-                    1000, delayForCurrentLocation, TimeUnit.MILLISECONDS);
-            ;//
-        }
-        if (optionCheckTask != null && optionCheckTask.isCancelled()) {
-            final SharedPreferences sp_fs = getSharedPreferences(getString(R.string.sp_featureSettings), 0);
-            final String fs_lane = getString(R.string.sp_fs_key_isLaneAllowed);
-            final String fs_obj_detect = getString(R.string.sp_fs_key_isObjDetectionAllowed);
-            final String fs_sign = getString(R.string.sp_fs_key_isSignAllowed);
-            final String fs_dist = getString(R.string.sp_fs_key_isDistCalAllowed);
-            final String fs_mute = getString(R.string.sp_fs_key_areWarningsMuted);
-
-            final SharedPreferences sp_hs = getSharedPreferences(getString(R.string.sp_homeSettings), 0);
-            final String hs_voice = getString(R.string.sp_hs_key_isVoiceCommandAllowed);
-            isVoiceCommandsAllowed = SharedPreferencesUtils.loadBool(sp_hs, hs_voice);
-
-            // repeatedly check if changed
-            optionCheckTask =
-                    threadExecutor.scheduleWithFixedDelay(new Runnable() {
-                        @Override
-                        public void run() {
-                            isLaneDetectionAllowed = SharedPreferencesUtils.loadBool(sp_fs, fs_lane);
-                            isSignDetectionAllowed = SharedPreferencesUtils.loadBool(sp_fs, fs_sign);
-                            isObjDetectionAllowed = SharedPreferencesUtils.loadBool(sp_fs, fs_obj_detect);
-                            isDistanceCalculatorAllowed = SharedPreferencesUtils.loadBool(sp_fs, fs_dist);
-                            isVoiceWarningAllowed = !SharedPreferencesUtils.loadBool(sp_fs, fs_mute);
-                        }
-                    }, 3, 5, TimeUnit.SECONDS);
-        }
-//        Reinitialize the tts engines upon resuming from background such as after opening the browser
         initializeTextToSpeech();
-        if (voiceCommandRecognizer != null) voiceCommandRecognizer.initializeSpeechRecognizer();
     }
 
     private void getDeviceLocation() {
@@ -939,11 +901,12 @@ public class ImageProcessor extends CameraCaptureActivity {
     public class DirectionsTask implements Runnable {
         @Override
         public void run() {
-            if (navigationSteps == null) {
-                Log.d(TAG, "doInBackground: navigationSteps is null");
+            if (navigationSteps == null || !hasNavSteps) {
+                Log.d(TAG, "DirectionsTask: navigationSteps is null");
+                maneuverDirection = null;
                 return;
             }
-            Log.d(TAG, "run: in directionsTask");
+            Log.d(TAG, "DirectionsTask: in directionsTask");
             String[] step;
             String distance;
             String instructions;
@@ -951,6 +914,7 @@ public class ImageProcessor extends CameraCaptureActivity {
             double lng;
             String maneuver;
 
+            boolean isStepMoved = false;
             for (int i = navStepPassed; i < navigationSteps.size(); i++) {
                 step = navigationSteps.get(i).split("::");
                 distance = step[0];
@@ -960,7 +924,7 @@ public class ImageProcessor extends CameraCaptureActivity {
                 lat = Double.parseDouble(step[2]);
                 lng = Double.parseDouble(step[3]);
                 maneuver = step[4];
-                Log.d(TAG, "doInBackground: current longLat = " + fromPosition.latitude + ", " + fromPosition.latitude);
+                Log.d(TAG, "DirectionsTask: current longLat = " + fromPosition.latitude + ", " + fromPosition.latitude);
                 if (Math.abs(lat - fromPosition.latitude) < 0.001) {
                     if (Math.abs(lng - fromPosition.longitude) < 0.001) {
                         navStepPassed++;
@@ -971,32 +935,37 @@ public class ImageProcessor extends CameraCaptureActivity {
                             maneuverDirection = "straight";
                         }
                         draw.postInvalidate();
+                        isStepMoved = true;
                         break;
                     }
                 }
             }
+
             // return to straight
-            threadExecutor.schedule(new Runnable() {
-                @Override
-                public void run() {
-                    if (navStepPassed == 0 || navStepPassed >= navigationSteps.size() ||
-                            maneuverDirection == null) return;
-                    String[] step = navigationSteps
-                            .get(navStepPassed - 1).split("::"); // one previous
-                    String lat1 = step[2];
-                    double lat = Double.parseDouble(step[2]);
-                    double lng = Double.parseDouble(step[3]);
-                    // if passed current point
-                    Log.d(TAG, "run: in straight check diff lat= " + (lat - fromPosition.latitude));
-                    Log.d(TAG, "run: in straight check diff long= " + (lng - fromPosition.longitude));
-                    if (Math.abs(lat - fromPosition.latitude) > 0.005) {
-                        if (Math.abs(lng - fromPosition.longitude) > 0.005) {
-                            maneuverDirection = "Straight";
-                            draw.postInvalidate();
-                        }
-                    }
-                }
-            }, 5, TimeUnit.SECONDS);
+            if (isStepMoved){
+//                threadExecutor.schedule(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        if (navStepPassed == 0 || navStepPassed >= navigationSteps.size() ||
+//                                maneuverDirection == null) return;
+//                        String[] step = navigationSteps
+//                                .get(navStepPassed - 1).split("::"); // one previous
+//                        String lat1 = step[2];
+//                        double lat = Double.parseDouble(step[2]);
+//                        double lng = Double.parseDouble(step[3]);
+//                        // if passed current point
+//                        Log.d(TAG, "run: in straight check diff lat= " + (lat - fromPosition.latitude));
+//                        Log.d(TAG, "run: in straight check diff long= " + (lng - fromPosition.longitude));
+//                        if (Math.abs(lat - fromPosition.latitude) > 0.005) {
+//                            if (Math.abs(lng - fromPosition.longitude) > 0.005) {
+//                                maneuverDirection = "Straight";
+//                                draw.postInvalidate();
+//                            }
+//                        }
+//                    }
+//                }, 5, TimeUnit.SECONDS);
+
+            }
 
 
             if (navStepPassed >= navigationSteps.size()) {
@@ -1017,7 +986,7 @@ public class ImageProcessor extends CameraCaptureActivity {
                 tts.speak(msg, TextToSpeech.QUEUE_ADD, null, null);
             }
         } else {
-            Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_LONG).show();
+            Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_SHORT).show();
         }
     }
 

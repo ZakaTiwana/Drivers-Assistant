@@ -156,7 +156,7 @@ public class Detector {
         String line;
         while ((line = br.readLine()) != null) {
 //            Log.w(TAG,line);
-            d.labels.add(line);
+            d.labels.add(line.toLowerCase().trim());
         }
         br.close();
 

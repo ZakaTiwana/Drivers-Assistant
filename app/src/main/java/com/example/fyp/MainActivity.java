@@ -16,17 +16,24 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Matrix;
+import android.graphics.PointF;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
 import android.util.Log;
+import android.util.Size;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.fyp.customutilities.ImageUtilities;
 import com.example.fyp.customutilities.SharedPreferencesUtils;
 import com.example.fyp.customutilities.SharedValues;
+
+import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
@@ -126,6 +133,46 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         SharedPreferences sp_bt = getSharedPreferences(getString(R.string.sp_blueTooth),0);
         String key_bt_conn = getString(R.string.sp_bt_key_isDeviceConnected);
         SharedPreferencesUtils.saveBool(sp_bt,key_bt_conn,false);
+
+        SharedPreferences sp_ld = getSharedPreferences(getString(R.string.sp_laneDetection),0);
+        String ld_key_t_mask = getString(R.string.sp_ld_key_transformed_mask_pts);
+        String ld_key_mask = getString(R.string.sp_ld_key_user_pts);
+
+        SharedPreferences sp_hs = getSharedPreferences(getString(R.string.sp_homeSettings),0);
+        String hs_preview_size = getString(R.string.sp_hs_key_previewSize);
+        try {
+            SharedPreferencesUtils.loadObject(sp_ld,ld_key_mask, PointF[].class);
+            SharedPreferencesUtils.loadObject(sp_ld,ld_key_t_mask, PointF[].class);
+            SharedPreferencesUtils.loadObject(sp_hs,hs_preview_size,Size.class);
+        }catch (IllegalArgumentException ex){
+            PointF[] p_original = new PointF[4];
+            p_original[0] = new PointF(0,0);
+            p_original[1] = new PointF(100,0);
+            p_original[2] = new PointF(100,100);
+            p_original[3] = new PointF(0,100);
+
+            SharedPreferencesUtils.saveObject(sp_ld,ld_key_mask,p_original);
+            Size auto = getAutomaticPreviewSize();
+            Matrix matrix = ImageUtilities.getTransformationMatrix(auto.getWidth(),auto.getHeight(),
+                    SharedValues.CROP_SIZE.getWidth(),SharedValues.CROP_SIZE.getHeight(),
+                    0,false);
+            PointF[] transformedPoints = new PointF[4];
+
+            float[] pts_temp = new float[8];
+
+            int j = 0;
+            for (int i = 0; i < p_original.length; i++) {
+                pts_temp[j] = p_original[i].x;
+                pts_temp[j+1]= p_original[i].y;
+                j+=2;
+            }
+            matrix.mapPoints(pts_temp);
+            for (int i = 0; i < pts_temp.length; i+=2) {
+                transformedPoints[i/2] = new PointF(pts_temp[i],pts_temp[i+1]);
+            }
+            SharedPreferencesUtils.saveObject(sp_ld,ld_key_t_mask,transformedPoints);
+            SharedPreferencesUtils.saveObject(sp_hs,hs_preview_size,auto);
+        }
     }
 
     @Override
@@ -304,6 +351,34 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
             }
         }
+    }
+
+    public Size getAutomaticPreviewSize() {
+        Size[] DESIRED_PREVIEW_SIZES = SharedValues.DESIRED_PREVIEW_SIZES;
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        int height = displayMetrics.heightPixels;
+        int width = displayMetrics.widthPixels;
+
+        Log.d(TAG, String.format("getDesiredPreviewSize: (device resolution) device width = %d :height = %d", width,height));
+        ArrayList<Size> temp = new ArrayList<>();
+        for (Size choice :
+                DESIRED_PREVIEW_SIZES) {
+            if (height == choice.getHeight()) {
+                temp.add(choice);
+            }
+        }
+
+        if (temp.size() == 0) return DESIRED_PREVIEW_SIZES[0];
+        int i = 0;
+        for (i = 0; i < temp.size(); i++) {
+            if (temp.get(i).getWidth() == width){
+                return temp.get(i);
+            }else if (temp.get(i).getWidth() > width){
+                return temp.get(Math.max(i - 1, 0));
+            }
+        }
+        return temp.get(i-1);
     }
 }
 

@@ -17,6 +17,7 @@
     <string name="sp_homeSettings">home_settings</string>
     <string name="sp_hs_key_darkMode">ui_settings</string>
     <string name="sp_hs_key_isVoiceCommandAllowed">voice_commands_settings</string>
+    <string name="sp_hs_key_previewSize">preview_size</string>
 
     <string name="sp_blueTooth">bluetooth_settings</string>
     <string name="sp_bt_key_isDeviceConnected">isObdConnected</string>
