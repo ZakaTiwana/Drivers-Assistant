@@ -760,11 +760,11 @@ public class NavigationModeActivity extends CameraCaptureActivity {
                         }
                         else {
                             // after 5 sec  straight arrow
-                            maneuverDirection = "straight";
+                            maneuverDirection = "Straight";
                             draw.postInvalidate();
                         }
                     }
-                }, 10, TimeUnit.SECONDS);
+                }, 5, TimeUnit.SECONDS);
 
             }
 
