@@ -43,6 +43,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     ImageView imgv1;
 
     private static final int MY_PERMISSIONS_REQUEST_CAMERA_ACCESS = 5;
+    private static final int MY_PERMISSIONS_REQUEST_CAMERA_ACCESS2 = 7;
 
     private static final String FINE_LOCATION = Manifest.permission.ACCESS_FINE_LOCATION;
     private static final String COURSE_LOCATION = Manifest.permission.ACCESS_COARSE_LOCATION;
@@ -256,7 +257,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 if(!manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
                     buildAlertMessageNoGps();
                 }else{
-                    getCameraPermission();
+                    getCameraPermission2();
                     if (CameraPermissionsGranted) {
                         Intent intent = new Intent(this, MapsActivity.class);
                         startActivity(intent);
@@ -290,6 +291,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             ActivityCompat.requestPermissions(this,
                     new String[]{Manifest.permission.CAMERA},
                     MY_PERMISSIONS_REQUEST_CAMERA_ACCESS);
+        }
+    }
+
+    private void getCameraPermission2() {
+        Log.d("TAG", "getCameraPermission: getting camera permissions");
+        if (ActivityCompat.checkSelfPermission(getApplicationContext(),
+                Manifest.permission.CAMERA) ==
+                PackageManager.PERMISSION_GRANTED) {
+            CameraPermissionsGranted = true;
+
+        } else {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.CAMERA},
+                    MY_PERMISSIONS_REQUEST_CAMERA_ACCESS2);
         }
     }
 
@@ -333,8 +348,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     }
                     Log.d(TAG, "onRequestPermissionsResult: permission granted");
                     mLocationPermissionsGranted = true;
-                    Intent intent = new Intent(this, MapsActivity.class);
-                    startActivity(intent);
+                    getCameraPermission2();
+                    if (CameraPermissionsGranted) {
+                        Intent intent = new Intent(this, MapsActivity.class);
+                        startActivity(intent);
+                    }
+//                    Intent intent = new Intent(this, MapsActivity.class);
+//                    startActivity(intent);
                     return;
                 }
             }
@@ -352,8 +372,26 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     CameraPermissionsGranted = true;
                     Intent intent = new Intent(getApplicationContext(), AssistantModeActivity.class);
                     startActivity(intent);
+                    return;
                 }
             }
+            case MY_PERMISSIONS_REQUEST_CAMERA_ACCESS2: {
+                if (grantResults.length > 0) {
+                    for (int i = 0; i < grantResults.length; i++) {
+                        if (grantResults[i] != PackageManager.PERMISSION_GRANTED) {
+                            CameraPermissionsGranted = false;
+                            Log.d(TAG, "onRequestPermissionsResult: permission failed");
+                            Toast.makeText(getApplicationContext(), "Please Enable Camera permission first.", Toast.LENGTH_LONG).show();
+                            return;
+                        }
+                    }
+                    Log.d(TAG, "onRequestPermissionsResult: permission granted");
+                    CameraPermissionsGranted = true;
+                    Intent intent = new Intent(getApplicationContext(), MapsActivity.class);
+                    startActivity(intent);
+                }
+            }
+
         }
     }
 

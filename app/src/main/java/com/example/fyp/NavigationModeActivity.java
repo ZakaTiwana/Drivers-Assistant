@@ -92,6 +92,8 @@ public class NavigationModeActivity extends CameraCaptureActivity {
     private static volatile boolean isComputingSignDetection = false;
     private static volatile boolean isComputingDetection = false;
     private static volatile boolean isComputingLaneDetection = false;
+    private static volatile boolean isDirectionTaskCompleted = false;
+
 
     private static float[][] lanePoints = null;
     private static ArrayList<PointF> lft_lane_pts = null;
@@ -675,9 +677,9 @@ public class NavigationModeActivity extends CameraCaptureActivity {
     public class DirectionsTask implements Runnable {
         @Override
         public void run() {
-            if (navigationSteps == null || !hasNavSteps || fromPosition == null) {
-                Log.d(TAG, "DirectionsTask: navigationSteps= "+navigationSteps
-                        +", hasSteps = "+hasNavSteps+", fromPosition = "+ fromPosition);
+            if (navigationSteps == null || !hasNavSteps || fromPosition == null || tts == null) {
+                Log.d(TAG, ", hasSteps = "+hasNavSteps+", fromPosition = "+ fromPosition + ", tts = "+tts
+                        +"DirectionsTask: navigationSteps= "+navigationSteps);
                 maneuverDirection = null;
                 return;
             }
@@ -692,7 +694,6 @@ public class NavigationModeActivity extends CameraCaptureActivity {
             boolean isStepMoved = false;
             Log.d(TAG, "run: navstepPassed = "+ navStepPassed);
             for (int i = navStepPassed; i < navigationSteps.size(); i++) {
-//                while (true){
                 step = navigationSteps.get(i).split("::");
                 distance = step[0];
                 instructions = step[1];
@@ -705,7 +706,7 @@ public class NavigationModeActivity extends CameraCaptureActivity {
                 if (Math.abs(lat - fromPosition.latitude) < 0.0003) {
                     if (Math.abs(lng - fromPosition.longitude) < 0.0003) {
                         navStepPassed++;
-                        speak(instructions);
+                        mustSpeak(instructions);
                         if (maneuver != null) {
                             maneuverDirection = maneuver;
                         } else {
@@ -716,7 +717,6 @@ public class NavigationModeActivity extends CameraCaptureActivity {
                         break;
                     }
                 }
-//                }
             }
 
             // return to straight
@@ -724,20 +724,36 @@ public class NavigationModeActivity extends CameraCaptureActivity {
                 threadExecutor.schedule(new Runnable() {
                     @Override
                     public void run() {
-                        if (navStepPassed == 0 || navStepPassed >= navigationSteps.size() ||
+                        if (navStepPassed == 0 ||
                                 maneuverDirection == null) return;
-                        String[] step = navigationSteps
-                                .get(navStepPassed - 1).split("::"); // one previous
-                        String lat1 = step[2];
-                        double lat = Double.parseDouble(step[2]);
-                        double lng = Double.parseDouble(step[3]);
-                        // if passed current point
-                        Log.d(TAG, "run: in straight check diff lat= " + (lat - fromPosition.latitude));
-                        Log.d(TAG, "run: in straight check diff long= " + (lng - fromPosition.longitude));
-                        if (Math.abs(lat - fromPosition.latitude) > 0.0003) {
-                            if (Math.abs(lng - fromPosition.longitude) > 0.0003) {
-                                maneuverDirection = "Straight";
-                                draw.postInvalidate();
+                        if (navStepPassed == navigationSteps.size()) {
+                            maneuverDirection = "straight";
+                            navStepPassed++;
+                            mustSpeak("Follow this last direction and you will reach your destination.");
+                            threadExecutor.schedule(new Runnable() {
+                                @Override
+                                public void run() {
+                                    if (directionTask != null){
+                                        isDirectionTaskCompleted = true;
+                                        directionTask.cancel(false);
+                                    }
+                                }
+                            },10,TimeUnit.SECONDS);
+                        }
+                        else {
+                            String[] step = navigationSteps
+                                    .get(navStepPassed - 1).split("::"); // one previous
+                            String lat1 = step[2];
+                            double lat = Double.parseDouble(step[2]);
+                            double lng = Double.parseDouble(step[3]);
+                            // if passed current point
+                            Log.d(TAG, "run: in straight check diff lat= " + (lat - fromPosition.latitude));
+                            Log.d(TAG, "run: in straight check diff long= " + (lng - fromPosition.longitude));
+                            if (Math.abs(lat - fromPosition.latitude) > 0.0003) {
+                                if (Math.abs(lng - fromPosition.longitude) > 0.0003) {
+                                    maneuverDirection = "Straight";
+                                    draw.postInvalidate();
+                                }
                             }
                         }
                     }
@@ -746,16 +762,7 @@ public class NavigationModeActivity extends CameraCaptureActivity {
             }
 
 
-            if (navStepPassed == navigationSteps.size()) {
-                // end navigation
-                // need to check langitude longitude
-                maneuverDirection = null;
-                navStepPassed++;
-                speak("Follow this last direction and you will reach your destination.");
-                //        if (directionsTask !=null){
-                //            directionsTask.cancel(false);
-                //        }
-            }
+
         }
     }
 
@@ -764,6 +771,12 @@ public class NavigationModeActivity extends CameraCaptureActivity {
             if (!tts.isSpeaking()) {
                 tts.speak(msg, TextToSpeech.QUEUE_ADD, null, null);
             }
+        }
+    }
+
+    private void mustSpeak(String msg) {
+        if (isVoiceWarningAllowed && tts !=null) {
+            tts.speak(msg, TextToSpeech.QUEUE_FLUSH, null, null);
         }
     }
 
@@ -797,6 +810,7 @@ public class NavigationModeActivity extends CameraCaptureActivity {
         rht_lane_pts = null;
         fromPosition = null;
         hasNavSteps = false;
+        isDirectionTaskCompleted = false;
         draw.postInvalidate();
         finishAffinity();
         Intent i = new Intent(getApplicationContext(), MainActivity.class);
@@ -820,9 +834,9 @@ public class NavigationModeActivity extends CameraCaptureActivity {
         navigationSteps = intent.getStringArrayListExtra(SharedValues.intent_step_info);
         Log.d(TAG, "run: got navigationSteps = " + navigationSteps);
         if (navigationSteps != null && navigationSteps.size() > 0) hasNavSteps = true;
-        if (hasNavSteps) {
+        if (hasNavSteps && !isDirectionTaskCompleted) {
             getDeviceLocation();
-            directionTask = threadExecutor.scheduleWithFixedDelay(new DirectionsTask(),500,500,TimeUnit.MILLISECONDS) ;
+            directionTask = threadExecutor.scheduleWithFixedDelay(new DirectionsTask(),2000,500,TimeUnit.MILLISECONDS) ;
             maneuverMatrix = LaneDetectorAdvance.getFlatPerspectiveMatrix(maskWidth, maskHeight);
         }
 
