@@ -3,7 +3,10 @@ package com.example.fyp.customutilities;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Matrix;
+import android.graphics.Paint;
+import android.graphics.RectF;
 import android.os.Environment;
 import android.util.Log;
 
@@ -375,5 +378,25 @@ public class ImageUtilities {
         } catch (IOException e) {
             Log.e(TAG, "Saving received message failed with", e);
         }
+    }
+    public static Bitmap getCropBitmapByCPU(Bitmap source, RectF cropRectF, boolean allowToRecycleBitmap) {
+        Bitmap resultBitmap = Bitmap.createBitmap((int) cropRectF.width(),
+                (int) cropRectF.height(), Bitmap.Config.ARGB_8888);
+        Canvas cavas = new Canvas(resultBitmap);
+
+        // draw background
+        Paint paint = new Paint(Paint.FILTER_BITMAP_FLAG);
+        paint.setColor(Color.WHITE);
+        cavas.drawRect(
+                new RectF(0, 0, cropRectF.width(), cropRectF.height()),
+                paint);
+
+        Matrix matrix = new Matrix();
+        matrix.postTranslate(-cropRectF.left, -cropRectF.top);
+
+        cavas.drawBitmap(source, matrix, paint);
+
+        if (!source.isRecycled() && allowToRecycleBitmap) source.recycle();
+        return resultBitmap;
     }
 }

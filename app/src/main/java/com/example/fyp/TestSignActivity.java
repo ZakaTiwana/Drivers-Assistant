@@ -46,6 +46,7 @@ public class TestSignActivity extends AppCompatActivity {
     private Bitmap image;
     private Bitmap copyBitmap;
     private Paint borderBoxPaint;
+    private Paint textPaint;
 
     private TextView result;
     private ImageView imageView;
@@ -66,6 +67,10 @@ public class TestSignActivity extends AppCompatActivity {
         borderBoxPaint.setStrokeWidth(8);
         borderBoxPaint.setStyle(Paint.Style.STROKE);
 
+        textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        textPaint.setColor(Color.GREEN);
+        textPaint.setTextSize(23);
+
         btn_pick_from_gallery.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -80,8 +85,8 @@ public class TestSignActivity extends AppCompatActivity {
             }
         });
 
-        image = BitmapFactory.decodeResource(getApplicationContext().getResources(),
-                R.drawable.sign_test_2);
+        image = ImageUtilities.getResizedBitmap(BitmapFactory.decodeResource(getApplicationContext().getResources(),
+                R.drawable.sign_test_2),300,300,true);
         copyBitmap = image.copy(Bitmap.Config.ARGB_8888,true);
 
         FrameLayout container = (FrameLayout) findViewById(R.id.container2);
@@ -108,6 +113,7 @@ public class TestSignActivity extends AppCompatActivity {
         if (resultCode == Activity.RESULT_OK) {
             switch (requestCode) {
                 case GALLERY_REQUEST_CODE:
+                    Bitmap bmp = null;
                     Uri selectedImage = data.getData();
                     //data.getData returns the content URI for the selected Image
                     String[] filePathColumn = {MediaStore.Images.Media.DATA};
@@ -119,7 +125,7 @@ public class TestSignActivity extends AppCompatActivity {
                             // now that you have the media URI, you can decode it to a bitmap
                             try (ParcelFileDescriptor pfd = this.getContentResolver().openFileDescriptor(selectedImage, "r")) {
                                 if (pfd != null) {
-                                    image = BitmapFactory.decodeFileDescriptor(pfd.getFileDescriptor());
+                                    bmp = BitmapFactory.decodeFileDescriptor(pfd.getFileDescriptor());
                                 }
                             } catch (IOException ex) {
 
@@ -129,11 +135,13 @@ public class TestSignActivity extends AppCompatActivity {
                             int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
                             //Gets the String value in the column
                             String filepath = cursor.getString(columnIndex);
-                            image = BitmapFactory.decodeFile(filepath);
+                            bmp = BitmapFactory.decodeFile(filepath);
                         }
                     }
                     cursor.close();
                     // Set the Image in ImageView after decoding the String
+                    if (bmp == null) break;
+                    image = ImageUtilities.getResizedBitmap(bmp,300,300,true);
                     imageView.setImageBitmap(image);
                     copyBitmap = image.copy(Bitmap.Config.ARGB_8888,true);
                     break;
@@ -160,7 +168,7 @@ public class TestSignActivity extends AppCompatActivity {
 
             try {
                 float start = SystemClock.currentThreadTimeMillis();
-//                recoganizor = SignDetector.create(getAssets());
+                recoganizor = SignDetector.create(getAssets(),300,300);
                 float end = SystemClock.currentThreadTimeMillis();
                 Log.d(TAG, "run: detector created in "+(end-start)+"ms");
             } catch (Exception e) {
@@ -181,21 +189,27 @@ public class TestSignActivity extends AppCompatActivity {
         }
     }
     private void processImage(){
-//        float start = SystemClock.currentThreadTimeMillis();
-////        List<RecognizedObject> recs = recoganizor.run(copyBitmap.copy(Bitmap.Config.ARGB_8888,true),true);
-//        float end = SystemClock.currentThreadTimeMillis();
-//        Log.d(TAG, "processImage: time take to detect sign : "+ (end-start) +" ms");
-//        String to_show="";
-//        Canvas canvas1 = new Canvas(copyBitmap);
-//        for (RecognizedObject rc :
-//                recs) {
-//            RectF location = rc.getLocation();
-//            canvas1.drawRect(location,borderBoxPaint);
-//            to_show += rc.getLabel()+" ; ";
-//        }
-//        result.setText(to_show);
-//        imageView.setImageBitmap(copyBitmap);
-//        if(image != null && !image.isRecycled()) image.recycle();
+        float start = SystemClock.currentThreadTimeMillis();
+        List<RecognizedObject> recs = recoganizor.run(copyBitmap.copy(Bitmap.Config.ARGB_8888,true),true);
+        float end = SystemClock.currentThreadTimeMillis();
+        Log.d(TAG, "processImage: time take to detect sign : "+ (end-start) +" ms");
+        String to_show="";
+        Canvas canvas1 = new Canvas(copyBitmap);
+        int index = 0;
+        for (RecognizedObject rc :
+                recs) {
+            RectF location = rc.getLocation();
+            ImageUtilities.createCustomFile(getApplicationContext(),
+                    ImageUtilities.getCropBitmapByCPU(copyBitmap,location,false),"test_"+index+".png");
+            canvas1.drawRect(location,borderBoxPaint);
+            canvas1.drawText(
+                    String.format("%s , %.1f %%", rc.getLabel(), rc.getScore() * 100),
+                    location.left, location.top < 10 ? location.top + 20 : location.top - 10, textPaint);
+            to_show += rc.getLabel()+" ; ";
+        }
+        result.setText(to_show);
+        imageView.setImageBitmap(copyBitmap);
+        if(image != null && !image.isRecycled()) image.recycle();
     }
 
 

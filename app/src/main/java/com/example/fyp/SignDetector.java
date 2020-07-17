@@ -35,9 +35,10 @@ public class SignDetector{
     private static final String TAG = "SignDetector";
 
     private static final float THRESHOLD_SCORE = 0.9f;
-    public static final String SIGN_CLASSIFIER_MODEL = "gtsrb.lite";
+    public static final String SIGN_CLASSIFIER_MODEL = "traffic_nomalized.tflite";//"traffic.tflite";//"gtsrb.lite";
+//    public static final String SIGN_CLASSIFIER_MODEL = "traffic.tflite";
     private static final String SIGN_CLASSIFIER_LABEL = "gtsrb_label.txt";
-    public static final int SIGN_CLASSIFIER_INPUT_SIZE = 224;
+    public static final int SIGN_CLASSIFIER_INPUT_SIZE = 30;//224;
     private static final Boolean SIGN_CLASSIFIER_IS_QUANTIZED = false;
     //only for Sign Classifier model
     private static final int NUM_CLASS_FOR_SIGN = 43;
@@ -45,8 +46,10 @@ public class SignDetector{
     // For Float model
 //    private static final float IMAGE_MEAN = 128.0f;
 //    private static final float IMAGE_STD = 128.0f;
+
     private static final float IMAGE_MEAN = 0;
-    private static final float IMAGE_STD = 255.0f;
+//    private static final float IMAGE_STD = 1;// for traffic.tflite
+    private static final float IMAGE_STD = 255f; //for traffic_normalized.tflite
 
     private Detector detector;
     private int width;
@@ -170,12 +173,19 @@ public class SignDetector{
                     imgData.putFloat((((pixelValue >> 16) & 0xFF) - IMAGE_MEAN) / IMAGE_STD);
                     imgData.putFloat((((pixelValue >> 8) & 0xFF) - IMAGE_MEAN) / IMAGE_STD);
                     imgData.putFloat(((pixelValue & 0xFF) - IMAGE_MEAN) / IMAGE_STD);
+//                    imgData.putFloat((pixelValue >> 16) & 0xFF);
+//                    imgData.putFloat((pixelValue >> 8) & 0xFF);
+//                    imgData.putFloat(pixelValue & 0xFF);
                 }
             }
         }
         Trace.endSection(); // preprocessBitmap
     }
 
+    public String runOnlyClassification(Bitmap bmp){
+        setImageData(bmp);
+        return recognizeSign();
+    }
 
     public List<RecognizedObject> run(@NotNull Bitmap bmp,boolean allowToRecycleBitmap) {
         List<RecognizedObject> recognizedObjects = new ArrayList<>();
@@ -189,9 +199,14 @@ public class SignDetector{
         for (RecognizedObject rc :
                 recognizedObjects_temp) {
             if(rc.getScore() >= THRESHOLD_SCORE) {
+                Log.d(TAG, "run: sign score = "+rc.getScore());
+
 
                 location = rc.getLocation();
+                // increasing location
+                location.set(location.left,location.top - 10 < 0 ? 0 : location.top - 10,location.right,location.bottom);
                 frameToCrop.mapRect(location);
+
 
                 croppedBmp = getCropBitmapByCPU(bmp,
                         location,false);
@@ -202,6 +217,7 @@ public class SignDetector{
 //                createCustomFile(resizeBitmap,rc.getLabel()+Calendar.getInstance().getTime());
                 setImageData(resizeBitmap);
                 label = recognizeSign();
+                Log.d(TAG, "run: sign label = "+ label);
 
                 cropToFrame.mapRect(location);
                 recognizedObjects.add(
@@ -258,5 +274,4 @@ public class SignDetector{
         if (!source.isRecycled() && allowToRecycleBitmap) source.recycle();
         return resultBitmap;
     }
-
 }

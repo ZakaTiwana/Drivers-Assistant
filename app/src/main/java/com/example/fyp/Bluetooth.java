@@ -1181,7 +1181,15 @@ public class Bluetooth extends AppCompatActivity implements AdapterView.OnItemCl
 //                    tcoc.run(sock.getInputStream(), sock.getOutputStream());
 //                    onProgressUpdate(8);
 //                    result = tcoc.getFormattedResult();
-   //                 Toast.makeText(getApplicationContext(), "OBD II connecting.", Toast.LENGTH_SHORT).show();
+
+                    ///  >>>>>>>>>>>>>>>> Masla idhar hoga agar hoga. <<<<<<<<<<<<<<
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                         Toast.makeText(getApplicationContext(), "OBD II connected", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+
                     while (true) {
                         //       Read from the InputStream
                         try {
