@@ -94,7 +94,6 @@ public class NavigationModeActivity extends CameraCaptureActivity {
     private static volatile boolean isComputingLaneDetection = false;
     private static volatile boolean isDirectionTaskCompleted = false;
 
-
     private static float[][] lanePoints = null;
     private static ArrayList<PointF> lft_lane_pts = null;
     private static ArrayList<PointF> rht_lane_pts = null;
@@ -670,8 +669,22 @@ public class NavigationModeActivity extends CameraCaptureActivity {
                     tts.setLanguage(Locale.US);
                     Log.d("check", "language: " + Locale.getDefault());
                 }
+         initDirectionTask(); // in here so that text to speech in initilized
             }
         });
+    }
+
+    private void initDirectionTask(){
+        //-- get step info --
+        Intent intent = getIntent();
+        navigationSteps = intent.getStringArrayListExtra(SharedValues.intent_step_info);
+        Log.d(TAG, "run: got navigationSteps = " + navigationSteps);
+        if (navigationSteps != null && navigationSteps.size() > 0) hasNavSteps = true;
+        if (hasNavSteps && !isDirectionTaskCompleted) {
+            getDeviceLocation();
+            directionTask = threadExecutor.scheduleWithFixedDelay(new DirectionsTask(),3000,500,TimeUnit.MILLISECONDS) ;
+            maneuverMatrix = LaneDetectorAdvance.getFlatPerspectiveMatrix(maskWidth, maskHeight);
+        }
     }
 
     public class DirectionsTask implements Runnable {
@@ -741,20 +754,9 @@ public class NavigationModeActivity extends CameraCaptureActivity {
                             },10,TimeUnit.SECONDS);
                         }
                         else {
-                            String[] step = navigationSteps
-                                    .get(navStepPassed - 1).split("::"); // one previous
-                            String lat1 = step[2];
-                            double lat = Double.parseDouble(step[2]);
-                            double lng = Double.parseDouble(step[3]);
-                            // if passed current point
-                            Log.d(TAG, "run: in straight check diff lat= " + (lat - fromPosition.latitude));
-                            Log.d(TAG, "run: in straight check diff long= " + (lng - fromPosition.longitude));
-                            if (Math.abs(lat - fromPosition.latitude) > 0.0003) {
-                                if (Math.abs(lng - fromPosition.longitude) > 0.0003) {
-                                    maneuverDirection = "Straight";
-                                    draw.postInvalidate();
-                                }
-                            }
+                            // after 5 sec  straight arrow
+                            maneuverDirection = "Straight";
+                            draw.postInvalidate();
                         }
                     }
                 }, 5, TimeUnit.SECONDS);
@@ -818,9 +820,9 @@ public class NavigationModeActivity extends CameraCaptureActivity {
     }
 
     private void startPeriodicTask(){
-        initializeTextToSpeech();
         //---------
         threadExecutor = new ScheduledThreadPoolExecutor(10);
+        initializeTextToSpeech();
 
         if (OpenCVLoader.initDebug()) {
             Log.d(TAG, "onCreate: Opencv Loaded Successfully");
@@ -828,17 +830,6 @@ public class NavigationModeActivity extends CameraCaptureActivity {
             Log.d(TAG, "onCreate: Opencv Could not load");
         }
 
-
-        //-- get step info --
-        Intent intent = getIntent();
-        navigationSteps = intent.getStringArrayListExtra(SharedValues.intent_step_info);
-        Log.d(TAG, "run: got navigationSteps = " + navigationSteps);
-        if (navigationSteps != null && navigationSteps.size() > 0) hasNavSteps = true;
-        if (hasNavSteps && !isDirectionTaskCompleted) {
-            getDeviceLocation();
-            directionTask = threadExecutor.scheduleWithFixedDelay(new DirectionsTask(),2000,500,TimeUnit.MILLISECONDS) ;
-            maneuverMatrix = LaneDetectorAdvance.getFlatPerspectiveMatrix(maskWidth, maskHeight);
-        }
 
         final SharedPreferences sp_fs = getSharedPreferences(getString(R.string.sp_featureSettings), 0);
         final String fs_lane = getString(R.string.sp_fs_key_isLaneAllowed);
