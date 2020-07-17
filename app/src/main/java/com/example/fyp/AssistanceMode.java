@@ -6,11 +6,22 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Log;
+import android.util.Size;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.Spinner;
+
+import com.example.fyp.customutilities.SharedPreferencesUtils;
+import com.example.fyp.customutilities.SharedValues;
+
+import java.util.ArrayList;
 
 public class AssistanceMode extends AppCompatActivity {
 
+    private static final String TAG = "AssistanceMode";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -82,6 +93,35 @@ public class AssistanceMode extends AppCompatActivity {
             public void onClick(View view) {
                 Intent i = new Intent(getApplicationContext(), TestObjectDistance.class);
                 startActivity(i);
+            }
+        });
+
+        Spinner spinner = findViewById(R.id.spinner_preview_size);
+        ArrayList<String> sizes = new ArrayList<>();
+        for (Size s :
+                SharedValues.DESIRED_PREVIEW_SIZES) {
+            sizes.add(s.toString());
+        }
+        ArrayAdapter<String> adapter =
+                new ArrayAdapter<>(getApplicationContext(),android.R.layout.simple_spinner_dropdown_item, sizes);
+        adapter.setDropDownViewResource( android.R.layout.simple_spinner_dropdown_item);
+        spinner.setAdapter(adapter);
+        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                Size size = SharedValues.DESIRED_PREVIEW_SIZES[position];
+                SharedPreferences sp_hs = getSharedPreferences(getString(R.string.sp_homeSettings),0);
+                String hs_preview_size = getString(R.string.sp_hs_key_previewSize);
+                Log.d(TAG, "onItemSelected: size = "+size.toString());
+                SharedPreferences.Editor editor = sp_hs.edit();
+                editor.putInt(hs_preview_size,position);
+                editor.apply();
+//                SharedPreferencesUtils.saveObject(sp_hs,hs_preview_size,size);
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
             }
         });
     }

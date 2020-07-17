@@ -146,7 +146,7 @@ public class LanePointsActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_lane_points);
-        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+//        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         mTextureView = (TextureView) findViewById(R.id.textureView_lane_points);
@@ -429,30 +429,12 @@ public class LanePointsActivity extends AppCompatActivity {
         }
     }
     public Size getDesiredPreviewSize() {
-        DisplayMetrics displayMetrics = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
-        int height = displayMetrics.heightPixels;
-        int width = displayMetrics.widthPixels;
-
-        Log.d(TAG, String.format("getDesiredPreviewSize: (device resolution) device width = %d :height = %d", width,height));
-        ArrayList<Size> temp = new ArrayList<>();
-        for (Size choice :
-                DESIRED_PREVIEW_SIZES) {
-            if (height == choice.getHeight()) {
-                temp.add(choice);
-            }
-        }
-
-        if (temp.size() == 0) return DESIRED_PREVIEW_SIZES[0];
-        int i = 0;
-        for (i = 0; i < temp.size(); i++) {
-            if (temp.get(i).getWidth() == width){
-                return temp.get(i);
-            }else if (temp.get(i).getWidth() > width){
-                return temp.get(Math.max(i - 1, 0));
-            }
-        }
-        return temp.get(i-1);
+        SharedPreferences sp_hs = getSharedPreferences(getString(R.string.sp_homeSettings),0);
+        String hs_preview_size = getString(R.string.sp_hs_key_previewSize);
+//        Size size = (Size) SharedPreferencesUtils.loadObject(sp_hs,hs_preview_size,Size.class);
+//        Log.d(TAG, "getDesiredPreviewSize: size = "+size.toString());
+        int i = sp_hs.getInt(hs_preview_size,0);
+        return DESIRED_PREVIEW_SIZES[i];
     }
 
 

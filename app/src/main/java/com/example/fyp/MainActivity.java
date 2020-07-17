@@ -136,14 +136,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         SharedPreferences sp_ld = getSharedPreferences(getString(R.string.sp_laneDetection),0);
         String ld_key_t_mask = getString(R.string.sp_ld_key_transformed_mask_pts);
-        String ld_key_mask = getString(R.string.sp_ld_key_user_pts);
+        String ld_key_mask = getString(R.string.sp_ld_key_original_mask_pts);
 
         SharedPreferences sp_hs = getSharedPreferences(getString(R.string.sp_homeSettings),0);
         String hs_preview_size = getString(R.string.sp_hs_key_previewSize);
         try {
             SharedPreferencesUtils.loadObject(sp_ld,ld_key_mask, PointF[].class);
             SharedPreferencesUtils.loadObject(sp_ld,ld_key_t_mask, PointF[].class);
-            SharedPreferencesUtils.loadObject(sp_hs,hs_preview_size,Size.class);
+//            SharedPreferencesUtils.loadObject(sp_hs,hs_preview_size,Size.class);
         }catch (IllegalArgumentException ex){
             PointF[] p_original = new PointF[4];
             p_original[0] = new PointF(0,0);
@@ -152,7 +152,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             p_original[3] = new PointF(0,100);
 
             SharedPreferencesUtils.saveObject(sp_ld,ld_key_mask,p_original);
-            Size auto = getAutomaticPreviewSize();
+            int auto_index = getAutomaticPreviewSize();
+            Size auto = SharedValues.DESIRED_PREVIEW_SIZES[auto_index];
             Matrix matrix = ImageUtilities.getTransformationMatrix(auto.getWidth(),auto.getHeight(),
                     SharedValues.CROP_SIZE.getWidth(),SharedValues.CROP_SIZE.getHeight(),
                     0,false);
@@ -171,7 +172,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 transformedPoints[i/2] = new PointF(pts_temp[i],pts_temp[i+1]);
             }
             SharedPreferencesUtils.saveObject(sp_ld,ld_key_t_mask,transformedPoints);
-            SharedPreferencesUtils.saveObject(sp_hs,hs_preview_size,auto);
+//            SharedPreferencesUtils.saveObject(sp_hs,hs_preview_size,auto);
+            SharedPreferences.Editor editor = sp_hs.edit();
+            editor.putInt(hs_preview_size,auto_index);
+            editor.apply();
         }
     }
 
@@ -353,32 +357,40 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
-    public Size getAutomaticPreviewSize() {
+    public int getAutomaticPreviewSize() {
         Size[] DESIRED_PREVIEW_SIZES = SharedValues.DESIRED_PREVIEW_SIZES;
         DisplayMetrics displayMetrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
-        int height = displayMetrics.heightPixels;
-        int width = displayMetrics.widthPixels;
+        int dheight = displayMetrics.heightPixels;
+        int dwidth = displayMetrics.widthPixels;
+
+        int height = Math.min(dheight,dwidth);
+        int width = Math.max(dheight,dwidth);
 
         Log.d(TAG, String.format("getDesiredPreviewSize: (device resolution) device width = %d :height = %d", width,height));
         ArrayList<Size> temp = new ArrayList<>();
+        ArrayList<Integer> indexes = new ArrayList<>();
+        int i = 0;
         for (Size choice :
                 DESIRED_PREVIEW_SIZES) {
             if (height == choice.getHeight()) {
                 temp.add(choice);
+                indexes.add(i);
             }
+            i++;
         }
 
-        if (temp.size() == 0) return DESIRED_PREVIEW_SIZES[0];
-        int i = 0;
+        if (temp.size() == 0) return 0;
+        i = 0;
         for (i = 0; i < temp.size(); i++) {
             if (temp.get(i).getWidth() == width){
-                return temp.get(i);
+                return indexes.get(i);
             }else if (temp.get(i).getWidth() > width){
-                return temp.get(Math.max(i - 1, 0));
+                return indexes.get(Math.max(i - 1, 0));
             }
         }
-        return temp.get(i-1);
+        return indexes.get(i-1);
+//        return SharedValues.DESIRED_PREVIEW_SIZES[0];
     }
 }
 
