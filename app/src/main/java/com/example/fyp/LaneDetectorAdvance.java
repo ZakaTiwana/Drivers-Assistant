@@ -509,7 +509,8 @@ public class LaneDetectorAdvance {
         return warped;
     }
     private Mat findEdges(){
-        Mat edge = isolateColor(convertToGrayScale());
+//        Mat edge = isolateColor(convertToGrayScale());
+        Mat edge = convertToGrayScale();
         cannay(edge);
         return edge;
     }
@@ -541,7 +542,7 @@ public class LaneDetectorAdvance {
     }
 
     private void cannay(Mat edge){
-        Imgproc.Canny(edge,edge,50,150);
+        Imgproc.Canny(edge,edge,60,150);
     }
 
     public Mat unDistortImage(Bitmap bmp){
