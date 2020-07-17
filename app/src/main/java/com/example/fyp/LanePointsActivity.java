@@ -8,7 +8,6 @@ import androidx.core.content.ContextCompat;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Matrix;
 import android.graphics.PointF;
@@ -25,9 +24,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.util.DisplayMetrics;
 import android.util.Log;
-import android.util.Range;
 import android.util.Size;
 import android.util.SparseIntArray;
 import android.view.Gravity;
@@ -182,16 +179,19 @@ public class LanePointsActivity extends AppCompatActivity {
                 SharedPreferencesUtils.saveBool(sp,sp_ld_key_up,true); // user defined points
 
                 Intent i = getIntent();
-                boolean isFromDirection = i.getBooleanExtra(SharedValues.intent_from_direction,false);
-                boolean check = i.getBooleanExtra(
-                        SharedValues.intent_LanePoints_to_ImageProcessor,false);
-                if(check){
-                    i.setClass(getApplicationContext(),ImageProcessor.class);
-                    if (isFromDirection){
-                        i.putStringArrayListExtra(
-                                SharedValues.intent_step_info,
-                                i.getStringArrayListExtra(SharedValues.intent_step_info));
-                    }
+                boolean isFromDirection = i.getBooleanExtra(SharedValues.intent_to_nav_mode,false);
+                boolean isFromMain = i.getBooleanExtra(
+                        SharedValues.intent_to_assistant_mode,false);
+                if (isFromDirection){
+                    i.setClass(getApplicationContext(),NavigationModeActivity.class);
+                    i.putStringArrayListExtra(
+                            SharedValues.intent_step_info,
+                            i.getStringArrayListExtra(SharedValues.intent_step_info));
+                    startActivity(i);
+                }
+
+                else if(isFromMain){
+                    i.setClass(getApplicationContext(), AssistantModeActivity.class);
                     startActivity(i);
                 }
                 finish();

@@ -95,7 +95,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 ////                Intent intent = new Intent(getApplicationContext(), AssistanceMode.class);
 ////                startActivity(intent);
 //
-////                Intent intent = new Intent(getApplicationContext(),ImageProcessor.class);
+////                Intent intent = new Intent(getApplicationContext(),AssistantModeActivity.class);
 ////                startActivity(intent);
 //
 //        });
@@ -273,7 +273,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             getCameraPermission();
             if (CameraPermissionsGranted) {
                 Intent intent = new Intent(getApplicationContext(), LanePointsActivity.class);
-                intent.putExtra(SharedValues.intent_LanePoints_to_ImageProcessor,true);
+                intent.putExtra(SharedValues.intent_to_assistant_mode,true);
                 startActivity(intent);
             }
         }
@@ -350,7 +350,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     }
                     Log.d(TAG, "onRequestPermissionsResult: permission granted");
                     CameraPermissionsGranted = true;
-                    Intent intent = new Intent(getApplicationContext(), ImageProcessor.class);
+                    Intent intent = new Intent(getApplicationContext(), AssistantModeActivity.class);
                     startActivity(intent);
                 }
             }

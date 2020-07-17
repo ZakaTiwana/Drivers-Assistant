@@ -14,7 +14,6 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.Spinner;
 
-import com.example.fyp.customutilities.SharedPreferencesUtils;
 import com.example.fyp.customutilities.SharedValues;
 
 import java.util.ArrayList;
@@ -66,7 +65,7 @@ public class AssistanceMode extends AppCompatActivity {
         btn_camera.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent i = new Intent(getApplicationContext(), ImageProcessor.class);
+                Intent i = new Intent(getApplicationContext(), AssistantModeActivity.class);
                 startActivity(i);
             }
         });

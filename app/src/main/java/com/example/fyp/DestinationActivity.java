@@ -12,28 +12,21 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.location.Address;
-import android.location.Geocoder;
 import android.location.Location;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.os.Build;
 import android.os.Bundle;
-import android.speech.tts.TextToSpeech;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 
 import com.example.fyp.customutilities.SharedValues;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -43,8 +36,6 @@ import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
 import com.google.android.libraries.places.api.Places;
 import com.google.android.libraries.places.api.model.Place;
 import com.google.android.libraries.places.api.net.PlacesClient;
@@ -52,12 +43,9 @@ import com.google.android.libraries.places.widget.AutocompleteSupportFragment;
 import com.google.android.libraries.places.widget.listener.PlaceSelectionListener;
 
 
-import java.io.IOException;
 import java.util.ArrayList;
 
 import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
 
 import io.nlopez.smartlocation.OnLocationUpdatedListener;
 import io.nlopez.smartlocation.SmartLocation;
@@ -236,8 +224,8 @@ public class DestinationActivity extends AppCompatActivity implements OnMapReady
 
                 // intent to image-processor
                 Intent intent = new Intent(getApplicationContext(), LanePointsActivity.class);
-                intent.putExtra(SharedValues.intent_LanePoints_to_ImageProcessor,true);
-                intent.putExtra(SharedValues.intent_from_direction,true);
+                intent.putExtra(SharedValues.intent_to_assistant_mode,true);
+                intent.putExtra(SharedValues.intent_to_nav_mode,true);
                 intent.putStringArrayListExtra(SharedValues.intent_step_info,stepsInformation);
                 startActivity(intent);
                 finishAffinity();

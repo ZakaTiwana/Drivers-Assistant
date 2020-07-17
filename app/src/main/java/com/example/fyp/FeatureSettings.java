@@ -188,7 +188,7 @@ public class FeatureSettings extends AppCompatActivity implements View.OnClickLi
         }
         else if(v.getId() == laneTextButton.getId()){
             Intent intent = new Intent(getApplicationContext(), LanePointsActivity.class);
-            intent.putExtra(SharedValues.intent_LanePoints_to_ImageProcessor,false);
+            intent.putExtra(SharedValues.intent_to_assistant_mode,false);
             startActivity(intent);
         }
     }

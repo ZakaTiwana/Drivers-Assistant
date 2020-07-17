@@ -44,7 +44,9 @@
         <activity android:name=".TestLaneActivity" />
         <activity android:name=".CameraCaptureActivity" />
         <activity android:screenOrientation="landscape"
-            android:name=".ImageProcessor" />
+            android:name=".AssistantModeActivity" />
+        <activity android:screenOrientation="landscape"
+            android:name=".NavigationModeActivity"/>
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"
