@@ -103,6 +103,7 @@ public class NavigationModeActivity extends CameraCaptureActivity {
     private static LaneDetectorAdvance laneDetectorAdvance = null;
     private float maskWidth;
     private float maskHeight;
+    private RectF maskRect = null;
     private Matrix maneuverMatrix;
 
     private Snackbar initSnackbar = null;
@@ -202,6 +203,7 @@ public class NavigationModeActivity extends CameraCaptureActivity {
         float mid_x_1 = (pts[0].x + pts[3].x) / 2f;
         float mid_x_2 = (pts[1].x + pts[2].x) / 2f;
         maskWidth = mid_x_2 - mid_x_1;
+        maskRect  = new RectF(pts[3].x,pts[0].y,pts[2].x,pts[2].y);
 
         lanePointsPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         lanePointsPaint.setColor(Color.argb(255, 255, 170, 0)); // 255,170,0,255 orange
@@ -234,6 +236,7 @@ public class NavigationModeActivity extends CameraCaptureActivity {
             @Override
             public void drawCallback(Canvas canvas) {
                 if (mappedRecognitions != null && isObjDetectionAllowed) {
+                    int countVoicedWarns = 0;
                     for (RecognizedObject object : mappedRecognitions) {
                         if (object.getScore() >= 0.6f &&
                                 object.getLabel().matches("car|motorcycle|person|bicycle|truck|stop sign|laptop|bottle")) {
@@ -253,15 +256,17 @@ public class NavigationModeActivity extends CameraCaptureActivity {
                                         location.top < 50 ? location.top + 20 : location.top - 35,
                                         borderTextPaint);
                                 // display warning if car some minimum distance
-                                if (dist < 10) {
+                                if (dist < 10 && countVoicedWarns <= 2) {
+                                    countVoicedWarns++;
                                     Bitmap bmp = BitmapFactory.decodeResource(getResources(), R.drawable.warning_for_distance);
                                     Bitmap bmp_resized = ImageUtilities.getResizedBitmap(bmp, (int) (location.width() - 5),
                                             (int) (location.height() - 5), true);
                                     canvas.drawBitmap(bmp_resized, location.left + 5,
-                                            location.top + 5, null);
+                                            location.top + 5, bitmapFilterPaint);
 
                                     // voice warning logic
-                                    speak("A " + object.getLabel() + " is approaching beware");
+                                    if (maskRect != null && object.getLocation().intersect(maskRect))
+                                        speak("A " + object.getLabel() + " is approaching beware");
                                 }
                             }
                         }
