@@ -232,7 +232,7 @@ public class LaneDetectorAdvance {
         offCenter(lft_lane_pts,rht_lane_pts);
         polyFit(lft_lane_pts,2);
         polyFit(rht_lane_pts,2);
-//        avg(lft_lane_pts,rht_lane_pts);
+        avg(lft_lane_pts,rht_lane_pts);
         ArrayList<PointF>[] res = new ArrayList[2];
         res[0] = lft_lane_pts;
         res[1] = rht_lane_pts;
@@ -640,21 +640,35 @@ public class LaneDetectorAdvance {
     }
 
     private void avg(ArrayList<PointF> new_lft, ArrayList<PointF> new_rht){
+        int counter = 1;
         for (int i = 0; i < lft_point_mem.length; i++) {
-            if(lft_point_mem[i] != null){
+            if(lft_point_mem[i] != null && !lft_point_mem[i].isEmpty()){
                 for (int j = 0; j < new_lft.size(); j++) {
-                    new_lft.get(j).x = (new_lft.get(j).x + lft_point_mem[i].get(j).x) /2;
+                    new_lft.get(j).x += lft_point_mem[i].get(j).x;
+                    new_lft.get(j).y += lft_point_mem[i].get(j).y;
                 }
+                counter++;
             }
+        }
+        for (int j = 0; j < new_lft.size(); j++) {
+            new_lft.get(j).x /= counter;
+            new_lft.get(j).y /= counter;
         }
         lft_point_mem[frameCounter] = new_lft;
 
+        counter = 1;
         for (int i = 0; i < rht_point_mem.length; i++) {
-            if(lft_point_mem[i] != null){
-                for (int j = 0; j < new_rht.size(); j++) {
-                    new_rht.get(j).x = (new_rht.get(j).x + rht_point_mem[i].get(j).x) /2;
+            if(rht_point_mem[i] != null && !rht_point_mem[i].isEmpty()){
+                for (int j = 0; j < new_lft.size(); j++) {
+                    new_rht.get(j).x += rht_point_mem[i].get(j).x;
+                    new_rht.get(j).y += rht_point_mem[i].get(j).y;
                 }
+                counter++;
             }
+        }
+        for (int j = 0; j < new_rht.size(); j++) {
+            new_rht.get(j).x /= counter;
+            new_rht.get(j).y /= counter;
         }
 
         rht_point_mem[frameCounter] = new_rht;
