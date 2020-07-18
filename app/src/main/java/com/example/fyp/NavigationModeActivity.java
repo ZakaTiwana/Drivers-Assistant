@@ -295,9 +295,12 @@ public class NavigationModeActivity extends CameraCaptureActivity {
                     int count = 0;
                     for (RecognizedObject object : mappedSignRecognitions) {
                         if (object.getLabel().contentEquals("yield")) continue;
+                        if (object.getLabel().contains("speed")){
+                            speak("Caution Speed limit Ahead");
+                        }
                         if (count >= 2) break;
                         RectF location = object.getLocation();
-                        speak(object.getLabel());
+
                         canvas.drawRect(location, borderBoxPaint);
                         canvas.drawText(
                                 String.format("%s , %.1f %%", object.getLabel(), object.getScore() * 100),
