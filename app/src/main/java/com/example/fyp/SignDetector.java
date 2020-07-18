@@ -173,18 +173,20 @@ public class SignDetector{
                     imgData.putFloat((((pixelValue >> 16) & 0xFF) - IMAGE_MEAN) / IMAGE_STD);
                     imgData.putFloat((((pixelValue >> 8) & 0xFF) - IMAGE_MEAN) / IMAGE_STD);
                     imgData.putFloat(((pixelValue & 0xFF) - IMAGE_MEAN) / IMAGE_STD);
-//                    imgData.putFloat((pixelValue >> 16) & 0xFF);
-//                    imgData.putFloat((pixelValue >> 8) & 0xFF);
-//                    imgData.putFloat(pixelValue & 0xFF);
                 }
             }
         }
         Trace.endSection(); // preprocessBitmap
     }
 
-    public String runOnlyClassification(Bitmap bmp){
-        setImageData(bmp);
-        return recognizeSign();
+    public String runOnlyClassification(Bitmap bmp,boolean allowToRecycle){
+        Bitmap resized = ImageUtilities.getResizedBitmap(bmp,SignDetector.SIGN_CLASSIFIER_INPUT_SIZE,
+                SignDetector.SIGN_CLASSIFIER_INPUT_SIZE,false);
+        setImageData(resized);
+        String rec = recognizeSign();
+        if (!resized.isRecycled())resized.recycle();
+        if (!bmp.isRecycled() && allowToRecycle) bmp.recycle();
+        return rec;
     }
 
     public List<RecognizedObject> run(@NotNull Bitmap bmp,boolean allowToRecycleBitmap) {

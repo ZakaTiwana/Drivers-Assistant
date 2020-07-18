@@ -7,7 +7,6 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.net.Uri;
@@ -29,7 +28,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.snackbar.Snackbar;
 import com.example.fyp.customutilities.ImageUtilities;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
 
@@ -52,6 +50,7 @@ public class TestSignActivity extends AppCompatActivity {
     private ImageView imageView;
 
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -60,6 +59,7 @@ public class TestSignActivity extends AppCompatActivity {
         imageView = findViewById(R.id.imageView);
         Button btn_recoganize = findViewById(R.id.btn_sign_recoganize);
         Button btn_pick_from_gallery = findViewById(R.id.btn_pick_from_gallery);
+        Button btn_test_classify_sign = findViewById(R.id.btn_test_classify_sign);
         result = findViewById(R.id.sign_result);
 
         borderBoxPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -81,7 +81,13 @@ public class TestSignActivity extends AppCompatActivity {
         btn_recoganize.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                processImage();
+                detectAndClassifyImage();
+            }
+        });
+        btn_test_classify_sign.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                classifyImage();
             }
         });
 
@@ -188,11 +194,18 @@ public class TestSignActivity extends AppCompatActivity {
             return null;
         }
     }
-    private void processImage(){
+    private void classifyImage(){
+        float start = SystemClock.currentThreadTimeMillis();
+        String to_show = recoganizor.runOnlyClassification(copyBitmap.copy(Bitmap.Config.ARGB_8888,true),true);
+        float end = SystemClock.currentThreadTimeMillis();
+        Log.d(TAG, "processImage: (classify) time take to classify sign : "+ (end-start) +" ms");
+        result.setText(to_show);
+    }
+    private void detectAndClassifyImage(){
         float start = SystemClock.currentThreadTimeMillis();
         List<RecognizedObject> recs = recoganizor.run(copyBitmap.copy(Bitmap.Config.ARGB_8888,true),true);
         float end = SystemClock.currentThreadTimeMillis();
-        Log.d(TAG, "processImage: time take to detect sign : "+ (end-start) +" ms");
+        Log.d(TAG, "processImage: (detectAndClassify) time take to detect sign : "+ (end-start) +" ms");
         String to_show="";
         Canvas canvas1 = new Canvas(copyBitmap);
         int index = 0;

@@ -709,6 +709,7 @@ public class AssistantModeActivity extends CameraCaptureActivity {
             }
             counterForVolumeDown++;
             counterForVolumeDown %= 3;
+            draw.postInvalidate();
             return true;
         }
 
