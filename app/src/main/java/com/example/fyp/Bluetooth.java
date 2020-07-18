@@ -20,6 +20,7 @@ import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Handler;
 import android.os.Message;
+import android.telecom.StatusHints;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
@@ -60,11 +61,16 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 public class Bluetooth extends AppCompatActivity implements AdapterView.OnItemClickListener, View.OnClickListener {
 
     private static final String TAG = "Bluetooth";
     ImageView backbutton;
+    private volatile boolean isTaskRunForFirstTime = true;
+    private ScheduledThreadPoolExecutor threadPoolExecutor = new ScheduledThreadPoolExecutor(1);
+    private BluetoothSocket sock;
 
 
     BluetoothAdapter mBluetoothAdapter;
@@ -284,7 +290,8 @@ public class Bluetooth extends AppCompatActivity implements AdapterView.OnItemCl
 //                    gtct.execute(mBTDevice.getAddress());
 //                    gtct = new GetTroubleCodesTask();
                     if(mBTDevice.getAddress().equals("00:00:00:33:33:33")||mBTDevice.getName().equalsIgnoreCase("OBDII")) {
-                        gtct.execute(mBTDevice.getAddress());
+                        gtct.setParams(mBTDevice.getAddress());
+                        threadPoolExecutor.scheduleWithFixedDelay(gtct,1,1,TimeUnit.MILLISECONDS);
                     }else {
                         Toast.makeText(getApplicationContext(), "Please select the OBDII device from the list.", Toast.LENGTH_SHORT).show();
                     }
@@ -1041,8 +1048,13 @@ public class Bluetooth extends AppCompatActivity implements AdapterView.OnItemCl
     });
 
     private void resetAcitivityState() {
+        closeSocket(sock);
         //progressBar.setProgress(0);
         //    sendBtn.setEnabled(true);
+        SharedPreferences sp_bt = getSharedPreferences(getString(R.string.sp_blueTooth),0);
+        String key_bt_conn = getString(R.string.sp_bt_key_isDeviceConnected);
+        SharedPreferencesUtils.saveBool(sp_bt,key_bt_conn,false);
+        threadPoolExecutor.shutdown();
     }
 
     private void makeToast(String text) {
@@ -1082,7 +1094,8 @@ public class Bluetooth extends AppCompatActivity implements AdapterView.OnItemCl
         if (remoteDevice == null | "".equals(remoteDevice))
             Log.e(TAG, "No bt device is paired.");
         else
-            gtct.execute(remoteDevice);
+            gtct.setParams(remoteDevice);
+        threadPoolExecutor.scheduleWithFixedDelay(gtct,1,1,TimeUnit.MILLISECONDS);
     }
 
 //    private static void connectViaBluetooth() {
@@ -1109,72 +1122,79 @@ public class Bluetooth extends AppCompatActivity implements AdapterView.OnItemCl
 //        return pairedDevices;
 //    }
 
-    private class GetTroubleCodesTask extends AsyncTask<String, Integer, String> {
-        @Override
-        protected void onPreExecute() {
-            Toast.makeText(getApplicationContext(), "OBD II connecting.", Toast.LENGTH_SHORT).show();
-            //   progressBar = requestActivity.getProgressBar();
-//            progressBar.setMax(8);
+    private class GetTroubleCodesTask implements Runnable {
+        private String params= null;
+        public GetTroubleCodesTask(){
+
+        }
+
+        public void setParams(String params) {
+            this.params = params;
         }
 
         @Override
-        protected String doInBackground(String... params) {
+        public void run() {
+            if (params == null) return;
+                if (isTaskRunForFirstTime){
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(getApplicationContext(), "OBD II connecting.", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
             String result = "";
             BluetoothDevice dev;
             //Get the current thread's token
             synchronized (this) {
+
                 Log.d(TAG, "Starting service..");
-                onProgressUpdate(1);
                 // get the remote Bluetooth device
-                final BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
-                dev = btAdapter.getRemoteDevice(params[0]);
+                if (isTaskRunForFirstTime){
+                    final BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
+                    dev = btAdapter.getRemoteDevice(params);
 
-                Log.d(TAG, "Stopping Bluetooth discovery.");
-                btAdapter.cancelDiscovery();
+                    Log.d(TAG, "Stopping Bluetooth discovery.");
+                    btAdapter.cancelDiscovery();
 
-                Log.d(TAG, "Starting OBD connection..");
-                onProgressUpdate(2);
-                BluetoothSocket sock;
-                // Instantiate a BluetoothSocket for the remote device and connect it.
-                try {
-                    Log.d("Checkaddress", "device address:" + dev);
+                    Log.d(TAG, "Starting OBD connection..");
+                    ;
+                    // Instantiate a BluetoothSocket for the remote device and connect it.
+                    try {
+                        Log.d("Checkaddress", "device address:" + dev);
 //                    if (isWorkAroundSamsungS9()) {
 //                        sock=initLocalConnectionS9(dev);
 //              //          sock = connectS9(dev);
 //                    } else {
 //                        sock = connect(dev);
 //                    }
-                   sock = connect(dev);
-                //    Toast.makeText(getApplicationContext(), "OBD II connected successfully.", Toast.LENGTH_SHORT).show();
-                } catch (Exception e) {
-                    Log.e(TAG, "There was an error while establishing connection. -> " + e.getMessage());
-                    Log.d(TAG, "Message received on handler here");
-                    mHandler.obtainMessage(CANNOT_CONNECT_TO_DEVICE).sendToTarget();
-                    return null;
+                        sock = connect(dev);
+                        //    Toast.makeText(getApplicationContext(), "OBD II connected successfully.", Toast.LENGTH_SHORT).show();
+                    } catch (Exception e) {
+                        Log.e(TAG, "There was an error while establishing connection. -> " + e.getMessage());
+                        Log.d(TAG, "Message received on handler here");
+                        mHandler.obtainMessage(CANNOT_CONNECT_TO_DEVICE).sendToTarget();
+                        return;
+                    }
                 }
+
 
                 try {
                     // Let's configure the connection.
                     Log.d(TAG, "Queueing jobs for connection configuration..");
 
-                    onProgressUpdate(3);
 
                     new ObdResetCommand().run(sock.getInputStream(), sock.getOutputStream());
                     Log.d(TAG, "ObdResetCommand successs");
 
-                    onProgressUpdate(4);
 
                     new EchoOffCommand().run(sock.getInputStream(), sock.getOutputStream());
                     Log.d(TAG, " EchoOffCommand succcess");
 
-                    onProgressUpdate(5);
-
-                    onProgressUpdate(6);
 
                     new SelectProtocolCommand(ObdProtocols.AUTO).run(sock.getInputStream(), sock.getOutputStream());
                     Log.d(TAG, "SelectProtocolCommand success");
 
-                    onProgressUpdate(7);
                     Log.d(TAG, "nothing");
 
 //                    MyTroubleCodesCommand tcoc = new MyTroubleCodesCommand();
@@ -1183,14 +1203,20 @@ public class Bluetooth extends AppCompatActivity implements AdapterView.OnItemCl
 //                    result = tcoc.getFormattedResult();
 
                     ///  >>>>>>>>>>>>>>>> Masla idhar hoga agar hoga. <<<<<<<<<<<<<<
-//                    runOnUiThread(new Runnable() {
-//                        @Override
-//                        public void run() {
-//                         Toast.makeText(getApplicationContext(), "OBD II connected", Toast.LENGTH_SHORT).show();
-//                        }
-//                    });
+                    if (isTaskRunForFirstTime){
+                        SharedPreferences sp_bt = getSharedPreferences(getString(R.string.sp_blueTooth),0);
+                        String key_bt_conn = getString(R.string.sp_bt_key_isDeviceConnected);
+                        SharedPreferencesUtils.saveBool(sp_bt,key_bt_conn,true);
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                Toast.makeText(getApplicationContext(), "OBD II connected", Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                        isTaskRunForFirstTime = false;
+                    }
 
-                    while (true) {
+
                         //       Read from the InputStream
                         try {
 
@@ -1239,77 +1265,56 @@ public class Bluetooth extends AppCompatActivity implements AdapterView.OnItemCl
                             if (result.contains("B1904") || result.contains("B1902")) {
                                 Intent intent = new Intent(getApplicationContext(), Sms.class);
                                 startActivity(intent);
-                                break;
+                                threadPoolExecutor.schedule(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                             threadPoolExecutor.shutdown();
+                                    }
+                                },10, TimeUnit.MILLISECONDS);
                             }
 
 
                         } catch (IOException | InterruptedException e) {
                             Log.e(TAG, "write: Error reading Input Stream. " + e.getMessage());
-                            break;
+                            resetAcitivityState();
                         }
-                    }
 
                 } catch (IOException e) {
                     e.printStackTrace();
                     Log.e("DTCERR", e.getMessage());
                     mHandler.obtainMessage(OBD_COMMAND_FAILURE_IO).sendToTarget();
-                    return null;
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                     Log.e("DTCERR", e.getMessage());
                     mHandler.obtainMessage(OBD_COMMAND_FAILURE_IE).sendToTarget();
-                    return null;
                 } catch (UnableToConnectException e) {
                     e.printStackTrace();
                     Log.e("DTCERR", e.getMessage());
                     mHandler.obtainMessage(OBD_COMMAND_FAILURE_UTC).sendToTarget();
-                    return null;
                 } catch (MisunderstoodCommandException e) {
                     e.printStackTrace();
                     Log.e("DTCERR", e.getMessage());
                     mHandler.obtainMessage(OBD_COMMAND_FAILURE_MIS).sendToTarget();
-                    return null;
                 } catch (NoDataException e) {
                     Log.e("DTCERR", e.getMessage());
                     mHandler.obtainMessage(OBD_COMMAND_FAILURE_NODATA).sendToTarget();
-                    return null;
                 } catch (Exception e) {
                     Log.e("DTCERR", e.getMessage());
                     mHandler.obtainMessage(OBD_COMMAND_FAILURE).sendToTarget();
-                } finally {
-                    closeSocket(sock);
                 }
             }
-            return result;
         }
 
-        private void closeSocket(BluetoothSocket sock) {
-            if (sock != null)
-                try {
-                    sock.close();
-                } catch (IOException e) {
-                    Log.e(TAG, e.getMessage());
-                }
-        }
 
-        @Override
-        protected void onProgressUpdate(Integer... values) {
-            super.onProgressUpdate(values);
-//            progressBar.setProgress(values[0]);
-        }
-
-        @Override
-        protected void onPostExecute(String result) {
-            if (result != null) {
-                Log.d(TAG, "Result obtained" + result);
-                //      requestActivity.startResultActivity(result);
-                //  resultDtcs(result);
-            } else {
-                Log.e(TAG, "No result (Nullpointer).");
-            }
-        }
     }
-
+    private void closeSocket(BluetoothSocket sock) {
+        if (sock != null)
+            try {
+                sock.close();
+            } catch (IOException e) {
+                Log.e(TAG, e.getMessage());
+            }
+    }
     /**
      * Instantiates a BluetoothSocket for the remote device and connects it.
      * See http://stackoverflow.com/questions/18657427/ioexception-read-failed-socket-might-closed-bluetooth-on-android-4-3/18786701#18786701

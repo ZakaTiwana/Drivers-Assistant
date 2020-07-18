@@ -166,7 +166,7 @@ public class AssistantModeActivity extends CameraCaptureActivity {
 
         borderTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         borderTextPaint.setColor(Color.BLUE);
-        borderTextPaint.setTextSize(23);
+        borderTextPaint.setTextSize(30);
 
 //        carLinePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 //        carLinePaint.setColor(Color.GREEN);
@@ -731,8 +731,9 @@ public class AssistantModeActivity extends CameraCaptureActivity {
                 public void run() {
                     Log.d(TAG, "run: OBD-ii speed checker");
                     carSpeed = sp_bt.getString(key_bt_speed, null);
+                    draw.postInvalidate();
                 }
-            }, 2, 5, TimeUnit.SECONDS);
+            }, 1,1 , TimeUnit.MILLISECONDS);
         }
 
 
