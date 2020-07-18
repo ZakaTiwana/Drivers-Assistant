@@ -26,6 +26,8 @@ public class SharedValues {
     public static final String intent_to_assistant_mode = "lane_points_img_processor";
     public static final String intent_step_info = "directions_steps_info";
     public static final String intent_to_nav_mode = "from_direction";
+    public static final String intent_dest_latitude = "dest_lat";
+    public static final String intent_dest_longitude = "dest_lng";
 
     public static Path getPathFromPointF(PointF[] pts,boolean loop){
         Path path = new Path();

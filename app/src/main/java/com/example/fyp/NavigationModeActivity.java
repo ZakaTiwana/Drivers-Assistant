@@ -128,6 +128,10 @@ public class NavigationModeActivity extends CameraCaptureActivity {
     //voice commands
     private VoiceCommandRecognizer voiceCommandRecognizer = null;
 
+    //
+    double dest_lat = 0;
+    double dest_lng = 0;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -727,6 +731,8 @@ public class NavigationModeActivity extends CameraCaptureActivity {
         //-- get step info --
         Intent intent = getIntent();
         navigationSteps = intent.getStringArrayListExtra(SharedValues.intent_step_info);
+        dest_lat = intent.getDoubleExtra(SharedValues.intent_dest_latitude,0);
+        dest_lng = intent.getDoubleExtra(SharedValues.intent_dest_longitude,0);
         Log.d(TAG, "run: got navigationSteps = " + navigationSteps);
         if (navigationSteps != null && navigationSteps.size() > 0) hasNavSteps = true;
         if (hasNavSteps && !isDirectionTaskCompleted) {
@@ -792,15 +798,6 @@ public class NavigationModeActivity extends CameraCaptureActivity {
                             maneuverDirection = "straight";
                             navStepPassed++;
                             mustSpeak("Follow this last direction and you will reach your destination.");
-                            threadExecutor.schedule(new Runnable() {
-                                @Override
-                                public void run() {
-                                    if (directionTask != null){
-                                        isDirectionTaskCompleted = true;
-                                        directionTask.cancel(false);
-                                    }
-                                }
-                            },10,TimeUnit.SECONDS);
                         }
                         else {
                             // after 5 sec  straight arrow
@@ -811,11 +808,20 @@ public class NavigationModeActivity extends CameraCaptureActivity {
                 }, 5, TimeUnit.SECONDS);
 
             }
-
-
-
+            if (navStepPassed > navigationSteps.size()){
+                if (Math.abs(dest_lat - fromPosition.latitude) < 0.0003) {
+                    if (Math.abs(dest_lng - fromPosition.longitude) < 0.0003) {
+                        mustSpeak("You have reached your Destination.");
+                        maneuverDirection = null;
+                        if (directionTask != null){
+                            isDirectionTaskCompleted = true;
+                            directionTask.cancel(false);
+                            }
+                        }
+                    }
+                }
+            }
         }
-    }
 
     private void speak(String msg) {
         if (isVoiceWarningAllowed && tts !=null) {
