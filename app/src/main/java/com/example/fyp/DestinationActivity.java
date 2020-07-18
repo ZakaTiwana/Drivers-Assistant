@@ -224,7 +224,6 @@ public class DestinationActivity extends AppCompatActivity implements OnMapReady
 
                 // intent to image-processor
                 Intent intent = new Intent(getApplicationContext(), LanePointsActivity.class);
-                intent.putExtra(SharedValues.intent_to_assistant_mode,true);
                 intent.putExtra(SharedValues.intent_to_nav_mode,true);
                 intent.putExtra(SharedValues.intent_dest_latitude,place2.getPosition().latitude);
                 intent.putExtra(SharedValues.intent_dest_longitude,place2.getPosition().longitude);

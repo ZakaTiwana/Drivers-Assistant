@@ -203,8 +203,8 @@ public class AssistantModeActivity extends CameraCaptureActivity {
         float mid_x_1 = (pts[0].x + pts[3].x) / 2f;
         float mid_x_2 = (pts[1].x + pts[2].x) / 2f;
         maskWidth = mid_x_2 - mid_x_1;
-        maskRect  = new RectF(pts[3].x,pts[0].y,pts[2].x,pts[2].y);
-
+        maskRect  = new RectF(mid_x_1 ,pts[0].y,
+                mid_x_2 ,pts[2].y);
         laneGuidPath = SharedValues.getPathFromPointF(pts, true);
 
         laneGuidPathPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -302,9 +302,11 @@ public class AssistantModeActivity extends CameraCaptureActivity {
                     int count = 0;
                     for (RecognizedObject object : mappedSignRecognitions) {
                         if (object.getLabel().contentEquals("yield")) continue;
-                        if (count >= 2) break;
+                        if (object.getLabel().contains("speed")){
+                            speak("Caution Speed limit Ahead");
+                        }
+                        if (count >= 1) break;
                         RectF location = object.getLocation();
-                        speak(object.getLabel());
                         canvas.drawRect(location, borderBoxPaint);
                         canvas.drawText(
                                 String.format("%s , %.1f %%", object.getLabel(), object.getScore() * 100),
@@ -343,7 +345,7 @@ public class AssistantModeActivity extends CameraCaptureActivity {
 //                }
 
                 float offset = Math.abs(laneDetectorAdvance.getOff_center());
-                if (offset > 1){
+                if (offset > 1.5){
                     if (lft_lane_pts != null && rht_lane_pts != null){
                         ArrayList<PointF> lane__ = new ArrayList<>();
 

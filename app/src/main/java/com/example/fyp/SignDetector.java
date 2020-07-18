@@ -198,6 +198,7 @@ public class SignDetector{
         String label;
         for (RecognizedObject rc :
                 recognizedObjects_temp) {
+
             if(rc.getScore() >= THRESHOLD_SCORE) {
                 Log.d(TAG, "run: sign score = "+rc.getScore());
 

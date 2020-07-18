@@ -208,7 +208,8 @@ public class NavigationModeActivity extends CameraCaptureActivity {
         float mid_x_1 = (pts[0].x + pts[3].x) / 2f;
         float mid_x_2 = (pts[1].x + pts[2].x) / 2f;
         maskWidth = mid_x_2 - mid_x_1;
-        maskRect  = new RectF(pts[3].x,pts[0].y,pts[2].x,pts[2].y);
+        maskRect  = new RectF(mid_x_1 ,pts[0].y,
+                mid_x_2 ,pts[2].y);
 
         lanePointsPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         lanePointsPaint.setColor(Color.argb(255, 255, 170, 0)); // 255,170,0,255 orange
@@ -300,7 +301,7 @@ public class NavigationModeActivity extends CameraCaptureActivity {
                         if (object.getLabel().contains("speed")){
                             speak("Caution Speed limit Ahead");
                         }
-                        if (count >= 2) break;
+                        if (count >= 1) break;
                         RectF location = object.getLocation();
 
                         canvas.drawRect(location, borderBoxPaint);
@@ -340,7 +341,7 @@ public class NavigationModeActivity extends CameraCaptureActivity {
 //                    }
 
                 float offset = Math.abs(laneDetectorAdvance.getOff_center());
-                if (offset > 1){
+                if (offset > 1.5){
                     if (lft_lane_pts != null && rht_lane_pts != null){
                         ArrayList<PointF> lane__ = new ArrayList<>();
                         lane__.add(lft_lane_pts.get(lft_lane_pts.size()-1));

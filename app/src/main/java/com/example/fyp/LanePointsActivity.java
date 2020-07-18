@@ -184,9 +184,9 @@ public class LanePointsActivity extends AppCompatActivity {
                         SharedValues.intent_to_assistant_mode,false);
                 if (isFromDirection){
                     i.setClass(getApplicationContext(),NavigationModeActivity.class);
-                    i.putStringArrayListExtra(
-                            SharedValues.intent_step_info,
-                            i.getStringArrayListExtra(SharedValues.intent_step_info));
+//                    i.putStringArrayListExtra(
+//                            SharedValues.intent_step_info,
+//                            i.getStringArrayListExtra(SharedValues.intent_step_info));
                     startActivity(i);
                 }
 

@@ -58,8 +58,8 @@ public class LaneDetectorAdvance {
     private static String dist_in_sp;
     private static String has_cal_mtx_dist;
 
-    private ArrayList<PointF>[] lft_point_mem = new ArrayList[4];
-    private ArrayList<PointF>[] rht_point_mem = new ArrayList[4];
+    private ArrayList<PointF>[] lft_point_mem = new ArrayList[2];
+    private ArrayList<PointF>[] rht_point_mem = new ArrayList[2];
     private int frameCounter;
 
 
@@ -553,7 +553,7 @@ public class LaneDetectorAdvance {
     }
 
     private void cannay(Mat edge){
-        Imgproc.Canny(edge,edge,30,150);
+        Imgproc.Canny(edge,edge,50,255);
     }
 
     public Mat unDistortImage(Bitmap bmp){
