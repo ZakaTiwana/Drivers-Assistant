@@ -212,8 +212,10 @@ public class NavigationModeActivity extends CameraCaptureActivity {
 
         lanePointsPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         lanePointsPaint.setColor(Color.argb(255, 255, 170, 0)); // 255,170,0,255 orange
+
         lanePointsPaint.setStrokeWidth(8);
-        lanePointsPaint.setStyle(Paint.Style.STROKE);
+        lanePointsPaint.setStyle(Paint.Style.FILL_AND_STROKE);
+        lanePointsPaint.setAlpha(100);
 
         offsetLinePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         offsetLinePaint.setColor(Color.RED);
@@ -773,7 +775,7 @@ public class NavigationModeActivity extends CameraCaptureActivity {
                 lat = Double.parseDouble(step[2]);
                 lng = Double.parseDouble(step[3]);
                 maneuver = step[4];
-                Log.d(TAG, "DirectionsTask: current longLat = " + fromPosition.latitude + ", " + fromPosition.latitude);
+
                 if (Math.abs(lat - fromPosition.latitude) < 0.0003) {
                     if (Math.abs(lng - fromPosition.longitude) < 0.0003) {
                         navStepPassed++;
@@ -808,12 +810,14 @@ public class NavigationModeActivity extends CameraCaptureActivity {
                             draw.postInvalidate();
                         }
                     }
-                }, 5, TimeUnit.SECONDS);
+                }, 12, TimeUnit.SECONDS);
 
             }
+            Log.d(TAG, "DirectionsTask: current longLat = " + fromPosition.latitude + ", " + fromPosition.latitude);
+            Log.d(TAG, "DirectionsTask: dest longLat = " + dest_lat + ", " + dest_lng);
             if (navStepPassed > navigationSteps.size()){
-                if (Math.abs(dest_lat - fromPosition.latitude) < 0.0003) {
-                    if (Math.abs(dest_lng - fromPosition.longitude) < 0.0003) {
+                if (Math.abs(dest_lat - fromPosition.latitude) < 0.0005) {
+                    if (Math.abs(dest_lng - fromPosition.longitude) < 0.0005) {
                         mustSpeak("You have reached your Destination.");
                         maneuverDirection = null;
                         if (directionTask != null){

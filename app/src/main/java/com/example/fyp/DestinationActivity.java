@@ -227,7 +227,7 @@ public class DestinationActivity extends AppCompatActivity implements OnMapReady
                 intent.putExtra(SharedValues.intent_to_assistant_mode,true);
                 intent.putExtra(SharedValues.intent_to_nav_mode,true);
                 intent.putExtra(SharedValues.intent_dest_latitude,place2.getPosition().latitude);
-                intent.putExtra(SharedValues.intent_dest_latitude,place2.getPosition().longitude);
+                intent.putExtra(SharedValues.intent_dest_longitude,place2.getPosition().longitude);
                 intent.putStringArrayListExtra(SharedValues.intent_step_info,stepsInformation);
                 startActivity(intent);
                 finishAffinity();
