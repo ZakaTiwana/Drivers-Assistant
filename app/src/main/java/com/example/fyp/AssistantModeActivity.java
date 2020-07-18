@@ -76,6 +76,7 @@ public class AssistantModeActivity extends CameraCaptureActivity {
     private static float[][] lanePoints = null;
     private static ArrayList<PointF> lft_lane_pts = null;
     private static ArrayList<PointF> rht_lane_pts = null;
+    private static ArrayList<PointF> all_lane_pts = null;
     private static float timeTakeByLaneDetector = 0;
     private Paint lanePointsPaint = null;
 
@@ -167,15 +168,11 @@ public class AssistantModeActivity extends CameraCaptureActivity {
         borderTextPaint.setColor(Color.BLUE);
         borderTextPaint.setTextSize(23);
 
-        carLinePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        carLinePaint.setColor(Color.GREEN);
-        carLinePaint.setStrokeWidth(5);
-        carLinePaint.setTextSize(23);
+//        carLinePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+//        carLinePaint.setColor(Color.GREEN);
+//        carLinePaint.setStrokeWidth(5);
+//        carLinePaint.setTextSize(23);
 
-        offsetLinePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        offsetLinePaint.setColor(Color.RED);
-        offsetLinePaint.setStrokeWidth(5);
-        offsetLinePaint.setTextSize(23);
 
 
         bitmapFilterPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -218,7 +215,14 @@ public class AssistantModeActivity extends CameraCaptureActivity {
         lanePointsPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         lanePointsPaint.setColor(Color.argb(255, 255, 170, 0)); // 255,170,0,255 orange
         lanePointsPaint.setStrokeWidth(8);
-        lanePointsPaint.setStyle(Paint.Style.STROKE);
+        lanePointsPaint.setStyle(Paint.Style.FILL_AND_STROKE);
+        lanePointsPaint.setAlpha(100);
+
+        offsetLinePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        offsetLinePaint.setColor(Color.RED);
+        offsetLinePaint.setStrokeWidth(8);
+        offsetLinePaint.setStyle(Paint.Style.FILL_AND_STROKE);
+        offsetLinePaint.setAlpha(100);
 
         FrameLayout container = (FrameLayout) findViewById(R.id.container);
         initSnackbar = Snackbar.make(container, "Initializing...", Snackbar.LENGTH_INDEFINITE);
@@ -331,33 +335,71 @@ public class AssistantModeActivity extends CameraCaptureActivity {
             public void drawCallback(Canvas canvas) {
                 if (!isLaneDetectionAllowed) return;
                 Log.d(TAG, "drawCallback: lane detection off center = " + laneDetectorAdvance.getOff_center());
-                if (lft_lane_pts != null && lft_lane_pts.size() > 3) {
-                    canvas.drawPath(SharedValues.getPathFromPointF(lft_lane_pts, false), lanePointsPaint);
-                }
-                if (rht_lane_pts != null && rht_lane_pts.size() > 3) {
-                    canvas.drawPath(SharedValues.getPathFromPointF(rht_lane_pts, false), lanePointsPaint);
-                }
+//                if (lft_lane_pts != null && lft_lane_pts.size() > 3) {
+//                    canvas.drawPath(SharedValues.getPathFromPointF(lft_lane_pts, false), lanePointsPaint);
+//                }
+//                if (rht_lane_pts != null && rht_lane_pts.size() > 3) {
+//                    canvas.drawPath(SharedValues.getPathFromPointF(rht_lane_pts, false), lanePointsPaint);
+//                }
 
-                float x1 = (pts[3].x + pts[2].x) / 2;
-                float y1 = mHeight;
-                float x2 = x1;
-                float y2 = mHeight - (maskHeight - maskHeight / 4f);
-                canvas.drawLine(x1, y1,
-                        x2, y2, carLinePaint);
-
-                float x2_n = x2 + laneDetectorAdvance.getPixOffcenter();
                 float offset = Math.abs(laneDetectorAdvance.getOff_center());
-                if (offset > 0.6) {
-                    canvas.drawCircle(x2, y2, 10f, offsetLinePaint);
-                    canvas.drawLine(x2, y2,
-                            x2_n, y2, offsetLinePaint);
-                    canvas.drawText(String.format("offset : %.3f", offset), x2, y2 + 20, offsetLinePaint);
-                } else {
-                    canvas.drawCircle(x2, y2, 10f, carLinePaint);
-                    canvas.drawLine(x2, y2,
-                            x2_n, y2, carLinePaint);
-                    canvas.drawText(String.format("offset : %.3f", offset), x2, y2 + 20, carLinePaint);
+                if (offset > 1){
+                    if (lft_lane_pts != null && rht_lane_pts != null){
+                        ArrayList<PointF> lane__ = new ArrayList<>();
+
+                        lane__.add(lft_lane_pts.get(lft_lane_pts.size()-1));
+                        lane__.get(0).y = Math.max(lft_lane_pts.get(lft_lane_pts.size()-1).y,
+                                rht_lane_pts.get(rht_lane_pts.size()-1).y);
+                        lane__.add(rht_lane_pts.get(rht_lane_pts.size()-1));
+                        lane__.get(1).y = lane__.get(0).y;
+
+                        lane__.add(rht_lane_pts.get(0));
+                        lane__.get(2).y = Math.min(lft_lane_pts.get(0).y,
+                                rht_lane_pts.get(0).y);
+                        lane__.add(lft_lane_pts.get(0));
+                        lane__.get(3).y = lane__.get(2).y;
+
+                        canvas.drawPath(SharedValues.getPathFromPointF(lane__, true), offsetLinePaint);
+                    }
+                }else {
+                    if (lft_lane_pts != null && rht_lane_pts != null){
+                        ArrayList<PointF> lane__ = new ArrayList<>();
+                        lane__.add(lft_lane_pts.get(lft_lane_pts.size()-1));
+                        lane__.get(0).y = Math.max(lft_lane_pts.get(lft_lane_pts.size()-1).y,
+                                rht_lane_pts.get(rht_lane_pts.size()-1).y);
+                        lane__.add(rht_lane_pts.get(rht_lane_pts.size()-1));
+                        lane__.get(1).y = lane__.get(0).y;
+
+                        lane__.add(rht_lane_pts.get(0));
+                        lane__.get(2).y = Math.min(lft_lane_pts.get(0).y,
+                                rht_lane_pts.get(0).y);
+                        lane__.add(lft_lane_pts.get(0));
+                        lane__.get(3).y = lane__.get(2).y;
+                        canvas.drawPath(SharedValues.getPathFromPointF(lane__, true), lanePointsPaint);
+                    }
                 }
+
+
+//                float x1 = (pts[3].x + pts[2].x) / 2;
+//                float y1 = mHeight;
+//                float x2 = x1;
+//                float y2 = mHeight - (maskHeight - maskHeight / 4f);
+//                canvas.drawLine(x1, y1,
+//                        x2, y2, carLinePaint);
+//
+//                float x2_n = x2 + laneDetectorAdvance.getPixOffcenter();
+//                float offset = Math.abs(laneDetectorAdvance.getOff_center());
+//                if (offset > 0.9) {
+//                    canvas.drawCircle(x2, y2, 10f, offsetLinePaint);
+//                    canvas.drawLine(x2, y2,
+//                            x2_n, y2, offsetLinePaint);
+//                    canvas.drawText(String.format("offset : %.3f", offset), x2, y2 + 20, offsetLinePaint);
+//                } else {
+//                    canvas.drawCircle(x2, y2, 10f, carLinePaint);
+//                    canvas.drawLine(x2, y2,
+//                            x2_n, y2, carLinePaint);
+//                    canvas.drawText(String.format("offset : %.3f", offset), x2, y2 + 20, carLinePaint);
+//                }
 
             }
         });

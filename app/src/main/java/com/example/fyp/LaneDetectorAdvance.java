@@ -59,7 +59,9 @@ public class LaneDetectorAdvance {
     private static String has_cal_mtx_dist;
 
     private ArrayList<PointF>[] lft_point_mem = new ArrayList[4];
-    private ArrayList<PointF>[] rht_point_mem = new ArrayList[4] ;
+    private ArrayList<PointF>[] rht_point_mem = new ArrayList[4];
+    private int frameCounter;
+
 
 
     public LaneDetectorAdvance(int srcWidth, int srcHeight, int cropWidth, int cropHeight) {
@@ -71,6 +73,7 @@ public class LaneDetectorAdvance {
 
         cropToFrame = new Matrix();
         frameToCrop.invert(cropToFrame);
+        frameCounter = 0;
     }
 
     public void setPtsResized (PointF[] pts){
@@ -229,6 +232,7 @@ public class LaneDetectorAdvance {
         offCenter(lft_lane_pts,rht_lane_pts);
         polyFit(lft_lane_pts,2);
         polyFit(rht_lane_pts,2);
+//        avg(lft_lane_pts,rht_lane_pts);
         ArrayList<PointF>[] res = new ArrayList[2];
         res[0] = lft_lane_pts;
         res[1] = rht_lane_pts;
@@ -636,18 +640,27 @@ public class LaneDetectorAdvance {
     }
 
     private void avg(ArrayList<PointF> new_lft, ArrayList<PointF> new_rht){
-        int lft_in_mem = 0;
         for (int i = 0; i < lft_point_mem.length; i++) {
             if(lft_point_mem[i] != null){
                 for (int j = 0; j < new_lft.size(); j++) {
                     new_lft.get(j).x = (new_lft.get(j).x + lft_point_mem[i].get(j).x) /2;
                 }
-                lft_in_mem++;
-            }else{
-                break;
-            };
+            }
         }
-        lft_in_mem %= lft_point_mem.length;
+        lft_point_mem[frameCounter] = new_lft;
+
+        for (int i = 0; i < rht_point_mem.length; i++) {
+            if(lft_point_mem[i] != null){
+                for (int j = 0; j < new_rht.size(); j++) {
+                    new_rht.get(j).x = (new_rht.get(j).x + rht_point_mem[i].get(j).x) /2;
+                }
+            }
+        }
+
+        rht_point_mem[frameCounter] = new_rht;
+        frameCounter ++;
+        frameCounter %= lft_point_mem.length;
+
 
     }
     private static void transformMatrix(Mat src, Matrix dst) {
@@ -680,8 +693,8 @@ public class LaneDetectorAdvance {
 
         MatOfPoint2f inshape = new MatOfPoint2f(p);
         Point[] p_d = new Point[4];
-        p_d[0] = new Point(width/5, height - height/3);
-        p_d[1] = new Point(width - width/6, height - height/3);
+        p_d[0] = new Point(width/4, height/2);
+        p_d[1] = new Point(width - width/4, height/2);
 
         p_d[2] = new Point(width, height);
         p_d[3] = new Point(0, height);

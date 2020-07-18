@@ -98,6 +98,7 @@ public class NavigationModeActivity extends CameraCaptureActivity {
     private static ArrayList<PointF> lft_lane_pts = null;
     private static ArrayList<PointF> rht_lane_pts = null;
     private Paint lanePointsPaint = null;
+    private Paint offsetLinePaint = null;
 
     private LaneDetector laneDetector = null;
     private static LaneDetectorAdvance laneDetectorAdvance = null;
@@ -210,6 +211,12 @@ public class NavigationModeActivity extends CameraCaptureActivity {
         lanePointsPaint.setStrokeWidth(8);
         lanePointsPaint.setStyle(Paint.Style.STROKE);
 
+        offsetLinePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        offsetLinePaint.setColor(Color.RED);
+        offsetLinePaint.setStrokeWidth(8);
+        offsetLinePaint.setStyle(Paint.Style.FILL_AND_STROKE);
+        offsetLinePaint.setAlpha(100);
+
         FrameLayout container = (FrameLayout) findViewById(R.id.container);
         initSnackbar = Snackbar.make(container, "Initializing...", Snackbar.LENGTH_INDEFINITE);
         Log.d(TAG, "onCreate: snackbar declared");
@@ -316,14 +323,51 @@ public class NavigationModeActivity extends CameraCaptureActivity {
             @Override
             public void drawCallback(Canvas canvas) {
                     if (!isLaneDetectionAllowed) return;
-                    if (lft_lane_pts != null && lft_lane_pts.size() > 3) {
-                        canvas.drawPath(SharedValues.getPathFromPointF(lft_lane_pts, false), lanePointsPaint);
-                    }
-                    if (rht_lane_pts != null && rht_lane_pts.size() > 3) {
-                        canvas.drawPath(SharedValues.getPathFromPointF(rht_lane_pts, false), lanePointsPaint);
-                    }
+//                    if (lft_lane_pts != null && lft_lane_pts.size() > 3) {
+//                        canvas.drawPath(SharedValues.getPathFromPointF(lft_lane_pts, false), lanePointsPaint);
+//                    }
+//                    if (rht_lane_pts != null && rht_lane_pts.size() > 3) {
+//                        canvas.drawPath(SharedValues.getPathFromPointF(rht_lane_pts, false), lanePointsPaint);
+//                    }
 
+                float offset = Math.abs(laneDetectorAdvance.getOff_center());
+                if (offset > 1){
+                    if (lft_lane_pts != null && rht_lane_pts != null){
+                        ArrayList<PointF> lane__ = new ArrayList<>();
+                        lane__.add(lft_lane_pts.get(lft_lane_pts.size()-1));
+                        lane__.get(0).y = Math.max(lft_lane_pts.get(lft_lane_pts.size()-1).y,
+                                rht_lane_pts.get(rht_lane_pts.size()-1).y);
+                        lane__.add(rht_lane_pts.get(rht_lane_pts.size()-1));
+                        lane__.get(1).y = lane__.get(0).y;
+
+                        lane__.add(rht_lane_pts.get(0));
+                        lane__.get(2).y = Math.min(lft_lane_pts.get(0).y,
+                                rht_lane_pts.get(0).y);
+                        lane__.add(lft_lane_pts.get(0));
+                        lane__.get(3).y = lane__.get(2).y;
+                        canvas.drawPath(SharedValues.getPathFromPointF(lane__, true), offsetLinePaint);
+                    }
+                }else {
+                    if (lft_lane_pts != null && rht_lane_pts != null){
+                        ArrayList<PointF> lane__ = new ArrayList<>();
+
+                        lane__.add(lft_lane_pts.get(lft_lane_pts.size()-1));
+                        lane__.get(0).y = Math.max(lft_lane_pts.get(lft_lane_pts.size()-1).y,
+                                rht_lane_pts.get(rht_lane_pts.size()-1).y);
+                        lane__.add(rht_lane_pts.get(rht_lane_pts.size()-1));
+                        lane__.get(1).y = lane__.get(0).y;
+
+                        lane__.add(rht_lane_pts.get(0));
+                        lane__.get(2).y = Math.min(lft_lane_pts.get(0).y,
+                                rht_lane_pts.get(0).y);
+                        lane__.add(lft_lane_pts.get(0));
+                        lane__.get(3).y = lane__.get(2).y;
+                        canvas.drawPath(SharedValues.getPathFromPointF(lane__, true), lanePointsPaint);
+                    }
                 }
+
+
+            }
         });
 
         // direction maneuver
