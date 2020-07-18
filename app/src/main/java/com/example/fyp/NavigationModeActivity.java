@@ -185,8 +185,8 @@ public class NavigationModeActivity extends CameraCaptureActivity {
         isDarkModeEnabled = SharedPreferencesUtils.loadBool(sp_hs, sp_hs_dark_mod);
 
         // change icon of mic
-        if (isDarkModeEnabled) {
-            voiceButton.setBackgroundResource(R.drawable.ic_mic_black);
+        if (!isDarkModeEnabled) {
+            voiceButton.setBackgroundResource(R.drawable.ic_mic_grey);
         }
 
         SharedPreferences sp_ld = getSharedPreferences(
