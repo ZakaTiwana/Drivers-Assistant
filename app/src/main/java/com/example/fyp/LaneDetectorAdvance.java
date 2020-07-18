@@ -58,6 +58,10 @@ public class LaneDetectorAdvance {
     private static String dist_in_sp;
     private static String has_cal_mtx_dist;
 
+    private ArrayList<PointF>[] lft_point_mem = new ArrayList[4];
+    private ArrayList<PointF>[] rht_point_mem = new ArrayList[4] ;
+
+
     public LaneDetectorAdvance(int srcWidth, int srcHeight, int cropWidth, int cropHeight) {
         Matrix frameToCrop = ImageUtilities.getTransformationMatrix(
                 srcWidth,srcHeight,
@@ -230,8 +234,9 @@ public class LaneDetectorAdvance {
         res[1] = rht_lane_pts;
         return res;
     }
-    private void polyFit(ArrayList<PointF> pts, int degree){
-        if (pts.size() == 0) return;
+    private ArrayList<PointF> polyFit(ArrayList<PointF> pts, int degree){
+        if (pts.size() == 0) return null;
+        ArrayList<PointF> specfic_points = new ArrayList<>();
         PolynomialCurveFitter
                 curveFitter = PolynomialCurveFitter.create(degree)
                 .withMaxIterations(500);
@@ -241,9 +246,12 @@ public class LaneDetectorAdvance {
             points.add(pts.get(i).x, pts.get(i).y);
         }
         PolynomialFunction func = new PolynomialFunction(curveFitter.fit(points.toList()));
+
         for(int i = 0; i < pts.size(); i++) {
             pts.get(i).y = (float) func.value(pts.get(i).x);
         }
+
+        return specfic_points;
     }
     private void orderedPoints(){
         points = new Point[4];
@@ -372,6 +380,7 @@ public class LaneDetectorAdvance {
         int windows_n_cols = 60;
         // Step of each window
         int StepSlide = 30;
+        int index = 0;
         for (int row = wrapped.rows() ; row > windows_n_rows - StepSlide ; row -= StepSlide) {
 
             int topX_lft = left_lane_index - windows_n_cols/2;
@@ -381,8 +390,7 @@ public class LaneDetectorAdvance {
 
             int y_axis = row-windows_n_rows;
             if (y_axis < 0) y_axis = 0;
-
-
+            index++;
 
             Log.d(TAG, String.format("windowSearch: y_axis = %d , topX_lft = %d, topX_rht=%d", y_axis,topX_lft,topX_rht));
 
@@ -415,14 +423,14 @@ public class LaneDetectorAdvance {
                 Imgproc.drawMarker(wrapped,new Point(right_lane_index,row - windows_n_rows/2f),new Scalar(255,255,255));
             }
 
-            left_lane_indexes.addAll(
-                    nz_pts_lft_lane
-            );
-            right_lane_indexes.addAll(
-                    nz_pts_rht_lane
-            );
-//            left_lane_indexes.add(new PointF(left_lane_index,row - windows_n_rows/2f));
-//            right_lane_indexes.add(new PointF(right_lane_index,row - windows_n_rows/2f));
+//            left_lane_indexes.addAll(
+//                    nz_pts_lft_lane
+//            );
+//            right_lane_indexes.addAll(
+//                    nz_pts_rht_lane
+//            );
+            left_lane_indexes.add(new PointF(left_lane_index,row - windows_n_rows/2f));
+            right_lane_indexes.add(new PointF(right_lane_index,row - windows_n_rows/2f));
             if(nz_pts_lft_lane.size() >= min_px){
                 left_lane_index = meanXIndex(nz_pts_lft_lane);
                 Log.d(TAG, "windowSearch: new mean lft = "+ left_lane_index);
@@ -455,7 +463,6 @@ public class LaneDetectorAdvance {
                 if ((int)mat.get(row,col)[0] > 0d){
                     non_zero_points.add(new PointF(offsetX+col, offsetY+row));
                 }
-
             }
         }
         return non_zero_points;
@@ -542,7 +549,7 @@ public class LaneDetectorAdvance {
     }
 
     private void cannay(Mat edge){
-        Imgproc.Canny(edge,edge,60,150);
+        Imgproc.Canny(edge,edge,30,150);
     }
 
     public Mat unDistortImage(Bitmap bmp){
@@ -566,10 +573,6 @@ public class LaneDetectorAdvance {
         img.release();
         return un_img;
     }
-
-
-
-
 
 
     public static void setSharedPreference(SharedPreferences s,
@@ -624,7 +627,6 @@ public class LaneDetectorAdvance {
                             db) {
                         dist_s.append(d).append(", ");
                     }
-
                 }
             }
             dist_s.append("]");
@@ -633,6 +635,21 @@ public class LaneDetectorAdvance {
         return dist_s.toString();
     }
 
+    private void avg(ArrayList<PointF> new_lft, ArrayList<PointF> new_rht){
+        int lft_in_mem = 0;
+        for (int i = 0; i < lft_point_mem.length; i++) {
+            if(lft_point_mem[i] != null){
+                for (int j = 0; j < new_lft.size(); j++) {
+                    new_lft.get(j).x = (new_lft.get(j).x + lft_point_mem[i].get(j).x) /2;
+                }
+                lft_in_mem++;
+            }else{
+                break;
+            };
+        }
+        lft_in_mem %= lft_point_mem.length;
+
+    }
     private static void transformMatrix(Mat src, Matrix dst) {
 
         int columns = src.cols();
@@ -663,8 +680,8 @@ public class LaneDetectorAdvance {
 
         MatOfPoint2f inshape = new MatOfPoint2f(p);
         Point[] p_d = new Point[4];
-        p_d[0] = new Point(width/5, height/2);
-        p_d[1] = new Point(width - width/4, height/2);
+        p_d[0] = new Point(width/5, height - height/3);
+        p_d[1] = new Point(width - width/6, height - height/3);
 
         p_d[2] = new Point(width, height);
         p_d[3] = new Point(0, height);

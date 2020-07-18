@@ -131,13 +131,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             enableDisableBT();
         }
 
-        SharedPreferences sp_bt = getSharedPreferences(getString(R.string.sp_blueTooth),0);
-        String key_bt_conn = getString(R.string.sp_bt_key_isDeviceConnected);
-        SharedPreferencesUtils.saveBool(sp_bt,key_bt_conn,false);
+
 
         SharedPreferences sp_ld = getSharedPreferences(getString(R.string.sp_laneDetection),0);
         String ld_key_t_mask = getString(R.string.sp_ld_key_transformed_mask_pts);
         String ld_key_mask = getString(R.string.sp_ld_key_original_mask_pts);
+
+        SharedPreferences sp_bt = getSharedPreferences(getString(R.string.sp_blueTooth),0);
+        String key_bt_conn = getString(R.string.sp_bt_key_isDeviceConnected);
+        SharedPreferencesUtils.saveBool(sp_bt,key_bt_conn,false);
+        String key_bt_speed = getString(R.string.sp_bt_key_car_speed);
+        SharedPreferencesUtils.saveString(sp_bt,key_bt_speed,"25");
 
         SharedPreferences sp_hs = getSharedPreferences(getString(R.string.sp_homeSettings),0);
         String hs_preview_size = getString(R.string.sp_hs_key_previewSize);
@@ -196,6 +200,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     }
 
+
+
     private void buildAlertMessageNoGps() {
         final AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setMessage("Your GPS seems to be disabled, do you want to enable it?")
@@ -218,7 +224,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (mBluetoothAdapter == null) {
             Log.d(TAG, "enableDisableBT: Does not have BT capabilities.");
         }
-        if (!mBluetoothAdapter.isEnabled()) {
+        SharedPreferences sp_bt = getSharedPreferences(getString(R.string.sp_blueTooth),0);
+        String key_bt_conn = getString(R.string.sp_bt_key_isDeviceConnected);
+        if (!mBluetoothAdapter.isEnabled() ) {
             Log.d(TAG, "enableDisableBT: enabling BT.");
 
             Toast.makeText(getApplicationContext(), "You need to turn on your device's Bluetooth to enjoy accident detection feature.", Toast.LENGTH_LONG).show();
@@ -228,6 +236,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             IntentFilter BTIntent = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
             registerReceiver(mBroadcastReceiver1, BTIntent);
         }
+//        }else if (!SharedPreferencesUtils.loadBool(sp_bt,key_bt_conn)){
+//            Toast.makeText(getApplicationContext(), "You need to connect to your corresponding obd II device to enjoy accident detection feature.", Toast.LENGTH_LONG).show();
+//            Intent intent = new Intent(MainActivity.this, Bluetooth.class);
+//            startActivity(intent);
+//        }
 
     }
 
