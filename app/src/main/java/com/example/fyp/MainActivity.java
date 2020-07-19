@@ -130,6 +130,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (settings.getBoolean("accident_detector_settings", false)) {
             enableDisableBT();
             if (!SharedValues.isBlueToothConnected && mBluetoothAdapter.isEnabled()){
+                Toast.makeText(getApplicationContext(), "You need to connect to your corresponding obd II device to enjoy accident detection feature.", Toast.LENGTH_LONG).show();
                 Intent intent = new Intent(MainActivity.this, Bluetooth.class);
                 startActivity(intent);
             }
