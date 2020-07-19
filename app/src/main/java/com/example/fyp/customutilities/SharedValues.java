@@ -7,6 +7,7 @@ import android.util.Size;
 import java.util.ArrayList;
 
 public class SharedValues {
+    public volatile static boolean isBlueToothConnected = false;
     public static final Size[] DESIRED_PREVIEW_SIZES =
             {
                     new Size(640,480),

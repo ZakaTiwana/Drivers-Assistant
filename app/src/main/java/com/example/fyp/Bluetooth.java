@@ -44,6 +44,7 @@ import android.widget.Toast;
 //import com.github.pires.obd.exceptions.UnableToConnectException;
 
 import com.example.fyp.customutilities.SharedPreferencesUtils;
+import com.example.fyp.customutilities.SharedValues;
 import com.github.pires.obd.commands.SpeedCommand;
 import com.github.pires.obd.commands.engine.RPMCommand;
 import com.github.pires.obd.commands.protocol.EchoOffCommand;
@@ -1049,11 +1050,14 @@ public class Bluetooth extends AppCompatActivity implements AdapterView.OnItemCl
 
     private void resetAcitivityState() {
         closeSocket(sock);
+        isTaskRunForFirstTime = false;
         //progressBar.setProgress(0);
         //    sendBtn.setEnabled(true);
+        SharedValues.isBlueToothConnected = false;
         SharedPreferences sp_bt = getSharedPreferences(getString(R.string.sp_blueTooth),0);
         String key_bt_conn = getString(R.string.sp_bt_key_isDeviceConnected);
         SharedPreferencesUtils.saveBool(sp_bt,key_bt_conn,false);
+
         threadPoolExecutor.shutdown();
     }
 
@@ -1207,6 +1211,7 @@ public class Bluetooth extends AppCompatActivity implements AdapterView.OnItemCl
                         SharedPreferences sp_bt = getSharedPreferences(getString(R.string.sp_blueTooth),0);
                         String key_bt_conn = getString(R.string.sp_bt_key_isDeviceConnected);
                         SharedPreferencesUtils.saveBool(sp_bt,key_bt_conn,true);
+                        SharedValues.isBlueToothConnected = true;
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
@@ -1265,12 +1270,7 @@ public class Bluetooth extends AppCompatActivity implements AdapterView.OnItemCl
                             if (result.contains("B1904") || result.contains("B1902")) {
                                 Intent intent = new Intent(getApplicationContext(), Sms.class);
                                 startActivity(intent);
-                                threadPoolExecutor.schedule(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                             threadPoolExecutor.shutdown();
-                                    }
-                                },10, TimeUnit.MILLISECONDS);
+                                resetAcitivityState();
                             }
 
 

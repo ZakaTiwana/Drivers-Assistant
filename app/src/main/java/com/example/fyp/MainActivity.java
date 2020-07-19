@@ -129,6 +129,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 //        SharedPreferences settings = getSharedPreferences("home_settings", 0);
         if (settings.getBoolean("accident_detector_settings", false)) {
             enableDisableBT();
+            if (!SharedValues.isBlueToothConnected && mBluetoothAdapter.isEnabled()){
+                Intent intent = new Intent(MainActivity.this, Bluetooth.class);
+                startActivity(intent);
+            }
         }
 
 

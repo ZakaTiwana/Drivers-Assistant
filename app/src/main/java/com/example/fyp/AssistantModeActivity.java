@@ -88,6 +88,8 @@ public class AssistantModeActivity extends CameraCaptureActivity {
     private Paint laneGuidPathPaint = null;
     private Paint carLinePaint = null;
     private Paint offsetLinePaint = null;
+    private Paint carSpeedBgPaint = null;
+    private Paint carSpeedTextPaint = null;
 
     private float maskWidth;
     private float maskHeight;
@@ -97,6 +99,7 @@ public class AssistantModeActivity extends CameraCaptureActivity {
     private volatile boolean initialized = false;
 
     private boolean drawDebugInfo = false;
+    private boolean drawCarSpeed = false;
     private int counterForVolumeDown = 0;
 
     private static OverlayView draw = null;
@@ -169,12 +172,15 @@ public class AssistantModeActivity extends CameraCaptureActivity {
 
         borderTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         borderTextPaint.setColor(Color.BLUE);
-        borderTextPaint.setTextSize(30);
+        borderTextPaint.setTextSize(50);
 
-//        carLinePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-//        carLinePaint.setColor(Color.GREEN);
-//        carLinePaint.setStrokeWidth(5);
-//        carLinePaint.setTextSize(23);
+        carSpeedBgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        carSpeedBgPaint.setColor(Color.parseColor("#1F2833"));
+        carSpeedBgPaint.setStyle(Paint.Style.FILL_AND_STROKE);
+
+        carSpeedTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        carSpeedTextPaint.setColor(Color.parseColor("#008577"));
+        carSpeedTextPaint.setTextSize(80);
 
 
 
@@ -432,10 +438,17 @@ public class AssistantModeActivity extends CameraCaptureActivity {
                     canvas.drawText(
                             String.format("Time Taken Lane Detection: %.0f ms", timeTakeByLaneDetector), 10, 150, borderTextPaint);
 
-                    if (carSpeed != null)
+
+                }
+                if (drawCarSpeed ){
+                    if (carSpeed != null){
+                        canvas.drawRect(new RectF(0,0,mWidth/3,mHeight/6),carSpeedBgPaint);
                         canvas.drawText(
-                                "Speed of Car: " + carSpeed, 10, 200, borderTextPaint
+                                "Speed of Car: " +carSpeed+ " km/h", 10, (mHeight/6)/2 + 20, carSpeedTextPaint
                         );
+                    }
+
+
                 }
             }
         });
@@ -714,6 +727,8 @@ public class AssistantModeActivity extends CameraCaptureActivity {
             counterForVolumeDown %= 3;
             draw.postInvalidate();
             return true;
+        }else if (keyCode == KeyEvent.KEYCODE_VOLUME_UP){
+            drawCarSpeed = !drawCarSpeed;
         }
 
         return super.onKeyDown(keyCode, event);
@@ -729,7 +744,7 @@ public class AssistantModeActivity extends CameraCaptureActivity {
         final String key_bt_conn = getString(R.string.sp_bt_key_isDeviceConnected);
         final String key_bt_speed = getString(R.string.sp_bt_key_car_speed);
         // if obd connected then get speed at intervals
-        if (SharedPreferencesUtils.loadBool(sp_bt, key_bt_conn)) {
+//        if (SharedPreferencesUtils.loadBool(sp_bt, key_bt_conn)) {
             obdStoppedTask = threadExecutor.scheduleAtFixedRate(new Runnable() {
                 @Override
                 public void run() {
@@ -738,7 +753,7 @@ public class AssistantModeActivity extends CameraCaptureActivity {
                     draw.postInvalidate();
                 }
             }, 1,1 , TimeUnit.MILLISECONDS);
-        }
+//        }
 
 
         final SharedPreferences sp_fs = getSharedPreferences(getString(R.string.sp_featureSettings), 0);
