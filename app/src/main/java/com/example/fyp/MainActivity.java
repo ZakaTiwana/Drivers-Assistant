@@ -388,7 +388,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     }
                     Log.d(TAG, "onRequestPermissionsResult: permission granted");
                     CameraPermissionsGranted = true;
-                    Intent intent = new Intent(getApplicationContext(), AssistantModeActivity.class);
+                    Intent intent = new Intent(getApplicationContext(), LanePointsActivity.class);
+                    intent.putExtra(SharedValues.intent_to_assistant_mode,true);
                     startActivity(intent);
                     return;
                 }
