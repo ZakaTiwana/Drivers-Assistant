@@ -92,8 +92,10 @@ public class TestSignActivity extends AppCompatActivity {
         });
 
         image = ImageUtilities.getResizedBitmap(BitmapFactory.decodeResource(getApplicationContext().getResources(),
-                R.drawable.sign_test_2),300,300,true);
+                R.drawable.sign_test_3),300,300,true);
         copyBitmap = image.copy(Bitmap.Config.ARGB_8888,true);
+
+        imageView.setImageResource(R.drawable.sign_test_3);
 
         FrameLayout container = (FrameLayout) findViewById(R.id.container2);
         initSnackbar = Snackbar.make(container, "Initializing...", Snackbar.LENGTH_INDEFINITE);

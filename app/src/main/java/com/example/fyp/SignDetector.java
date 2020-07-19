@@ -35,12 +35,13 @@ public class SignDetector{
     private static final String TAG = "SignDetector";
 
     private static final float THRESHOLD_SCORE = 0.9f;
-    public static final String SIGN_CLASSIFIER_MODEL = "traffic_nomalized.tflite";//"traffic.tflite";//"gtsrb.lite";
+//    public static final String SIGN_CLASSIFIER_MODEL = "traffic_nomalized.tflite";//"traffic.tflite";//"gtsrb.lite";
 //    public static final String SIGN_CLASSIFIER_MODEL = "traffic.tflite";
+    public static final String SIGN_CLASSIFIER_MODEL = "pyimgsearch_ts.tflite";
 
 
     private static final String SIGN_CLASSIFIER_LABEL = "gtsrb_label.txt";
-    public static final int SIGN_CLASSIFIER_INPUT_SIZE = 30;//224;
+    public static final int SIGN_CLASSIFIER_INPUT_SIZE = 32;//30;//224;
     private static final Boolean SIGN_CLASSIFIER_IS_QUANTIZED = false;
     //only for Sign Classifier model
     private static final int NUM_CLASS_FOR_SIGN = 43;

@@ -520,8 +520,8 @@ public class LaneDetectorAdvance {
         return warped;
     }
     private Mat findEdges(){
-//        Mat edge = isolateColor(convertToGrayScale());
-        Mat edge = convertToGrayScale();
+        Mat edge = isolateColor(convertToGrayScale());
+//        Mat edge = convertToGrayScale();
         cannay(edge);
         return edge;
     }
