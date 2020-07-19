@@ -24,6 +24,7 @@ public class DistanceCalculator {
         switch (label.toLowerCase()){
             case "bottle":
                 ACTUAL_WIDTH = ACTUAL_WIDTH_BOTTLE;
+                break;
             case "car":
                 ACTUAL_WIDTH = ACTUAL_WIDTH_CAR;
                 break;
