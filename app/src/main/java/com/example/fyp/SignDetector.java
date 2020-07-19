@@ -37,6 +37,8 @@ public class SignDetector{
     private static final float THRESHOLD_SCORE = 0.9f;
     public static final String SIGN_CLASSIFIER_MODEL = "traffic_nomalized.tflite";//"traffic.tflite";//"gtsrb.lite";
 //    public static final String SIGN_CLASSIFIER_MODEL = "traffic.tflite";
+
+
     private static final String SIGN_CLASSIFIER_LABEL = "gtsrb_label.txt";
     public static final int SIGN_CLASSIFIER_INPUT_SIZE = 30;//224;
     private static final Boolean SIGN_CLASSIFIER_IS_QUANTIZED = false;

@@ -69,6 +69,7 @@ public class NavigationModeActivity extends CameraCaptureActivity {
     private int mWidth = 0;
     private int mHeight = 0;
 
+    private Bitmap warningBitmap = null;
     private Bitmap rgbFrameBitmap = null;
     private Boolean isRgbFrameCreated = false;
 
@@ -171,6 +172,7 @@ public class NavigationModeActivity extends CameraCaptureActivity {
             }
         });
 
+        warningBitmap = BitmapFactory.decodeResource(getResources(),R.drawable.warning_for_distance);
         borderBoxPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         borderBoxPaint.setColor(Color.RED);
         borderBoxPaint.setStrokeWidth(8);
@@ -272,9 +274,9 @@ public class NavigationModeActivity extends CameraCaptureActivity {
                                 // display warning if car some minimum distance
                                 if (dist < 10 && countVoicedWarns <= 2) {
                                     countVoicedWarns++;
-                                    Bitmap bmp = BitmapFactory.decodeResource(getResources(), R.drawable.warning_for_distance);
-                                    Bitmap bmp_resized = ImageUtilities.getResizedBitmap(bmp, (int) (location.width() - 5),
-                                            (int) (location.height() - 5), true);
+//                                    Bitmap bmp = BitmapFactory.decodeResource(getResources(), R.drawable.warning_for_distance);
+                                    Bitmap bmp_resized = ImageUtilities.getResizedBitmap(warningBitmap, (int) (location.width() - 5),
+                                            (int) (location.height() - 5), false);
                                     canvas.drawBitmap(bmp_resized, location.left + 5,
                                             location.top + 5, bitmapFilterPaint);
 
