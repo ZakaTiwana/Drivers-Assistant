@@ -20,6 +20,7 @@ import android.os.SystemClock;
 import android.speech.tts.TextToSpeech;
 import android.util.Log;
 import android.util.Size;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
@@ -61,6 +62,8 @@ public class NavigationModeActivity extends CameraCaptureActivity {
 
     private static final String TAG = "NavigationModeActivity";
 
+    private  ScheduledFuture<?> obdStoppedTask;
+    private String carSpeed = null;
     private static OverlayView draw = null;
     private static List<RecognizedObject> mappedRecognitions = null;
     private static List<RecognizedObject> mappedSignRecognitions = null;
@@ -100,6 +103,11 @@ public class NavigationModeActivity extends CameraCaptureActivity {
     private static ArrayList<PointF> rht_lane_pts = null;
     private Paint lanePointsPaint = null;
     private Paint offsetLinePaint = null;
+    private boolean drawCarSpeed = false;
+
+    private Paint carSpeedBgPaint = null;
+    private Paint carSpeedTextPaint = null;
+
 
     private LaneDetector laneDetector = null;
     private static LaneDetectorAdvance laneDetectorAdvance = null;
@@ -171,6 +179,14 @@ public class NavigationModeActivity extends CameraCaptureActivity {
                 }
             }
         });
+
+        carSpeedBgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        carSpeedBgPaint.setColor(Color.parseColor("#1F2833"));
+        carSpeedBgPaint.setStyle(Paint.Style.FILL_AND_STROKE);
+
+        carSpeedTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        carSpeedTextPaint.setColor(Color.parseColor("#008577"));
+        carSpeedTextPaint.setTextSize(80);
 
         warningBitmap = BitmapFactory.decodeResource(getResources(),R.drawable.warning_for_distance);
         borderBoxPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -258,8 +274,8 @@ public class NavigationModeActivity extends CameraCaptureActivity {
                                 object.getLabel().matches("car|motorcycle|person|bicycle|truck|stop sign|laptop|bottle")) {
                             RectF location = object.getLocation();
 
-                            if (object.getLabel().contentEquals("stop sign"))
-                                speak(object.getLabel());
+//                            if (object.getLabel().contentEquals("stop sign"))
+//                                speak(object.getLabel());
 
                             canvas.drawRect(location, borderBoxPaint);
                             canvas.drawText(
@@ -507,6 +523,24 @@ public class NavigationModeActivity extends CameraCaptureActivity {
                         canvas.drawBitmap(newBitmap, pts[0].x - maskWidth / 8,
                                 pts[0].y - maskHeight / 3, bitmapFilterPaint);
                     }
+
+                }
+            }
+        });
+
+        // debug information
+        draw.addCallback(new OverlayView.DrawCallback() {
+            @SuppressLint("DefaultLocale")
+            @Override
+            public void drawCallback(Canvas canvas) {
+                if (drawCarSpeed ){
+                    if (carSpeed != null){
+                        canvas.drawRect(new RectF(0,0,mWidth/3,mHeight/6),carSpeedBgPaint);
+                        canvas.drawText(
+                                "Speed of Car: " +carSpeed+ " km/h", 10, (mHeight/6)/2 + 20, carSpeedTextPaint
+                        );
+                    }
+
 
                 }
             }
@@ -896,6 +930,22 @@ public class NavigationModeActivity extends CameraCaptureActivity {
         }
 
 
+        final SharedPreferences sp_bt = getSharedPreferences(getString(R.string.sp_blueTooth), 0);
+        final String key_bt_conn = getString(R.string.sp_bt_key_isDeviceConnected);
+        final String key_bt_speed = getString(R.string.sp_bt_key_car_speed);
+        // if obd connected then get speed at intervals
+        if (SharedPreferencesUtils.loadBool(sp_bt, key_bt_conn)) {
+            obdStoppedTask = threadExecutor.scheduleAtFixedRate(new Runnable() {
+                @Override
+                public void run() {
+                    Log.d(TAG, "run: OBD-ii speed checker");
+                    carSpeed = sp_bt.getString(key_bt_speed, null);
+                    draw.postInvalidate();
+                }
+            }, 1,1 , TimeUnit.MILLISECONDS);
+        }
+
+
         final SharedPreferences sp_fs = getSharedPreferences(getString(R.string.sp_featureSettings), 0);
         final String fs_lane = getString(R.string.sp_fs_key_isLaneAllowed);
         final String fs_obj_detect = getString(R.string.sp_fs_key_isObjDetectionAllowed);
@@ -928,10 +978,25 @@ public class NavigationModeActivity extends CameraCaptureActivity {
             directionTask.cancel(false);
             directionTask = null;
         }
+        if (obdStoppedTask !=null){
+            obdStoppedTask.cancel(false);
+            obdStoppedTask = null;
+        }
+
 
         if(threadExecutor != null){
             threadExecutor.shutdown();
             threadExecutor = null;
         }
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_UP){
+            drawCarSpeed = !drawCarSpeed;
+        }
+        draw.postInvalidate();
+        return super.onKeyDown(keyCode, event);
     }
 }

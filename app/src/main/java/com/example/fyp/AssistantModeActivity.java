@@ -269,8 +269,8 @@ public class AssistantModeActivity extends CameraCaptureActivity {
                                 object.getLabel().matches("car|motorcycle|person|bicycle|truck|stop sign|laptop|bottle")) {
                             RectF location = object.getLocation();
 
-                            if (object.getLabel().contentEquals("stop sign"))
-                                speak(object.getLabel());
+//                            if (object.getLabel().contentEquals("stop sign"))
+//                                speak(object.getLabel());
 
                             canvas.drawRect(location, borderBoxPaint);
                             canvas.drawText(
@@ -744,7 +744,7 @@ public class AssistantModeActivity extends CameraCaptureActivity {
         final String key_bt_conn = getString(R.string.sp_bt_key_isDeviceConnected);
         final String key_bt_speed = getString(R.string.sp_bt_key_car_speed);
         // if obd connected then get speed at intervals
-//        if (SharedPreferencesUtils.loadBool(sp_bt, key_bt_conn)) {
+        if (SharedPreferencesUtils.loadBool(sp_bt, key_bt_conn)) {
             obdStoppedTask = threadExecutor.scheduleAtFixedRate(new Runnable() {
                 @Override
                 public void run() {
@@ -753,7 +753,7 @@ public class AssistantModeActivity extends CameraCaptureActivity {
                     draw.postInvalidate();
                 }
             }, 1,1 , TimeUnit.MILLISECONDS);
-//        }
+        }
 
 
         final SharedPreferences sp_fs = getSharedPreferences(getString(R.string.sp_featureSettings), 0);
